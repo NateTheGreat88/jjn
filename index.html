@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stolen</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <figure>
+        <figcaption>Listen to Stolen:</figcaption>
+        <p class="credits">by: Nathan DeLuca, Jaxon Croskey, and Junhu Choi</p>
+        <audio id="audioPlayer" controls src="stolen.mp3"></audio>
+        <a href="stolen.mp3"> Download audio </a>
+    </figure>
+    <div class="lyrics-container">
+        <div id="lyricsDisplay" class="lyrics-text"></div>
+    </div>
+    <script>
+        const audio = document.getElementById('audioPlayer');
+        const lyricsDisplay = document.getElementById('lyricsDisplay');
+        
+        const lyrics = `[Verse 1] I was a kid, I was alone (hah) Wandered off too far from home (hah) Saw a white van, didn't know what to believe He said "Free toys," and I felt naïve, didn't know what was up his sleeve.
+I lived two lives, one brave, one shy, but I couldn't read that creepy guy. Called a wild child 'cause I ran too fast. Now I'm locked in the van at last
+[Pre-Chorus] I'm done chillin', now I'm missin' like I'm meant to be. We trusted hard, we fell too far, now I can't breathe
+[Chorus] We're going in in in to the white van Gonna be gonna be stolen We're gonna be gonna be stolen Oh, in in in with no choices Never gonna see the sun Gonna be gonna be stolen
+Oh, I'm done chillin', now I'm missin' like I'm meant to be. Oh, no time, no doors, no light. That's what we didn't see
+[Verse 2] Waited so long to cross that street To chase a dog and feel complete Dropped my backpack for a treat Now I'm trapped in the backseat
+No more hiding, we're just riding in captivity. We were curious, voices loud, and we believed
+[Chorus] We're going in in in to the white van Gonna be gonna be stolen We're gonna be gonna be stolen Oh, in in in with no choices Never gonna see the sun Gonna be gonna be stolen
+Oh, I'm done chillin', now I'm missin' like I'm meant to be. Oh, no time, no doors, no light. That's what we didn't see
+[Outro] You know we're gonna be, gonna be stolen We're gonna be, gonna be Gone to be, gone to be rollin' Far away from everything You know that it's too late, no doors, no light That's what we didn't see`;
+
+        let typewriterInterval = null;
+        let currentIndex = 0;
+        let isTyping = false;
+        const START_DELAY = 6; // Start typing 6 seconds into the song
+
+        function typeWriter() {
+            if (currentIndex < lyrics.length) {
+                const char = lyrics[currentIndex];
+                lyricsDisplay.textContent += char;
+                currentIndex++;
+            } else {
+                clearInterval(typewriterInterval);
+                isTyping = false;
+            }
+        }
+
+        function startTypewriter() {
+            if (!isTyping) {
+                // If we're resuming from a pause, don't reset
+                if (currentIndex === 0) {
+                    lyricsDisplay.textContent = '';
+                }
+                isTyping = true;
+                const typingSpeed = 80; // milliseconds per character
+                typewriterInterval = setInterval(typeWriter, typingSpeed);
+            }
+        }
+
+        function resetTypewriter() {
+            clearInterval(typewriterInterval);
+            lyricsDisplay.textContent = '';
+            currentIndex = 0;
+            isTyping = false;
+        }
+
+        function pauseTypewriter() {
+            clearInterval(typewriterInterval);
+            isTyping = false;
+        }
+
+        function checkStartTime() {
+            if (audio.currentTime >= START_DELAY && !isTyping && !audio.paused) {
+                startTypewriter();
+            }
+        }
+
+        audio.addEventListener('timeupdate', checkStartTime);
+        audio.addEventListener('pause', pauseTypewriter);
+        audio.addEventListener('seeked', () => {
+            resetTypewriter();
+            // If seeking to after 6 seconds, start immediately
+            if (audio.currentTime >= START_DELAY && !audio.paused) {
+                startTypewriter();
+            }
+        });
+        audio.addEventListener('ended', () => {
+            clearInterval(typewriterInterval);
+            isTyping = false;
+        });
+        
+        // Handle case where audio might already be playing when page loads
+        if (!audio.paused && audio.currentTime >= START_DELAY) {
+            startTypewriter();
+        }
+    </script>
+</body>
+</html>
