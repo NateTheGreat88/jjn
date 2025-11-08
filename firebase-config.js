@@ -1,4 +1,4 @@
-// Firebase Configuration for JJN Chat
+// Firebase Configuration for JNJ Chat
 // This file contains your Firebase project configuration
 
 const firebaseConfig = {

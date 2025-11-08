@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Editor - JJN Website</title>
+    <title>Image Editor - JNJ Website</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="imageeditor.css">
 </head>
@@ -12,7 +12,7 @@
     
     <div class="editor-container">
         <header class="editor-header">
-            <h1>JJN Image Editor</h1>
+            <h1>JNJ Image Editor</h1>
             <p class="editor-subtitle">Create and edit images</p>
         </header>
 
@@ -458,7 +458,7 @@
 
         function downloadImage() {
             const link = document.createElement('a');
-            link.download = 'jjn-image-' + Date.now() + '.png';
+            link.download = 'jnj-image-' + Date.now() + '.png';
             link.href = canvas.toDataURL();
             link.click();
         }
