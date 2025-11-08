@@ -167,6 +167,21 @@ body {
     margin-top: 5px;
 }
 
+.zoom-display {
+    margin-top: 10px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.zoom-display span {
+    color: #4a9eff;
+    font-weight: bold;
+    font-size: 14px;
+}
+
 .canvas-container {
     flex: 1;
     display: flex;
@@ -177,6 +192,9 @@ body {
     padding: 20px;
     min-height: 500px;
     position: relative;
+    overflow: auto;
+    max-width: 100%;
+    max-height: calc(100vh - 250px);
 }
 
 #canvas {
@@ -186,6 +204,8 @@ body {
     cursor: crosshair;
     max-width: 100%;
     height: auto;
+    transition: transform 0.2s ease;
+    display: block;
 }
 
 .canvas-overlay {
@@ -279,6 +299,15 @@ body {
 
     .canvas-container {
         background: rgba(0, 0, 0, 0.05);
+    }
+    
+    .zoom-display {
+        background: rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .zoom-display span {
+        color: #2563eb;
     }
 }
 

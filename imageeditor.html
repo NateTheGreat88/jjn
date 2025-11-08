@@ -74,9 +74,21 @@
                         <button class="tool-btn" onclick="clearCanvas()">🗑️ Clear</button>
                     </div>
                 </div>
+
+                <div class="tool-section">
+                    <h3>Zoom</h3>
+                    <div class="tool-group">
+                        <button class="tool-btn" onclick="zoomIn()">🔍+ Zoom In</button>
+                        <button class="tool-btn" onclick="zoomOut()">🔍- Zoom Out</button>
+                        <button class="tool-btn" onclick="resetZoom()">🎯 Reset</button>
+                        <div class="zoom-display">
+                            <span id="zoomLevel">100%</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="canvas-container">
+            <div class="canvas-container" id="canvasContainer">
                 <canvas id="canvas"></canvas>
                 <div class="canvas-overlay" id="canvasOverlay"></div>
             </div>
@@ -96,30 +108,52 @@
         let brushSize = 5;
         let history = [];
         let textInput = null;
+        let zoomLevel = 1.0; // Current zoom level (1.0 = 100%)
+        const MIN_ZOOM = 0.25; // 25% minimum
+        const MAX_ZOOM = 4.0; // 400% maximum
+        const ZOOM_STEP = 0.25; // 25% increments
+        let baseCanvasWidth = 800;
+        let baseCanvasHeight = 600;
 
         // Initialize canvas
         function initCanvas() {
             canvas.width = 800;
             canvas.height = 600;
+            baseCanvasWidth = 800;
+            baseCanvasHeight = 600;
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.strokeStyle = currentColor;
             ctx.lineWidth = brushSize;
             saveState();
             resizeCanvas();
+            applyZoom(); // Apply zoom after resize
         }
 
-        // Resize canvas to fit container
+        // Resize canvas to fit container (only if zoom is at 100%)
         function resizeCanvas() {
-            const container = canvas.parentElement;
-            const maxWidth = container.clientWidth - 40;
-            const maxHeight = window.innerHeight - 200;
-            const scale = Math.min(maxWidth / canvas.width, maxHeight / canvas.height, 1);
-            canvas.style.width = (canvas.width * scale) + 'px';
-            canvas.style.height = (canvas.height * scale) + 'px';
+            if (zoomLevel === 1.0) {
+                const container = canvas.parentElement;
+                const maxWidth = container.clientWidth - 40;
+                const maxHeight = window.innerHeight - 200;
+                const scale = Math.min(maxWidth / canvas.width, maxHeight / canvas.height, 1);
+                // Store the display size, but don't override zoom
+                if (scale < 1) {
+                    canvas.style.width = (canvas.width * scale) + 'px';
+                    canvas.style.height = (canvas.height * scale) + 'px';
+                } else {
+                    canvas.style.width = canvas.width + 'px';
+                    canvas.style.height = canvas.height + 'px';
+                }
+            }
         }
 
-        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            if (zoomLevel !== 1.0) {
+                applyZoom(); // Reapply zoom on resize
+            }
+        });
 
         // Get canvas coordinates from mouse event
         function getCanvasCoordinates(e) {
@@ -200,9 +234,12 @@
                     img.onload = () => {
                         canvas.width = img.width;
                         canvas.height = img.height;
+                        baseCanvasWidth = img.width;
+                        baseCanvasHeight = img.height;
                         ctx.drawImage(img, 0, 0);
                         saveState();
                         resizeCanvas();
+                        applyZoom(); // Reapply zoom with new dimensions
                     };
                     img.src = event.target.result;
                 };
@@ -345,7 +382,80 @@
             }
         }
 
-        // Download image
+        // Zoom Functions
+        function zoomIn() {
+            if (zoomLevel < MAX_ZOOM) {
+                zoomLevel = Math.min(zoomLevel + ZOOM_STEP, MAX_ZOOM);
+                applyZoom();
+            }
+        }
+
+        function zoomOut() {
+            if (zoomLevel > MIN_ZOOM) {
+                zoomLevel = Math.max(zoomLevel - ZOOM_STEP, MIN_ZOOM);
+                applyZoom();
+            }
+        }
+
+        function resetZoom() {
+            zoomLevel = 1.0;
+            applyZoom();
+        }
+
+        function applyZoom() {
+            // Apply zoom only to the canvas element itself
+            // Keep container size fixed so it doesn't cover buttons
+            // Calculate base display size (fit to container at 100%)
+            const container = canvas.parentElement;
+            const maxWidth = container.clientWidth - 40;
+            const maxHeight = window.innerHeight - 200;
+            const baseScale = Math.min(maxWidth / baseCanvasWidth, maxHeight / baseCanvasHeight, 1);
+            
+            // Apply zoom to the base display size
+            const displayWidth = (baseCanvasWidth * baseScale * zoomLevel);
+            const displayHeight = (baseCanvasHeight * baseScale * zoomLevel);
+            
+            canvas.style.width = displayWidth + 'px';
+            canvas.style.height = displayHeight + 'px';
+            canvas.style.maxWidth = 'none';
+            canvas.style.maxHeight = 'none';
+            updateZoomDisplay();
+        }
+
+        function updateZoomDisplay() {
+            const zoomLevelDisplay = document.getElementById('zoomLevel');
+            zoomLevelDisplay.textContent = Math.round(zoomLevel * 100) + '%';
+        }
+
+        // Keyboard shortcuts for zoom (Ctrl/Cmd + Plus/Minus/0)
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && !e.shiftKey) {
+                if (e.key === '=' || e.key === '+') {
+                    e.preventDefault();
+                    zoomIn();
+                } else if (e.key === '-') {
+                    e.preventDefault();
+                    zoomOut();
+                } else if (e.key === '0') {
+                    e.preventDefault();
+                    resetZoom();
+                }
+            }
+        });
+
+        // Mouse wheel zoom (Ctrl/Cmd + Scroll)
+        const canvasContainer = document.getElementById('canvasContainer');
+        canvasContainer.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                if (e.deltaY < 0) {
+                    zoomIn();
+                } else {
+                    zoomOut();
+                }
+            }
+        }, { passive: false });
+
         function downloadImage() {
             const link = document.createElement('a');
             link.download = 'jjn-image-' + Date.now() + '.png';
@@ -392,6 +502,7 @@
 
         // Initialize
         initCanvas();
+        updateZoomDisplay(); // Initialize zoom display
     </script>
 </body>
 </html>
