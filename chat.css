@@ -141,19 +141,24 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.user-selector {
+.user-name-container {
     margin-bottom: 15px;
+}
+
+.user-name-container label {
+    color: #b0b0b0;
+    font-size: 14px;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.name-input-wrapper {
     display: flex;
-    align-items: center;
     gap: 10px;
 }
 
-.user-selector label {
-    color: #b0b0b0;
-    font-size: 14px;
-}
-
-.user-select {
+.user-name-input {
+    flex: 1;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 8px;
@@ -161,19 +166,79 @@ body {
     color: #e0e0e0;
     font-family: 'Courier New', monospace;
     font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.user-name-input::placeholder {
+    color: #b0b0b0;
+}
+
+.user-name-input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #4a9eff;
+    box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.2);
+}
+
+.save-name-button {
+    background: #4a9eff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(74, 158, 255, 0.3);
+}
+
+.save-name-button:hover {
+    background: #5ba8ff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(74, 158, 255, 0.4);
+}
+
+.save-name-button:active {
+    transform: translateY(0);
+}
+
+.current-name-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.current-name-display span {
+    color: #e0e0e0;
+    font-size: 14px;
+}
+
+.current-name-display strong {
+    color: #4a9eff;
+}
+
+.change-name-button {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 6px 12px;
+    color: #e0e0e0;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
-.user-select:hover {
+.change-name-button:hover {
     background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
-}
-
-.user-select:focus {
-    outline: none;
-    border-color: #4a9eff;
-    box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.2);
+    color: #fff;
 }
 
 .input-wrapper {
@@ -202,6 +267,17 @@ body {
     background: rgba(255, 255, 255, 0.15);
     border-color: #4a9eff;
     box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.2);
+}
+
+.message-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.send-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
 }
 
 .send-button {
@@ -301,18 +377,52 @@ body {
         border: 1px solid rgba(0, 0, 0, 0.1);
     }
 
-    .user-selector label {
+    .user-name-container label {
         color: #4a5568;
     }
 
-    .user-select {
+    .user-name-input {
         background: rgba(0, 0, 0, 0.05);
         border: 1px solid rgba(0, 0, 0, 0.1);
         color: #2d3748;
     }
 
-    .user-select:hover {
+    .user-name-input::placeholder {
+        color: #4a5568;
+    }
+
+    .save-name-button {
+        background: #2563eb;
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+    }
+
+    .save-name-button:hover {
+        background: #1d4ed8;
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    }
+
+    .current-name-display {
+        background: rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .current-name-display span {
+        color: #2d3748;
+    }
+
+    .current-name-display strong {
+        color: #2563eb;
+    }
+
+    .change-name-button {
+        background: rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        color: #2d3748;
+    }
+
+    .change-name-button:hover {
         background: rgba(0, 0, 0, 0.08);
+        color: #1a202c;
     }
 
     .message-input {

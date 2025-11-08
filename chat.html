@@ -25,13 +25,23 @@
         </div>
         
         <div class="chat-input-container">
-            <div class="user-selector">
-                <label for="userSelect">You are:</label>
-                <select id="userSelect" class="user-select">
-                    <option value="Junhu">Junhu Choi</option>
-                    <option value="Jaxon">Jaxon Croskey</option>
-                    <option value="Nathan">Nathan DeLuca</option>
-                </select>
+            <div class="user-name-container" id="userNameContainer">
+                <label for="userNameInput">Your name:</label>
+                <div class="name-input-wrapper">
+                    <input 
+                        type="text" 
+                        id="userNameInput" 
+                        class="user-name-input" 
+                        placeholder="Enter your name..."
+                        autocomplete="off"
+                        maxlength="30"
+                    >
+                    <button id="saveNameButton" class="save-name-button">Save</button>
+                </div>
+                <div class="current-name-display" id="currentNameDisplay" style="display: none;">
+                    <span>Chatting as: <strong id="currentNameText"></strong></span>
+                    <button id="changeNameButton" class="change-name-button">Change</button>
+                </div>
             </div>
             <div class="input-wrapper">
                 <input 
@@ -40,8 +50,9 @@
                     class="message-input" 
                     placeholder="Type a message..."
                     autocomplete="off"
+                    disabled
                 >
-                <button id="sendButton" class="send-button">Send</button>
+                <button id="sendButton" class="send-button" disabled>Send</button>
             </div>
         </div>
     </div>
@@ -50,7 +61,68 @@
         const chatMessages = document.getElementById('chatMessages');
         const messageInput = document.getElementById('messageInput');
         const sendButton = document.getElementById('sendButton');
-        const userSelect = document.getElementById('userSelect');
+        const userNameInput = document.getElementById('userNameInput');
+        const saveNameButton = document.getElementById('saveNameButton');
+        const currentNameDisplay = document.getElementById('currentNameDisplay');
+        const currentNameText = document.getElementById('currentNameText');
+        const changeNameButton = document.getElementById('changeNameButton');
+        const nameInputWrapper = userNameInput.parentElement;
+
+        let currentUserName = '';
+
+        // Load saved name from localStorage
+        function loadUserName() {
+            const savedName = localStorage.getItem('jjnChatUserName');
+            if (savedName && savedName.trim() !== '') {
+                currentUserName = savedName.trim();
+                showNameDisplay();
+                enableChat();
+            } else {
+                showNameInput();
+            }
+        }
+
+        // Save name to localStorage
+        function saveUserName(name) {
+            const trimmedName = name.trim();
+            if (trimmedName === '') return false;
+            
+            localStorage.setItem('jjnChatUserName', trimmedName);
+            currentUserName = trimmedName;
+            showNameDisplay();
+            enableChat();
+            return true;
+        }
+
+        // Show name input field
+        function showNameInput() {
+            nameInputWrapper.style.display = 'flex';
+            currentNameDisplay.style.display = 'none';
+            userNameInput.value = '';
+            userNameInput.focus();
+            disableChat();
+        }
+
+        // Show current name display
+        function showNameDisplay() {
+            nameInputWrapper.style.display = 'none';
+            currentNameDisplay.style.display = 'flex';
+            currentNameText.textContent = currentUserName;
+        }
+
+        // Enable chat input
+        function enableChat() {
+            messageInput.disabled = false;
+            sendButton.disabled = false;
+            messageInput.placeholder = 'Type a message...';
+        }
+
+        // Disable chat input
+        function disableChat() {
+            messageInput.disabled = true;
+            sendButton.disabled = true;
+            messageInput.placeholder = 'Enter your name above to start chatting...';
+        }
 
         // Load messages from localStorage
         function loadMessages() {
@@ -86,7 +158,7 @@
             
             messageDiv.innerHTML = `
                 <div class="message-header">
-                    <span class="message-user">${user}</span>
+                    <span class="message-user">${escapeHtml(user)}</span>
                     <span class="message-time">${timeString}</span>
                 </div>
                 <div class="message-content">
@@ -113,17 +185,34 @@
         // Send message
         function sendMessage() {
             const message = messageInput.value.trim();
-            if (message === '') return;
+            if (message === '' || !currentUserName) return;
 
-            const user = userSelect.value;
             const timestamp = Date.now();
-            
-            addMessageToChat(user, message, timestamp);
+            addMessageToChat(currentUserName, message, timestamp);
             messageInput.value = '';
             messageInput.focus();
         }
 
+        // Save name handler
+        function handleSaveName() {
+            const name = userNameInput.value.trim();
+            if (name === '') {
+                userNameInput.focus();
+                return;
+            }
+            if (saveUserName(name)) {
+                userNameInput.value = '';
+            }
+        }
+
         // Event listeners
+        saveNameButton.addEventListener('click', handleSaveName);
+        userNameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSaveName();
+            }
+        });
+        changeNameButton.addEventListener('click', showNameInput);
         sendButton.addEventListener('click', sendMessage);
         messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
@@ -131,9 +220,9 @@
             }
         });
 
-        // Load messages on page load
+        // Initialize on page load
+        loadUserName();
         loadMessages();
-        messageInput.focus();
     </script>
 </body>
 </html>
