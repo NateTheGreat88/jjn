@@ -35,13 +35,87 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
+.player-container {
+    max-width: 1000px;
+    width: 100%;
+    display: flex;
+    gap: 20px;
+    margin-bottom: 30px;
+    align-items: flex-start;
+}
+
 figure {
-    margin: 0 0 40px 0;
+    flex: 1;
+    margin: 0;
     background: rgba(255, 255, 255, 0.05);
     padding: 20px;
     border-radius: 10px;
     backdrop-filter: blur(10px);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    min-width: 0;
+}
+
+.controls-panel {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    flex-shrink: 0;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.control-button {
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #e0e0e0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    font-size: 20px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.control-button:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.control-button:active {
+    transform: translateY(0);
+}
+
+.control-button.active {
+    background: linear-gradient(135deg, #4a9eff 0%, #2563eb 100%);
+    border-color: rgba(74, 158, 255, 0.5);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(74, 158, 255, 0.3);
+}
+
+.control-button.active:hover {
+    background: linear-gradient(135deg, #5ba8ff 0%, #3574f0 100%);
+    box-shadow: 0 6px 20px rgba(74, 158, 255, 0.4);
 }
 
 figcaption {
@@ -132,6 +206,36 @@ a:not(.back-button):hover {
         color: #4a5568;
     }
 
+    .controls-panel {
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .control-button {
+        background: rgba(0, 0, 0, 0.05);
+        color: #2d3748;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .control-button:hover {
+        background: rgba(0, 0, 0, 0.1);
+        border-color: rgba(0, 0, 0, 0.2);
+        color: #1a202c;
+    }
+
+    .control-button.active {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        border-color: rgba(37, 99, 235, 0.3);
+        color: #fff;
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
+    }
+
+    .control-button.active:hover {
+        background: linear-gradient(135deg, #3574f0 0%, #2563eb 100%);
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
+    }
+
     .lyrics-container {
         background: rgba(255, 255, 255, 0.7);
         border: 1px solid rgba(0, 0, 0, 0.1);
@@ -158,6 +262,26 @@ a:not(.back-button):hover {
 
     a:not(.back-button):hover {
         color: #1d4ed8;
+    }
+}
+
+@media (max-width: 800px) {
+    .player-container {
+        flex-direction: column;
+    }
+    
+    .controls-panel {
+        width: 100%;
+        padding: 15px;
+    }
+
+    .control-group {
+        justify-content: center;
+    }
+
+    .control-button {
+        flex: 1;
+        min-width: 50px;
     }
 }
   

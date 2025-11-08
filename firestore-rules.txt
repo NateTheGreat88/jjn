@@ -1,0 +1,14 @@
+// Firestore Security Rules for JJN Chat
+// Paste these in the Firestore "Rules" tab in Firebase Console
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow anyone to read and write messages
+    // For production, you might want to add authentication
+    match /messages/{messageId} {
+      allow read, write: if true;
+    }
+  }
+}
+

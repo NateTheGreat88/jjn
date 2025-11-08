@@ -6,6 +6,11 @@
     <title>Chat - JJN Website</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="chat.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
 </head>
 <body>
     <a href="index.html" class="back-button">← Back to Home</a>
@@ -58,6 +63,23 @@
     </div>
 
     <script>
+        // Initialize Firebase
+        let db = null;
+        let messagesUnsubscribe = null;
+        
+        try {
+            if (typeof firebaseConfig !== 'undefined') {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                console.log('Firebase connected successfully!');
+            } else {
+                console.warn('Firebase config not found. Using localStorage fallback.');
+            }
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+            console.warn('Falling back to localStorage.');
+        }
+
         const chatMessages = document.getElementById('chatMessages');
         const messageInput = document.getElementById('messageInput');
         const sendButton = document.getElementById('sendButton');
@@ -69,8 +91,9 @@
         const nameInputWrapper = userNameInput.parentElement;
 
         let currentUserName = '';
+        let loadedMessageIds = new Set(); // Track loaded messages to prevent duplicates
 
-        // Load saved name from localStorage
+        // Load saved name from localStorage (still using localStorage for user name)
         function loadUserName() {
             const savedName = localStorage.getItem('jjnChatUserName');
             if (savedName && savedName.trim() !== '') {
@@ -82,7 +105,7 @@
             }
         }
 
-        // Save name to localStorage
+        // Save name to localStorage (still using localStorage for user name)
         function saveUserName(name) {
             const trimmedName = name.trim();
             if (trimmedName === '') return false;
@@ -124,17 +147,94 @@
             messageInput.placeholder = 'Enter your name above to start chatting...';
         }
 
-        // Load messages from localStorage
+        // Load messages from Firestore or localStorage fallback
         function loadMessages() {
-            const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
-            messages.forEach(msg => {
-                addMessageToChat(msg.user, msg.message, msg.timestamp, false);
-            });
-            scrollToBottom();
+            if (db) {
+                // Use Firestore with real-time updates
+                loadMessagesFromFirestore();
+            } else {
+                // Fallback to localStorage
+                const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
+                messages.forEach(msg => {
+                    addMessageToChat(msg.user, msg.message, msg.timestamp, false);
+                });
+                scrollToBottom();
+            }
         }
 
-        // Save messages to localStorage
+        // Load messages from Firestore with real-time listener
+        function loadMessagesFromFirestore() {
+            // First, load existing messages
+            db.collection('messages')
+                .orderBy('timestamp', 'desc')
+                .limit(50)
+                .get()
+                .then((querySnapshot) => {
+                    const messages = [];
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        messages.push({
+                            id: doc.id,
+                            user: data.user,
+                            message: data.message,
+                            timestamp: data.timestamp
+                        });
+                        loadedMessageIds.add(doc.id);
+                    });
+                    
+                    // Display messages in reverse order (oldest first)
+                    messages.reverse().forEach(msg => {
+                        addMessageToChat(msg.user, msg.message, msg.timestamp, false);
+                    });
+                    scrollToBottom();
+                })
+                .catch((error) => {
+                    console.error('Error loading messages:', error);
+                    // Fallback to localStorage
+                    const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
+                    messages.forEach(msg => {
+                        addMessageToChat(msg.user, msg.message, msg.timestamp, false);
+                    });
+                });
+
+            // Set up real-time listener for new messages
+            messagesUnsubscribe = db.collection('messages')
+                .orderBy('timestamp', 'desc')
+                .onSnapshot((querySnapshot) => {
+                    querySnapshot.docChanges().forEach((change) => {
+                        if (change.type === 'added' && !loadedMessageIds.has(change.doc.id)) {
+                            const data = change.doc.data();
+                            addMessageToChat(data.user, data.message, data.timestamp, false);
+                            loadedMessageIds.add(change.doc.id);
+                        }
+                    });
+                }, (error) => {
+                    console.error('Error in real-time listener:', error);
+                });
+        }
+
+        // Save message to Firestore or localStorage fallback
         function saveMessage(user, message, timestamp) {
+            if (db) {
+                // Save to Firestore
+                db.collection('messages').add({
+                    user: user,
+                    message: message,
+                    timestamp: timestamp
+                })
+                .catch((error) => {
+                    console.error('Error saving message to Firestore:', error);
+                    // Fallback to localStorage
+                    saveMessageToLocalStorage(user, message, timestamp);
+                });
+            } else {
+                // Fallback to localStorage
+                saveMessageToLocalStorage(user, message, timestamp);
+            }
+        }
+
+        // Fallback: Save messages to localStorage
+        function saveMessageToLocalStorage(user, message, timestamp) {
             const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
             messages.push({ user, message, timestamp });
             // Keep only last 100 messages
@@ -146,6 +246,12 @@
 
         // Add message to chat display
         function addMessageToChat(user, message, timestamp, shouldSave = true) {
+            // Remove welcome message if it exists
+            const welcomeMsg = chatMessages.querySelector('.welcome-message');
+            if (welcomeMsg) {
+                welcomeMsg.remove();
+            }
+
             if (shouldSave) {
                 saveMessage(user, message, timestamp);
             }
@@ -188,7 +294,15 @@
             if (message === '' || !currentUserName) return;
 
             const timestamp = Date.now();
-            addMessageToChat(currentUserName, message, timestamp);
+            // Don't add to display immediately - let Firestore listener handle it
+            // This prevents duplicate messages
+            if (db) {
+                saveMessage(currentUserName, message, timestamp);
+                // Add to display immediately for better UX
+                addMessageToChat(currentUserName, message, timestamp, false);
+            } else {
+                addMessageToChat(currentUserName, message, timestamp);
+            }
             messageInput.value = '';
             messageInput.focus();
         }
