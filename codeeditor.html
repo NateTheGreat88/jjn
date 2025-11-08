@@ -1979,6 +1979,16 @@ body.darktheme .trytopnav a, body.darktheme .trytopnav button {
     <button href="javascript:void(0);" onclick="newWindow()" title="Change Theme" class="w3-button w3-bar-item" style="margin-top:-2px;">Open In New Window</button>
 
   <button onclick='downloadCode()' id="getwebsitebtn" class="w3-button w3-bar-item w3-hover-white w3-hover-text-green w3-hide-small">Download</button>
+  
+  <div class="w3-dropdown-click" style="position:relative;display:inline-block;">
+    <button onclick="toggleExportMenu()" class="w3-button w3-bar-item w3-hover-white w3-hover-text-green" title="Export Code">📥 Export</button>
+    <div id="exportMenu" class="w3-dropdown-content w3-bar-block w3-border" style="right:0;z-index:10;display:none;">
+      <button onclick="exportCode('html', this)" class="w3-bar-item w3-button">📄 Export as HTML</button>
+      <button onclick="exportCode('txt', this)" class="w3-bar-item w3-button">📝 Export as TXT</button>
+      <button onclick="exportCode('js', this)" class="w3-bar-item w3-button">⚡ Export as JS</button>
+      <button onclick="exportCode('css', this)" class="w3-bar-item w3-button">🎨 Export as CSS</button>
+    </div>
+  </div>
 
   <span class="w3-right" style="padding:8px 16px 8px 0;display:block;font-size:16px;margin-top:4px"><span id="framesize">Result Size: <span>935 x 745</span></span></span>
 </div>
@@ -2116,6 +2126,91 @@ today = mm +'/'+ dd +'/'+ yyyy;
 
 function downloadCode() {
 download((today +' HTML.html'), window.editor.getValue())
+}
+
+// Enhanced Export Function
+function toggleExportMenu() {
+    var menu = document.getElementById('exportMenu');
+    if (menu.style.display === 'block') {
+        menu.style.display = 'none';
+    } else {
+        menu.style.display = 'block';
+        // Close menu when clicking outside
+        setTimeout(function() {
+            document.addEventListener('click', function closeMenu(e) {
+                if (!e.target.closest('.w3-dropdown-click')) {
+                    menu.style.display = 'none';
+                    document.removeEventListener('click', closeMenu);
+                }
+            });
+        }, 0);
+    }
+}
+
+function exportCode(fileType, buttonElement) {
+    var code = window.editor.getValue();
+    var filename = '';
+    var mimeType = '';
+    
+    // Generate filename with timestamp
+    var now = new Date();
+    var timestamp = now.getFullYear() + 
+                   String(now.getMonth() + 1).padStart(2, '0') + 
+                   String(now.getDate()).padStart(2, '0') + '_' +
+                   String(now.getHours()).padStart(2, '0') + 
+                   String(now.getMinutes()).padStart(2, '0') + 
+                   String(now.getSeconds()).padStart(2, '0');
+    
+    switch(fileType) {
+        case 'html':
+            filename = 'code_' + timestamp + '.html';
+            mimeType = 'text/html';
+            break;
+        case 'txt':
+            filename = 'code_' + timestamp + '.txt';
+            mimeType = 'text/plain';
+            break;
+        case 'js':
+            filename = 'code_' + timestamp + '.js';
+            mimeType = 'text/javascript';
+            break;
+        case 'css':
+            filename = 'code_' + timestamp + '.css';
+            mimeType = 'text/css';
+            break;
+        default:
+            filename = 'code_' + timestamp + '.txt';
+            mimeType = 'text/plain';
+    }
+    
+    // Create download
+    var element = document.createElement('a');
+    var blob = new Blob([code], { type: mimeType + ';charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    
+    element.setAttribute('href', url);
+    element.setAttribute('download', filename);
+    element.style.display = 'none';
+    
+    document.body.appendChild(element);
+    element.click();
+    
+    document.body.removeChild(element);
+    URL.revokeObjectURL(url);
+    
+    // Close menu
+    document.getElementById('exportMenu').style.display = 'none';
+    
+    // Show brief feedback
+    if (buttonElement) {
+        var originalText = buttonElement.textContent;
+        buttonElement.textContent = '✓ Exported!';
+        buttonElement.style.color = '#4CAF50';
+        setTimeout(function() {
+            buttonElement.textContent = originalText;
+            buttonElement.style.color = '';
+        }, 1500);
+    }
 }
 
 function saveToURL() {
