@@ -10,9 +10,6 @@
 <body>
     <div class="container">
         <div class="top-controls">
-            <button id="themeToggle" class="theme-toggle" title="Toggle dark/light mode">
-                <span class="theme-icon">🌙</span>
-            </button>
             <div class="search-wrapper">
                 <input 
                     type="text" 
@@ -127,51 +124,6 @@
     </div>
 
     <script>
-        // Theme Toggle
-        const themeToggle = document.getElementById('themeToggle');
-        const themeIcon = themeToggle.querySelector('.theme-icon');
-        const html = document.documentElement;
-        
-        // Load saved theme preference
-        const savedTheme = localStorage.getItem('jjnTheme') || 'auto';
-        if (savedTheme === 'light') {
-            html.classList.add('force-light');
-        } else if (savedTheme === 'dark') {
-            html.classList.add('force-dark');
-        }
-        updateThemeIcon();
-        
-        function updateThemeIcon() {
-            const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-            const isLight = html.classList.contains('force-light') || 
-                          (!html.classList.contains('force-dark') && prefersLight);
-            themeIcon.textContent = isLight ? '🌙' : '☀️';
-        }
-        
-        themeToggle.addEventListener('click', () => {
-            const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-            const isLight = html.classList.contains('force-light') || 
-                          (!html.classList.contains('force-dark') && prefersLight);
-            
-            if (isLight) {
-                html.classList.remove('force-light');
-                html.classList.add('force-dark');
-                localStorage.setItem('jjnTheme', 'dark');
-            } else {
-                html.classList.remove('force-dark');
-                html.classList.add('force-light');
-                localStorage.setItem('jjnTheme', 'light');
-            }
-            updateThemeIcon();
-        });
-        
-        // Listen for system theme changes
-        window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
-            if (!html.classList.contains('force-light') && !html.classList.contains('force-dark')) {
-                updateThemeIcon();
-            }
-        });
-        
         // Search/Filter
         const searchInput = document.getElementById('searchInput');
         const songCards = document.querySelectorAll('.song-card');
