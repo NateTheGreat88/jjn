@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phantom's Paradise</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="phantomsparadise.css">
+</head>
+<body>
+    <a href="index.html" class="back-button">← Back to Home</a>
+    <div class="player-container">
+    <figure>
+        <figcaption>Listen to Phantom's Paradise:</figcaption>
+            <p class="credits">by: JNJ (Junhu Choi, Jaxon Croskey, Nathan DeLuca)</p>
+        <audio id="audioPlayer" controls src="phantomtaxersparadise.mp3"></audio>
+        <a href="phantomtaxersparadise.mp3"> Download audio </a>
+    </figure>
+        
+        <div class="controls-panel">
+            <div class="control-group">
+                <button class="control-button" onclick="skipBack(30)" title="Skip back 30 seconds">⏪</button>
+                <button class="control-button" onclick="skipBack(10)" title="Skip back 10 seconds">⏮</button>
+                <button class="control-button" onclick="skipAhead(10)" title="Skip ahead 10 seconds">⏭</button>
+                <button class="control-button" onclick="skipAhead(30)" title="Skip ahead 30 seconds">⏩</button>
+            </div>
+            <div class="control-group">
+                <button class="control-button" onclick="toggleLyrics()" title="Toggle lyrics visibility">👁️</button>
+                <button class="control-button" onclick="resetTypewriter()" title="Reset lyrics">↻</button>
+                <button class="control-button" onclick="showAllLyrics()" title="Show all lyrics">📄</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="lyrics-container" id="lyricsContainer">
+        <div class="lyrics-text" id="lyricsDisplay"></div>
+    </div>
+
+    <script>
+        const audio = document.getElementById('audioPlayer');
+        const lyricsDisplay = document.getElementById('lyricsDisplay');
+        const lyricsContainer = document.getElementById('lyricsContainer');
+        
+        // Lyrics text - replace with actual lyrics
+        const lyrics = `[Enter lyrics here]`;
+        
+        let typewriterInterval;
+        let currentIndex = 0;
+        let isTyping = false;
+        const START_DELAY = 0; // Start typing immediately when audio starts
+        
+        let lyricsVisible = true;
+        let showAllActive = false; // Flag to prevent sync when "Show All" is active
+
+        // Calculate character index based on audio time
+        function calculateCharacterIndex(time) {
+            const totalDuration = audio.duration || 0;
+            if (totalDuration === 0) return 0;
+            
+            const progress = Math.min(time / totalDuration, 1);
+            return Math.floor(lyrics.length * progress);
+        }
+
+        // Typewriter effect
+        function typeWriter() {
+            if (currentIndex < lyrics.length && isTyping) {
+                lyricsDisplay.textContent = lyrics.substring(0, currentIndex + 1);
+                currentIndex++;
+            } else {
+                clearInterval(typewriterInterval);
+                isTyping = false;
+            }
+        }
+
+        function startTypewriter() {
+            if (!isTyping && currentIndex < lyrics.length) {
+                isTyping = true;
+                typewriterInterval = setInterval(typeWriter, 50); // Adjust speed as needed
+            }
+        }
+
+        function resetTypewriter() {
+            showAllActive = false; // Reset show all flag
+            clearInterval(typewriterInterval);
+            lyricsDisplay.textContent = '';
+            currentIndex = 0;
+            isTyping = false;
+        }
+
+        function pauseTypewriter() {
+            clearInterval(typewriterInterval);
+            isTyping = false;
+        }
+
+        function syncTypewriterWithAudio() {
+            // Don't sync if "Show All" is active
+            if (showAllActive) {
+                return;
+            }
+            
+            if (audio.currentTime >= START_DELAY) {
+                const targetIndex = calculateCharacterIndex(audio.currentTime - START_DELAY);
+                
+                if (targetIndex > currentIndex) {
+                    currentIndex = targetIndex;
+                    lyricsDisplay.textContent = lyrics.substring(0, currentIndex);
+                } else if (targetIndex < currentIndex) {
+                    // If seeking backwards, reset and retype
+                    resetTypewriter();
+                    if (!audio.paused) {
+                        startTypewriter();
+                    }
+                }
+            }
+        }
+
+        function checkStartTime() {
+            if (audio.currentTime >= START_DELAY && !isTyping && currentIndex === 0) {
+                startTypewriter();
+            }
+        }
+
+        // Skip functions
+        function skipAhead(seconds) {
+            showAllActive = false; // Reset show all when skipping
+            const newTime = Math.min(audio.duration || audio.currentTime + seconds, audio.currentTime + seconds);
+            audio.currentTime = newTime;
+            syncTypewriterWithAudio();
+        }
+
+        function skipBack(seconds) {
+            showAllActive = false; // Reset show all when skipping
+            const newTime = Math.max(0, audio.currentTime - seconds);
+            audio.currentTime = newTime;
+            syncTypewriterWithAudio();
+        }
+
+        // Toggle lyrics visibility
+        function toggleLyrics() {
+            lyricsVisible = !lyricsVisible;
+            if (lyricsVisible) {
+                lyricsContainer.style.display = 'block';
+            } else {
+                lyricsContainer.style.display = 'none';
+            }
+        }
+
+        // Show all lyrics instantly
+        function showAllLyrics() {
+            showAllActive = true; // Set flag to prevent sync from overwriting
+            clearInterval(typewriterInterval);
+            lyricsDisplay.textContent = lyrics;
+            currentIndex = lyrics.length;
+            isTyping = false;
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            audio.addEventListener('play', () => {
+                if (audio.currentTime >= START_DELAY) {
+                    startTypewriter();
+                } else {
+                    checkStartTime();
+                }
+            });
+        }
+
+        setupEventListeners();
+
+        // Audio event listeners
+        audio.addEventListener('timeupdate', () => {
+            if (!showAllActive) {
+                checkStartTime();
+                // Sync typewriter position periodically
+                if (audio.currentTime >= START_DELAY) {
+                    syncTypewriterWithAudio();
+                }
+            }
+        });
+        audio.addEventListener('pause', pauseTypewriter);
+        audio.addEventListener('seeked', () => {
+            if (!showAllActive) {
+                syncTypewriterWithAudio();
+            }
+        });
+        audio.addEventListener('ended', () => {
+            clearInterval(typewriterInterval);
+            isTyping = false;
+        });
+        
+        // Handle case where audio might already be playing when page loads
+        if (!audio.paused && audio.currentTime >= START_DELAY) {
+            syncTypewriterWithAudio();
+        }
+        
+        // Cursor Trail Effect - Smooth line effect
+        const trails = [];
+        const maxTrails = 50;
+        let lastTime = 0;
+        
+        function createCursorTrail(x, y, delay = 0) {
+            setTimeout(() => {
+                const trail = document.createElement('div');
+                trail.className = 'cursor-trail';
+                trail.style.left = x + 'px';
+                trail.style.top = y + 'px';
+                trail.style.opacity = '0.6';
+                document.body.appendChild(trail);
+                
+                requestAnimationFrame(() => {
+                    trail.style.opacity = '0';
+                    trail.style.transform = 'translate(-50%, -50%) scale(0.2)';
+                });
+                
+                setTimeout(() => {
+                    if (trail.parentNode) {
+                        trail.remove();
+                    }
+                }, 800);
+                
+                trails.push(trail);
+                if (trails.length > maxTrails) {
+                    const oldTrail = trails.shift();
+                    if (oldTrail && oldTrail.parentNode) {
+                        oldTrail.remove();
+                    }
+                }
+            }, delay);
+        }
+        
+        let lastX = 0;
+        let lastY = 0;
+        let mouseX = 0;
+        let mouseY = 0;
+        
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            const now = Date.now();
+            const timeSinceLastTrail = now - lastTime;
+            
+            if (timeSinceLastTrail > 8) {
+                const distance = Math.sqrt(
+                    Math.pow(mouseX - lastX, 2) + Math.pow(mouseY - lastY, 2)
+                );
+                
+                if (distance > 2) {
+                    createCursorTrail(mouseX, mouseY);
+                    lastX = mouseX;
+                    lastY = mouseY;
+                    lastTime = now;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+
