@@ -1961,6 +1961,20 @@ body.darktheme .trytopnav {
 body.darktheme .trytopnav a, body.darktheme .trytopnav button {
     color: #e0e0e0 !important;
 }
+
+/* Cursor Trail */
+.cursor-trail {
+    position: fixed;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.25);
+    pointer-events: none;
+    z-index: 9999;
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+}
 </style>
 </head>
 <body>
@@ -2238,6 +2252,69 @@ window.addEventListener("beforeunload", function(event) {
   event.returnValue = "Are You Sure You Want To Leave?";
   useLess();
 });
+
+// Cursor Trail Effect - Smooth line effect
+(function() {
+    const trails = [];
+    const maxTrails = 50;
+    let lastTime = 0;
+    
+    function createCursorTrail(x, y, delay = 0) {
+        setTimeout(() => {
+            const trail = document.createElement('div');
+            trail.className = 'cursor-trail';
+            trail.style.left = x + 'px';
+            trail.style.top = y + 'px';
+            trail.style.opacity = '0.6';
+            document.body.appendChild(trail);
+            
+            requestAnimationFrame(() => {
+                trail.style.opacity = '0';
+                trail.style.transform = 'translate(-50%, -50%) scale(0.2)';
+            });
+            
+            setTimeout(() => {
+                if (trail.parentNode) {
+                    trail.remove();
+                }
+            }, 800);
+            
+            trails.push(trail);
+            if (trails.length > maxTrails) {
+                const oldTrail = trails.shift();
+                if (oldTrail && oldTrail.parentNode) {
+                    oldTrail.remove();
+                }
+            }
+        }, delay);
+    }
+    
+    let lastX = 0;
+    let lastY = 0;
+    let mouseX = 0;
+    let mouseY = 0;
+    
+    document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        
+        const now = Date.now();
+        const timeSinceLastTrail = now - lastTime;
+        
+        if (timeSinceLastTrail > 8) {
+            const distance = Math.sqrt(
+                Math.pow(mouseX - lastX, 2) + Math.pow(mouseY - lastY, 2)
+            );
+            
+            if (distance > 2) {
+                createCursorTrail(mouseX, mouseY);
+                lastX = mouseX;
+                lastY = mouseY;
+                lastTime = now;
+            }
+        }
+    });
+})();
 </script>
 </body>
 </html>

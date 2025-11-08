@@ -39,6 +39,20 @@ body::before {
     animation: backgroundShift 20s ease-in-out infinite;
 }
 
+/* Cursor Trail */
+.cursor-trail {
+    position: fixed;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.25);
+    pointer-events: none;
+    z-index: 9999;
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+}
+
 @keyframes backgroundShift {
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.8; transform: scale(1.1); }

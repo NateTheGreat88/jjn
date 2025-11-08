@@ -503,6 +503,67 @@
         // Initialize
         initCanvas();
         updateZoomDisplay(); // Initialize zoom display
+        
+        // Cursor Trail Effect - Smooth line effect
+        const trails = [];
+        const maxTrails = 50;
+        let lastTime = 0;
+        
+        function createCursorTrail(x, y, delay = 0) {
+            setTimeout(() => {
+                const trail = document.createElement('div');
+                trail.className = 'cursor-trail';
+                trail.style.left = x + 'px';
+                trail.style.top = y + 'px';
+                trail.style.opacity = '0.6';
+                document.body.appendChild(trail);
+                
+                requestAnimationFrame(() => {
+                    trail.style.opacity = '0';
+                    trail.style.transform = 'translate(-50%, -50%) scale(0.2)';
+                });
+                
+                setTimeout(() => {
+                    if (trail.parentNode) {
+                        trail.remove();
+                    }
+                }, 800);
+                
+                trails.push(trail);
+                if (trails.length > maxTrails) {
+                    const oldTrail = trails.shift();
+                    if (oldTrail && oldTrail.parentNode) {
+                        oldTrail.remove();
+                    }
+                }
+            }, delay);
+        }
+        
+        let lastX = 0;
+        let lastY = 0;
+        let mouseX = 0;
+        let mouseY = 0;
+        
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            const now = Date.now();
+            const timeSinceLastTrail = now - lastTime;
+            
+            if (timeSinceLastTrail > 8) {
+                const distance = Math.sqrt(
+                    Math.pow(mouseX - lastX, 2) + Math.pow(mouseY - lastY, 2)
+                );
+                
+                if (distance > 2) {
+                    createCursorTrail(mouseX, mouseY);
+                    lastX = mouseX;
+                    lastY = mouseY;
+                    lastTime = now;
+                }
+            }
+        });
     </script>
 </body>
 </html>

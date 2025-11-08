@@ -243,6 +243,74 @@
         
         // Show indicators on page load
         showRecentIndicators();
+        
+        // Cursor Trail Effect - Smooth line effect
+        const trails = [];
+        const maxTrails = 50;
+        let lastTime = 0;
+        
+        function createCursorTrail(x, y, delay = 0) {
+            setTimeout(() => {
+                // Create new trail element
+                const trail = document.createElement('div');
+                trail.className = 'cursor-trail';
+                trail.style.left = x + 'px';
+                trail.style.top = y + 'px';
+                trail.style.opacity = '0.6';
+                document.body.appendChild(trail);
+                
+                // Smooth fade out
+                requestAnimationFrame(() => {
+                    trail.style.opacity = '0';
+                    trail.style.transform = 'translate(-50%, -50%) scale(0.2)';
+                });
+                
+                // Remove after animation
+                setTimeout(() => {
+                    if (trail.parentNode) {
+                        trail.remove();
+                    }
+                }, 800);
+                
+                // Store for cleanup
+                trails.push(trail);
+                if (trails.length > maxTrails) {
+                    const oldTrail = trails.shift();
+                    if (oldTrail && oldTrail.parentNode) {
+                        oldTrail.remove();
+                    }
+                }
+            }, delay);
+        }
+        
+        // Track mouse movement with smooth interpolation
+        let lastX = 0;
+        let lastY = 0;
+        let mouseX = 0;
+        let mouseY = 0;
+        
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            const now = Date.now();
+            const timeSinceLastTrail = now - lastTime;
+            
+            // Create trail very frequently for continuous line effect
+            if (timeSinceLastTrail > 8) { // ~120fps for smoother line
+                const distance = Math.sqrt(
+                    Math.pow(mouseX - lastX, 2) + Math.pow(mouseY - lastY, 2)
+                );
+                
+                // Create dots closer together for continuous line
+                if (distance > 2) {
+                    createCursorTrail(mouseX, mouseY);
+                    lastX = mouseX;
+                    lastY = mouseY;
+                    lastTime = now;
+                }
+            }
+        });
     </script>
 </body>
 </html>
