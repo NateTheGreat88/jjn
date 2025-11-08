@@ -9,6 +9,22 @@
 </head>
 <body>
     <div class="container">
+        <div class="top-controls">
+            <button id="themeToggle" class="theme-toggle" title="Toggle dark/light mode">
+                <span class="theme-icon">🌙</span>
+            </button>
+            <div class="search-wrapper">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    class="search-input" 
+                    placeholder="Search pages..."
+                    autocomplete="off"
+                >
+                <span class="search-icon">🔍</span>
+            </div>
+        </div>
+        
         <header>
             <h1>JJN Website</h1>
             <p class="subtitle">Junhu Choi • Jaxon Croskey • Nathan DeLuca</p>
@@ -42,7 +58,7 @@
         </section>
         
         <main>
-            <div class="song-card">
+            <div class="song-card" data-title="stolen" data-description="music song nathan jaxon junhu">
                 <a href="stolen.html" class="song-link">
                     <div class="song-button">
                         <img src="favicon.png" alt="Stolen" class="song-image">
@@ -51,9 +67,10 @@
                             <p>by Nathan DeLuca, Jaxon Croskey, and Junhu Choi</p>
                         </div>
                     </div>
+                    <span class="recent-indicator" title="Recently visited">⭐</span>
                 </a>
             </div>
-            <div class="song-card">
+            <div class="song-card" data-title="code editor" data-description="code programming editor interactive">
                 <a href="codeeditor.html" class="song-link">
                     <div class="song-button">
                         <img src="codeicon.png" alt="Code Editor" class="song-image">
@@ -62,9 +79,10 @@
                             <p>Interactive code editor</p>
                         </div>
                     </div>
+                    <span class="recent-indicator" title="Recently visited">⭐</span>
                 </a>
             </div>
-            <div class="song-card">
+            <div class="song-card" data-title="chat" data-description="collaborative messaging communication">
                 <a href="chat.html" class="song-link">
                     <div class="song-button">
                         <div class="song-image" style="background: linear-gradient(135deg, #4a9eff 0%, #2563eb 100%); display: flex; align-items: center; justify-content: center; font-size: 48px; color: white;">💬</div>
@@ -73,9 +91,10 @@
                             <p>Collaborative messaging</p>
                         </div>
                     </div>
+                    <span class="recent-indicator" title="Recently visited">⭐</span>
                 </a>
             </div>
-            <div class="song-card">
+            <div class="song-card" data-title="image editor" data-description="image edit create art design">
                 <a href="imageeditor.html" class="song-link">
                     <div class="song-button">
                         <div class="song-image" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); display: flex; align-items: center; justify-content: center; font-size: 48px; color: white;">🎨</div>
@@ -84,9 +103,10 @@
                             <p>Edit and create images</p>
                         </div>
                     </div>
+                    <span class="recent-indicator" title="Recently visited">⭐</span>
                 </a>
             </div>
-            <div class="song-card">
+            <div class="song-card" data-title="notes" data-description="notes organize thoughts keep">
                 <a href="notes.html" class="song-link">
                     <div class="song-button">
                         <div class="song-image" style="background: linear-gradient(135deg, #51cf66 0%, #40c057 100%); display: flex; align-items: center; justify-content: center; font-size: 48px; color: white;">📝</div>
@@ -95,6 +115,7 @@
                             <p>Keep your thoughts organized</p>
                         </div>
                     </div>
+                    <span class="recent-indicator" title="Recently visited">⭐</span>
                 </a>
             </div>
         </main>
@@ -104,5 +125,124 @@
             <p class="footer-year">© 2025 JJN</p>
         </footer>
     </div>
+
+    <script>
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = themeToggle.querySelector('.theme-icon');
+        const html = document.documentElement;
+        
+        // Load saved theme preference
+        const savedTheme = localStorage.getItem('jjnTheme') || 'auto';
+        if (savedTheme === 'light') {
+            html.classList.add('force-light');
+        } else if (savedTheme === 'dark') {
+            html.classList.add('force-dark');
+        }
+        updateThemeIcon();
+        
+        function updateThemeIcon() {
+            const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+            const isLight = html.classList.contains('force-light') || 
+                          (!html.classList.contains('force-dark') && prefersLight);
+            themeIcon.textContent = isLight ? '🌙' : '☀️';
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+            const isLight = html.classList.contains('force-light') || 
+                          (!html.classList.contains('force-dark') && prefersLight);
+            
+            if (isLight) {
+                html.classList.remove('force-light');
+                html.classList.add('force-dark');
+                localStorage.setItem('jjnTheme', 'dark');
+            } else {
+                html.classList.remove('force-dark');
+                html.classList.add('force-light');
+                localStorage.setItem('jjnTheme', 'light');
+            }
+            updateThemeIcon();
+        });
+        
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+            if (!html.classList.contains('force-light') && !html.classList.contains('force-dark')) {
+                updateThemeIcon();
+            }
+        });
+        
+        // Search/Filter
+        const searchInput = document.getElementById('searchInput');
+        const songCards = document.querySelectorAll('.song-card');
+        
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            
+            songCards.forEach(card => {
+                const title = card.dataset.title || '';
+                const description = card.dataset.description || '';
+                const text = `${title} ${description}`.toLowerCase();
+                
+                if (searchTerm === '' || text.includes(searchTerm)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+        
+        // Recently Visited Tracking
+        function trackPageVisit(page) {
+            const recentPages = JSON.parse(localStorage.getItem('jjnRecentPages') || '[]');
+            // Remove if already exists
+            const index = recentPages.indexOf(page);
+            if (index > -1) {
+                recentPages.splice(index, 1);
+            }
+            // Add to front
+            recentPages.unshift(page);
+            // Keep only last 5
+            if (recentPages.length > 5) {
+                recentPages.pop();
+            }
+            localStorage.setItem('jjnRecentPages', JSON.stringify(recentPages));
+        }
+        
+        function showRecentIndicators() {
+            const recentPages = JSON.parse(localStorage.getItem('jjnRecentPages') || '[]');
+            const pageMap = {
+                'stolen.html': 'stolen',
+                'codeeditor.html': 'code editor',
+                'chat.html': 'chat',
+                'imageeditor.html': 'image editor',
+                'notes.html': 'notes'
+            };
+            
+            songCards.forEach(card => {
+                const link = card.querySelector('a');
+                const href = link.getAttribute('href');
+                const pageName = pageMap[href] || href.replace('.html', '');
+                
+                const indicator = card.querySelector('.recent-indicator');
+                if (recentPages.includes(href)) {
+                    indicator.style.display = 'block';
+                } else {
+                    indicator.style.display = 'none';
+                }
+            });
+        }
+        
+        // Track when user clicks a link
+        document.querySelectorAll('.song-link').forEach(link => {
+            link.addEventListener('click', () => {
+                const href = link.getAttribute('href');
+                trackPageVisit(href);
+            });
+        });
+        
+        // Show indicators on page load
+        showRecentIndicators();
+    </script>
 </body>
 </html>
