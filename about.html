@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - JJN Website</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="about.css">
+</head>
+<body>
+    <a href="index.html" class="back-button">← Back to Home</a>
+    
+    <div class="about-container">
+        <header class="about-header">
+            <h1>About Us</h1>
+            <p class="about-subtitle">Meet the creators behind JJN Website</p>
+        </header>
+
+        <div class="team-section">
+            <div class="team-member">
+                <div class="member-icon">👤</div>
+                <h2>Junhu Choi</h2>
+                <p class="member-role">Co-Creator</p>
+                <p class="member-description">Passionate designer and creative collaborator</p>
+            </div>
+            
+            <div class="team-member">
+                <div class="member-icon">👤</div>
+                <h2>Jaxon Croskey</h2>
+                <p class="member-role">Co-Creator</p>
+                <p class="member-description">Head of music and audio engineering</p>
+            </div>
+            
+            <div class="team-member">
+                <div class="member-icon">👤</div>
+                <h2>Nathan DeLuca</h2>
+                <p class="member-role">Co-Creator</p>
+                <p class="member-description">Creative developer and project collaborator</p>
+            </div>
+        </div>
+
+        <div class="about-content">
+            <section class="about-section">
+                <h3>Our Mission</h3>
+                <p>We're a collaborative team building creative tools and projects. This website showcases our work, from music and code editors to chat applications and creative utilities.</p>
+            </section>
+
+            <section class="about-section">
+                <h3>What We Do</h3>
+                <p>We create interactive web experiences, collaborative tools, and creative projects. Our goal is to build useful and engaging applications that bring people together.</p>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Cursor Trail Effect - Smooth line effect
+        const trails = [];
+        const maxTrails = 50;
+        let lastTime = 0;
+        
+        function createCursorTrail(x, y, delay = 0) {
+            setTimeout(() => {
+                const trail = document.createElement('div');
+                trail.className = 'cursor-trail';
+                trail.style.left = x + 'px';
+                trail.style.top = y + 'px';
+                trail.style.opacity = '0.6';
+                document.body.appendChild(trail);
+                
+                requestAnimationFrame(() => {
+                    trail.style.opacity = '0';
+                    trail.style.transform = 'translate(-50%, -50%) scale(0.2)';
+                });
+                
+                setTimeout(() => {
+                    if (trail.parentNode) {
+                        trail.remove();
+                    }
+                }, 800);
+                
+                trails.push(trail);
+                if (trails.length > maxTrails) {
+                    const oldTrail = trails.shift();
+                    if (oldTrail && oldTrail.parentNode) {
+                        oldTrail.remove();
+                    }
+                }
+            }, delay);
+        }
+        
+        let lastX = 0;
+        let lastY = 0;
+        let mouseX = 0;
+        let mouseY = 0;
+        
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            const now = Date.now();
+            const timeSinceLastTrail = now - lastTime;
+            
+            if (timeSinceLastTrail > 8) {
+                const distance = Math.sqrt(
+                    Math.pow(mouseX - lastX, 2) + Math.pow(mouseY - lastY, 2)
+                );
+                
+                if (distance > 2) {
+                    createCursorTrail(mouseX, mouseY);
+                    lastX = mouseX;
+                    lastY = mouseY;
+                    lastTime = now;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+
