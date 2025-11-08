@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notes - JJN Website</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="notes.css">
+</head>
+<body>
+    <a href="index.html" class="back-button">← Back to Home</a>
+    
+    <div class="notes-container">
+        <header class="notes-header">
+            <h1>📝 Notes</h1>
+            <p class="notes-subtitle">Keep your thoughts organized</p>
+        </header>
+        
+        <div class="notes-controls">
+            <div class="search-wrapper">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    class="search-input" 
+                    placeholder="Search notes..."
+                    autocomplete="off"
+                >
+            </div>
+            <button id="newNoteButton" class="new-note-button">+ New Note</button>
+        </div>
+        
+        <div class="notes-grid" id="notesGrid">
+            <!-- Notes will be dynamically added here -->
+        </div>
+        
+        <div class="empty-state" id="emptyState">
+            <p>No notes yet. Create your first note!</p>
+        </div>
+    </div>
+    
+    <!-- Note Editor Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">New Note</h2>
+                <button class="close-button" id="closeButton">×</button>
+            </div>
+            <div class="modal-body">
+                <input 
+                    type="text" 
+                    id="noteTitleInput" 
+                    class="note-title-input" 
+                    placeholder="Note title..."
+                    autocomplete="off"
+                    maxlength="100"
+                >
+                <textarea 
+                    id="noteContentInput" 
+                    class="note-content-input" 
+                    placeholder="Write your note here..."
+                    rows="10"
+                ></textarea>
+                <div class="modal-footer">
+                    <button class="delete-button" id="deleteButton" style="display: none;">Delete</button>
+                    <div class="modal-actions">
+                        <button class="cancel-button" id="cancelButton">Cancel</button>
+                        <button class="save-button" id="saveButton">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="notes.js"></script>
+</body>
+</html>
+
