@@ -41,30 +41,64 @@
         const lyricsDisplay = document.getElementById('lyricsDisplay');
         const lyricsContainer = document.getElementById('lyricsContainer');
         
-        // Lyrics text - replace with actual lyrics
-        const lyrics = `[Enter lyrics here]`;
+        // Lyrics text
+        const lyrics = `As I walk through the hallway of the elementary zone  
+I take a look at my pad and realize it's almost gone  
+'Cause I been tappin' and swipin' so long that  
+Even my teacher thinks my tech game's strong
+
+But I ain't never crossed a phantom who didn't tax a screen  
+He creepin' through the Wi-Fi, takin' what he needs  
+You better watch your apps, better hide your stash  
+He's skimming off the top like digital cash
+
+I really hate to whine, but I gotta moan  
+He took my Roblox coins and left me alone  
+I'm the kind of kid the playground's hypin'  
+On my iPad grind while the phantom's siphonin'
+
+Been spendin' most my life  
+Livin' in a phantom's paradise  
+He taxes all our bytes  
+Livin' in a phantom taxers paradise 
+
+He don't need a mask, he don't need a name  
+He just reroutes your data like it's part of a game  
+He got no chill, he got no shame  
+He even taxed my grandma's Candy Crush fame
+
+Power and pixels, minute by minute  
+The more we tap, the more he's in it  
+Everybody's swipin', nobody's winnin'  
+He's ghostin' our screens while we just grinnin'
+
+Tell me why are we so blind to see  
+That the phantom lives in our USB?
+
+Been spendin' most my life  
+Livin' in a phantom's paradise  
+He taxes all our bytes  
+Livin' in a phantom's paradise`;
         
-        let typewriterInterval;
+        let typewriterInterval = null;
         let currentIndex = 0;
         let isTyping = false;
+        let typingSpeed = 80; // milliseconds per character (normal speed)
         const START_DELAY = 0; // Start typing immediately when audio starts
-        
         let lyricsVisible = true;
         let showAllActive = false; // Flag to prevent sync when "Show All" is active
 
-        // Calculate character index based on audio time
-        function calculateCharacterIndex(time) {
-            const totalDuration = audio.duration || 0;
-            if (totalDuration === 0) return 0;
-            
-            const progress = Math.min(time / totalDuration, 1);
-            return Math.floor(lyrics.length * progress);
+        // Calculate how many characters should be displayed based on current time
+        function calculateCharacterIndex(currentTime) {
+            const timeSinceStart = Math.max(0, currentTime - START_DELAY);
+            const charactersPerSecond = 1000 / typingSpeed;
+            return Math.floor(timeSinceStart * charactersPerSecond);
         }
 
-        // Typewriter effect
         function typeWriter() {
-            if (currentIndex < lyrics.length && isTyping) {
-                lyricsDisplay.textContent = lyrics.substring(0, currentIndex + 1);
+            if (currentIndex < lyrics.length) {
+                const char = lyrics[currentIndex];
+                lyricsDisplay.textContent += char;
                 currentIndex++;
             } else {
                 clearInterval(typewriterInterval);
@@ -73,9 +107,13 @@
         }
 
         function startTypewriter() {
-            if (!isTyping && currentIndex < lyrics.length) {
+            if (!isTyping) {
+                // If we're resuming from a pause, don't reset
+                if (currentIndex === 0) {
+                    lyricsDisplay.textContent = '';
+                }
                 isTyping = true;
-                typewriterInterval = setInterval(typeWriter, 50); // Adjust speed as needed
+                typewriterInterval = setInterval(typeWriter, typingSpeed);
             }
         }
 
@@ -97,26 +135,25 @@
             if (showAllActive) {
                 return;
             }
-            
-            if (audio.currentTime >= START_DELAY) {
-                const targetIndex = calculateCharacterIndex(audio.currentTime - START_DELAY);
+            // Sync typewriter position with audio time
+            const targetIndex = calculateCharacterIndex(audio.currentTime);
+            if (targetIndex !== currentIndex) {
+                clearInterval(typewriterInterval);
+                lyricsDisplay.textContent = lyrics.substring(0, targetIndex);
+                currentIndex = targetIndex;
                 
-                if (targetIndex > currentIndex) {
-                    currentIndex = targetIndex;
-                    lyricsDisplay.textContent = lyrics.substring(0, currentIndex);
-                } else if (targetIndex < currentIndex) {
-                    // If seeking backwards, reset and retype
-                    resetTypewriter();
-                    if (!audio.paused) {
-                        startTypewriter();
-                    }
+                if (targetIndex < lyrics.length && !audio.paused && audio.currentTime >= START_DELAY) {
+                    isTyping = true;
+                    typewriterInterval = setInterval(typeWriter, typingSpeed);
+                } else {
+                    isTyping = false;
                 }
             }
         }
 
         function checkStartTime() {
-            if (audio.currentTime >= START_DELAY && !isTyping && currentIndex === 0) {
-                startTypewriter();
+            if (audio.currentTime >= START_DELAY && !isTyping && !audio.paused) {
+                syncTypewriterWithAudio();
             }
         }
 
@@ -138,10 +175,11 @@
         // Toggle lyrics visibility
         function toggleLyrics() {
             lyricsVisible = !lyricsVisible;
+            const container = document.getElementById('lyricsContainer');
             if (lyricsVisible) {
-                lyricsContainer.style.display = 'block';
+                container.style.display = 'block';
             } else {
-                lyricsContainer.style.display = 'none';
+                container.style.display = 'none';
             }
         }
 
@@ -153,19 +191,6 @@
             currentIndex = lyrics.length;
             isTyping = false;
         }
-
-        // Setup event listeners
-        function setupEventListeners() {
-            audio.addEventListener('play', () => {
-                if (audio.currentTime >= START_DELAY) {
-                    startTypewriter();
-                } else {
-                    checkStartTime();
-                }
-            });
-        }
-
-        setupEventListeners();
 
         // Audio event listeners
         audio.addEventListener('timeupdate', () => {
