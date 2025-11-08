@@ -92,8 +92,8 @@
 
         let currentUserName = '';
         let loadedMessageIds = new Set(); // Track loaded messages to prevent duplicates
-        let recentlySentMessages = new Set(); // Track recently sent messages to prevent duplicates from listener
         const MAX_VISIBLE_MESSAGES = 35; // Maximum number of messages to display
+        let isInitialLoad = true; // Track if this is the first load
 
         // Load saved name from localStorage (still using localStorage for user name)
         function loadUserName() {
@@ -168,32 +168,47 @@
 
         // Load messages from Firestore with real-time listener
         function loadMessagesFromFirestore() {
-            // First, load existing messages (only the most recent ones)
-            db.collection('messages')
+            // Set up real-time listener that gets all current messages and then listens for changes
+            messagesUnsubscribe = db.collection('messages')
                 .orderBy('timestamp', 'desc')
                 .limit(MAX_VISIBLE_MESSAGES)
-                .get()
-                .then((querySnapshot) => {
-                    const messages = [];
-                    querySnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        messages.push({
-                            id: doc.id,
-                            user: data.user,
-                            message: data.message,
-                            timestamp: data.timestamp
+                .onSnapshot((querySnapshot) => {
+                    // On initial load, clear and reload all messages
+                    if (isInitialLoad) {
+                        const existingMessages = chatMessages.querySelectorAll('.message:not(.welcome-message)');
+                        existingMessages.forEach(msg => msg.remove());
+                        loadedMessageIds.clear();
+                        
+                        const messages = [];
+                        querySnapshot.forEach((doc) => {
+                            const data = doc.data();
+                            messages.push({
+                                id: doc.id,
+                                user: data.user,
+                                message: data.message,
+                                timestamp: data.timestamp
+                            });
+                            loadedMessageIds.add(doc.id);
                         });
-                        loadedMessageIds.add(doc.id);
-                    });
-                    
-                    // Display messages in reverse order (oldest first)
-                    messages.reverse().forEach(msg => {
-                        addMessageToChat(msg.user, msg.message, msg.timestamp, false);
-                    });
-                    scrollToBottom();
-                })
-                .catch((error) => {
-                    console.error('Error loading messages:', error);
+                        
+                        // Display messages in reverse order (oldest first)
+                        messages.reverse().forEach(msg => {
+                            addMessageToChat(msg.user, msg.message, msg.timestamp, false);
+                        });
+                        scrollToBottom();
+                        isInitialLoad = false;
+                    } else {
+                        // After initial load, only process new changes
+                        querySnapshot.docChanges().forEach((change) => {
+                            if (change.type === 'added' && !loadedMessageIds.has(change.doc.id)) {
+                                const data = change.doc.data();
+                                addMessageToChat(data.user, data.message, data.timestamp, false);
+                                loadedMessageIds.add(change.doc.id);
+                            }
+                        });
+                    }
+                }, (error) => {
+                    console.error('Error in real-time listener:', error);
                     // Fallback to localStorage
                     const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
                     // Only show the most recent messages
@@ -201,31 +216,6 @@
                     recentMessages.forEach(msg => {
                         addMessageToChat(msg.user, msg.message, msg.timestamp, false);
                     });
-                });
-
-            // Set up real-time listener for new messages
-            messagesUnsubscribe = db.collection('messages')
-                .orderBy('timestamp', 'desc')
-                .onSnapshot((querySnapshot) => {
-                    querySnapshot.docChanges().forEach((change) => {
-                        if (change.type === 'added' && !loadedMessageIds.has(change.doc.id)) {
-                            const data = change.doc.data();
-                            // Create a unique key to check if this is a message we just sent
-                            const messageKey = `${data.user}-${data.message}-${data.timestamp}`;
-                            
-                            // Skip if this is a message we just sent (to prevent duplicates)
-                            if (!recentlySentMessages.has(messageKey)) {
-                                addMessageToChat(data.user, data.message, data.timestamp, false);
-                                loadedMessageIds.add(change.doc.id);
-                            } else {
-                                // Remove from recently sent after processing
-                                recentlySentMessages.delete(messageKey);
-                                loadedMessageIds.add(change.doc.id);
-                            }
-                        }
-                    });
-                }, (error) => {
-                    console.error('Error in real-time listener:', error);
                 });
         }
 
@@ -272,8 +262,20 @@
                 saveMessage(user, message, timestamp);
             }
 
+            // Check if message already exists (prevent duplicates)
+            const existingMessages = chatMessages.querySelectorAll('.message:not(.welcome-message)');
+            for (let msg of existingMessages) {
+                const msgTime = msg.getAttribute('data-timestamp');
+                const msgUser = msg.querySelector('.message-user').textContent;
+                const msgContent = msg.querySelector('.message-content p').textContent;
+                if (msgTime == timestamp && msgUser === user && msgContent === message) {
+                    return; // Message already exists, don't add duplicate
+                }
+            }
+
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message';
+            messageDiv.setAttribute('data-timestamp', timestamp);
             
             const time = new Date(timestamp);
             const timeString = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -288,7 +290,20 @@
                 </div>
             `;
             
-            chatMessages.appendChild(messageDiv);
+            // Insert message in correct chronological order
+            const allMessages = Array.from(chatMessages.querySelectorAll('.message:not(.welcome-message)'));
+            let inserted = false;
+            for (let i = 0; i < allMessages.length; i++) {
+                const msgTimestamp = parseInt(allMessages[i].getAttribute('data-timestamp') || '0');
+                if (timestamp < msgTimestamp) {
+                    chatMessages.insertBefore(messageDiv, allMessages[i]);
+                    inserted = true;
+                    break;
+                }
+            }
+            if (!inserted) {
+                chatMessages.appendChild(messageDiv);
+            }
             
             // Remove old messages if we exceed the limit
             limitVisibleMessages();
@@ -328,20 +343,12 @@
             const timestamp = Date.now();
             
             if (db) {
-                // Create unique key to track this message
-                const messageKey = `${currentUserName}-${message}-${timestamp}`;
-                recentlySentMessages.add(messageKey);
-                
-                // Add to display immediately for better UX
-                addMessageToChat(currentUserName, message, timestamp, false);
-                
-                // Save to Firestore (listener will skip it because of recentlySentMessages)
+                // Save to Firestore first
                 saveMessage(currentUserName, message, timestamp);
                 
-                // Clean up the tracking after a delay (in case listener is slow)
-                setTimeout(() => {
-                    recentlySentMessages.delete(messageKey);
-                }, 2000);
+                // Add to display immediately for better UX
+                // The listener will handle it, but we add it immediately so user sees it right away
+                addMessageToChat(currentUserName, message, timestamp, false);
             } else {
                 addMessageToChat(currentUserName, message, timestamp);
             }
