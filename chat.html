@@ -92,6 +92,7 @@
 
         let currentUserName = '';
         let loadedMessageIds = new Set(); // Track loaded messages to prevent duplicates
+        let recentlySentMessages = new Set(); // Track recently sent messages to prevent duplicates from listener
 
         // Load saved name from localStorage (still using localStorage for user name)
         function loadUserName() {
@@ -204,8 +205,18 @@
                     querySnapshot.docChanges().forEach((change) => {
                         if (change.type === 'added' && !loadedMessageIds.has(change.doc.id)) {
                             const data = change.doc.data();
-                            addMessageToChat(data.user, data.message, data.timestamp, false);
-                            loadedMessageIds.add(change.doc.id);
+                            // Create a unique key to check if this is a message we just sent
+                            const messageKey = `${data.user}-${data.message}-${data.timestamp}`;
+                            
+                            // Skip if this is a message we just sent (to prevent duplicates)
+                            if (!recentlySentMessages.has(messageKey)) {
+                                addMessageToChat(data.user, data.message, data.timestamp, false);
+                                loadedMessageIds.add(change.doc.id);
+                            } else {
+                                // Remove from recently sent after processing
+                                recentlySentMessages.delete(messageKey);
+                                loadedMessageIds.add(change.doc.id);
+                            }
                         }
                     });
                 }, (error) => {
@@ -294,12 +305,22 @@
             if (message === '' || !currentUserName) return;
 
             const timestamp = Date.now();
-            // Don't add to display immediately - let Firestore listener handle it
-            // This prevents duplicate messages
+            
             if (db) {
-                saveMessage(currentUserName, message, timestamp);
+                // Create unique key to track this message
+                const messageKey = `${currentUserName}-${message}-${timestamp}`;
+                recentlySentMessages.add(messageKey);
+                
                 // Add to display immediately for better UX
                 addMessageToChat(currentUserName, message, timestamp, false);
+                
+                // Save to Firestore (listener will skip it because of recentlySentMessages)
+                saveMessage(currentUserName, message, timestamp);
+                
+                // Clean up the tracking after a delay (in case listener is slow)
+                setTimeout(() => {
+                    recentlySentMessages.delete(messageKey);
+                }, 2000);
             } else {
                 addMessageToChat(currentUserName, message, timestamp);
             }
