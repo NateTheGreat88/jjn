@@ -93,6 +93,7 @@
         let currentUserName = '';
         let loadedMessageIds = new Set(); // Track loaded messages to prevent duplicates
         let recentlySentMessages = new Set(); // Track recently sent messages to prevent duplicates from listener
+        const MAX_VISIBLE_MESSAGES = 35; // Maximum number of messages to display
 
         // Load saved name from localStorage (still using localStorage for user name)
         function loadUserName() {
@@ -156,7 +157,9 @@
             } else {
                 // Fallback to localStorage
                 const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
-                messages.forEach(msg => {
+                // Only show the most recent messages
+                const recentMessages = messages.slice(-MAX_VISIBLE_MESSAGES);
+                recentMessages.forEach(msg => {
                     addMessageToChat(msg.user, msg.message, msg.timestamp, false);
                 });
                 scrollToBottom();
@@ -165,10 +168,10 @@
 
         // Load messages from Firestore with real-time listener
         function loadMessagesFromFirestore() {
-            // First, load existing messages
+            // First, load existing messages (only the most recent ones)
             db.collection('messages')
                 .orderBy('timestamp', 'desc')
-                .limit(50)
+                .limit(MAX_VISIBLE_MESSAGES)
                 .get()
                 .then((querySnapshot) => {
                     const messages = [];
@@ -193,7 +196,9 @@
                     console.error('Error loading messages:', error);
                     // Fallback to localStorage
                     const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
-                    messages.forEach(msg => {
+                    // Only show the most recent messages
+                    const recentMessages = messages.slice(-MAX_VISIBLE_MESSAGES);
+                    recentMessages.forEach(msg => {
                         addMessageToChat(msg.user, msg.message, msg.timestamp, false);
                     });
                 });
@@ -284,7 +289,23 @@
             `;
             
             chatMessages.appendChild(messageDiv);
+            
+            // Remove old messages if we exceed the limit
+            limitVisibleMessages();
+            
             scrollToBottom();
+        }
+
+        // Limit visible messages to MAX_VISIBLE_MESSAGES
+        function limitVisibleMessages() {
+            const allMessages = chatMessages.querySelectorAll('.message:not(.welcome-message)');
+            if (allMessages.length > MAX_VISIBLE_MESSAGES) {
+                // Remove the oldest messages (first ones in the list)
+                const messagesToRemove = allMessages.length - MAX_VISIBLE_MESSAGES;
+                for (let i = 0; i < messagesToRemove; i++) {
+                    allMessages[i].remove();
+                }
+            }
         }
 
         // Escape HTML to prevent XSS
