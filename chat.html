@@ -312,7 +312,8 @@
             
             let imageHtml = '';
             if (imageData) {
-                imageHtml = `<div class="message-image"><img src="${imageData}" alt="Uploaded image" onclick="this.classList.toggle('expanded')"></div>`;
+                const imageId = 'img-' + timestamp;
+                imageHtml = `<div class="message-image"><img id="${imageId}" src="${imageData}" alt="Uploaded image" class="chat-image"></div>`;
             }
             
             messageDiv.innerHTML = `
@@ -325,6 +326,17 @@
                     ${message ? `<p>${escapeHtml(message)}</p>` : ''}
                 </div>
             `;
+            
+            // Add click handler for image expansion
+            if (imageData) {
+                const imageId = 'img-' + timestamp;
+                const img = messageDiv.querySelector('#' + imageId);
+                if (img) {
+                    img.addEventListener('click', function() {
+                        expandImage(this);
+                    });
+                }
+            }
             
             // Insert message in correct chronological order
             const allMessages = Array.from(chatMessages.querySelectorAll('.message:not(.welcome-message)'));
@@ -434,6 +446,43 @@
             document.getElementById('imagePreview').style.display = 'none';
             document.getElementById('previewImage').src = '';
             document.getElementById('imageInput').value = '';
+        }
+        
+        // Expand image on click
+        function expandImage(imgElement) {
+            // Remove any existing expanded image
+            const existingExpanded = document.querySelector('.expanded-image-overlay');
+            if (existingExpanded) {
+                existingExpanded.remove();
+            }
+            
+            // Create overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'expanded-image-overlay';
+            overlay.innerHTML = `
+                <div class="expanded-image-container">
+                    <button class="close-expanded-image">✕</button>
+                    <img src="${imgElement.src}" alt="Expanded image" class="expanded-image">
+                </div>
+            `;
+            
+            document.body.appendChild(overlay);
+            
+            // Close on overlay click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay || e.target.classList.contains('close-expanded-image')) {
+                    overlay.remove();
+                }
+            });
+            
+            // Close on Escape key
+            const closeHandler = (e) => {
+                if (e.key === 'Escape') {
+                    overlay.remove();
+                    document.removeEventListener('keydown', closeHandler);
+                }
+            };
+            document.addEventListener('keydown', closeHandler);
         }
 
         // Save name handler
