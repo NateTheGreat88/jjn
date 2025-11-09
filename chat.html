@@ -353,11 +353,11 @@
             const collection = roomCode ? 'roomMessages' : 'messages';
             let query = db.collection(collection);
             
-            // If in a room, filter by room code first, then order
-            // Note: This requires a Firestore composite index on (roomCode, timestamp)
-            // If index doesn't exist, we'll filter in memory as fallback
+            // If in a room, filter by room code first
+            // Note: We don't use orderBy here to avoid requiring a composite index
+            // We'll sort in memory instead
             if (roomCode) {
-                query = query.where('roomCode', '==', roomCode).orderBy('timestamp', 'desc').limit(MAX_VISIBLE_MESSAGES);
+                query = query.where('roomCode', '==', roomCode);
             } else {
                 query = query.orderBy('timestamp', 'desc').limit(MAX_VISIBLE_MESSAGES);
             }
@@ -395,8 +395,12 @@
                             }
                         });
                         
+                        // Sort by timestamp descending (newest first), then take most recent
+                        messages.sort((a, b) => b.timestamp - a.timestamp);
+                        const recentMessages = messages.slice(0, MAX_VISIBLE_MESSAGES);
+                        
                         // Display messages in reverse order (oldest first)
-                        messages.reverse().forEach(msg => {
+                        recentMessages.reverse().forEach(msg => {
                             if (!loadedMessageIds.has(msg.id)) {
                                 addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image);
                                 loadedMessageIds.add(msg.id);
@@ -820,9 +824,9 @@
                     code: roomCode,
                     createdAt: roomCreationTime,
                     createdBy: currentUserName
-                })
+                }, { merge: false })
                 .then(() => {
-                    console.log('Room created successfully:', roomCode);
+                    console.log('Room created successfully:', roomCode, 'at', new Date(roomCreationTime));
                 })
                 .catch((error) => {
                     console.error('Error creating room:', error);
@@ -836,6 +840,7 @@
                     createdBy: currentUserName
                 };
                 localStorage.setItem('jjnChatRooms', JSON.stringify(rooms));
+                console.log('Room saved to localStorage:', roomCode, 'at', new Date(roomCreationTime));
             }
             
             // Update UI
@@ -878,8 +883,16 @@
                 return;
             }
             
+            // Show loading state
+            const originalButtonText = confirmJoinButton.textContent;
+            confirmJoinButton.textContent = 'Checking...';
+            confirmJoinButton.disabled = true;
+            
             // Check if room exists and is valid (created within past week)
             checkRoomValidity(code).then((isValid) => {
+                confirmJoinButton.textContent = originalButtonText;
+                confirmJoinButton.disabled = false;
+                
                 if (!isValid) {
                     alert('Room code not found or expired. Rooms expire after 7 days.');
                     roomCodeInput.value = '';
@@ -911,19 +924,33 @@
                 }
             }).catch((error) => {
                 console.error('Error checking room validity:', error);
+                confirmJoinButton.textContent = originalButtonText;
+                confirmJoinButton.disabled = false;
                 alert('Error checking room code. Please try again.');
             });
         }
         
         // Check if a room code is valid (exists and was created within past week)
-        function checkRoomValidity(roomCode) {
+        function checkRoomValidity(roomCode, retryCount = 0) {
             const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000); // 7 days in milliseconds
+            const maxRetries = 3;
+            const retryDelay = 500; // 500ms delay between retries
             
             if (db) {
                 // Check Firestore
                 return db.collection('rooms').doc(roomCode).get()
                     .then((doc) => {
                         if (!doc.exists) {
+                            // If room doesn't exist and we haven't retried, wait and try again
+                            // This handles the case where room was just created but not yet saved
+                            if (retryCount < maxRetries) {
+                                console.log(`Room not found, retrying... (${retryCount + 1}/${maxRetries})`);
+                                return new Promise((resolve) => {
+                                    setTimeout(() => {
+                                        checkRoomValidity(roomCode, retryCount + 1).then(resolve);
+                                    }, retryDelay);
+                                });
+                            }
                             console.log('Room does not exist:', roomCode);
                             return false;
                         }
@@ -931,18 +958,43 @@
                         const roomData = doc.data();
                         const createdAt = roomData.createdAt || 0;
                         
+                        console.log('Room check:', {
+                            code: roomCode,
+                            createdAt: createdAt,
+                            createdAtDate: new Date(createdAt),
+                            oneWeekAgo: oneWeekAgo,
+                            oneWeekAgoDate: new Date(oneWeekAgo),
+                            isValid: createdAt >= oneWeekAgo,
+                            timeDiff: Date.now() - createdAt,
+                            timeDiffDays: (Date.now() - createdAt) / (24 * 60 * 60 * 1000)
+                        });
+                        
+                        if (createdAt === 0) {
+                            console.log('Room has no creation timestamp:', roomCode);
+                            return false;
+                        }
+                        
                         if (createdAt < oneWeekAgo) {
-                            console.log('Room expired:', roomCode, 'Created:', new Date(createdAt));
+                            console.log('Room expired:', roomCode, 'Created:', new Date(createdAt), 'Now:', new Date());
                             // Optionally delete expired room
                             db.collection('rooms').doc(roomCode).delete().catch(err => console.error('Error deleting expired room:', err));
                             return false;
                         }
                         
-                        console.log('Room is valid:', roomCode);
+                        console.log('Room is valid:', roomCode, 'Created:', new Date(createdAt));
                         return true;
                     })
                     .catch((error) => {
                         console.error('Error checking room in Firestore:', error);
+                        // Retry on error if we haven't exceeded max retries
+                        if (retryCount < maxRetries) {
+                            console.log(`Error checking room, retrying... (${retryCount + 1}/${maxRetries})`);
+                            return new Promise((resolve) => {
+                                setTimeout(() => {
+                                    checkRoomValidity(roomCode, retryCount + 1).then(resolve);
+                                }, retryDelay);
+                            });
+                        }
                         return false;
                     });
             } else {
@@ -958,8 +1010,14 @@
                     }
                     
                     const createdAt = room.createdAt || 0;
+                    if (createdAt === 0) {
+                        console.log('Room has no creation timestamp in localStorage:', roomCode);
+                        resolve(false);
+                        return;
+                    }
+                    
                     if (createdAt < oneWeekAgo) {
-                        console.log('Room expired:', roomCode);
+                        console.log('Room expired in localStorage:', roomCode);
                         // Remove expired room
                         delete rooms[roomCode];
                         localStorage.setItem('jjnChatRooms', JSON.stringify(rooms));
@@ -967,7 +1025,7 @@
                         return;
                     }
                     
-                    console.log('Room is valid:', roomCode);
+                    console.log('Room is valid in localStorage:', roomCode);
                     resolve(true);
                 });
             }

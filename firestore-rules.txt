@@ -9,6 +9,16 @@ service cloud.firestore {
     match /messages/{messageId} {
       allow read, write: if true;
     }
+    
+    // Allow anyone to read and write room messages (private rooms)
+    match /roomMessages/{messageId} {
+      allow read, write: if true;
+    }
+    
+    // Allow anyone to read and write room metadata
+    match /rooms/{roomId} {
+      allow read, write: if true;
+    }
   }
 }
 
