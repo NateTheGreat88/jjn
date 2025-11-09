@@ -57,7 +57,21 @@
                     autocomplete="off"
                     disabled
                 >
+                <label for="imageInput" class="image-upload-button" title="Upload Image">
+                    📷
+                </label>
+                <input 
+                    type="file" 
+                    id="imageInput" 
+                    accept="image/*"
+                    style="display: none;"
+                    disabled
+                >
                 <button id="sendButton" class="send-button" disabled>Send</button>
+            </div>
+            <div id="imagePreview" class="image-preview" style="display: none;">
+                <img id="previewImage" src="" alt="Preview">
+                <button id="removeImageButton" class="remove-image-button">✕</button>
             </div>
         </div>
     </div>
@@ -94,6 +108,7 @@
         let loadedMessageIds = new Set(); // Track loaded messages to prevent duplicates
         const MAX_VISIBLE_MESSAGES = 35; // Maximum number of messages to display
         let isInitialLoad = true; // Track if this is the first load
+        let selectedImage = null; // Store selected image as base64
 
         // Load saved name from localStorage (still using localStorage for user name)
         function loadUserName() {
@@ -139,6 +154,7 @@
         function enableChat() {
             messageInput.disabled = false;
             sendButton.disabled = false;
+            document.getElementById('imageInput').disabled = false;
             messageInput.placeholder = 'Type a message...';
         }
 
@@ -146,6 +162,7 @@
         function disableChat() {
             messageInput.disabled = true;
             sendButton.disabled = true;
+            document.getElementById('imageInput').disabled = true;
             messageInput.placeholder = 'Enter your name above to start chatting...';
         }
 
@@ -179,22 +196,23 @@
                         existingMessages.forEach(msg => msg.remove());
                         loadedMessageIds.clear();
                         
-                        const messages = [];
-                        querySnapshot.forEach((doc) => {
-                            const data = doc.data();
-                            messages.push({
-                                id: doc.id,
-                                user: data.user,
-                                message: data.message,
-                                timestamp: data.timestamp
-                            });
-                            loadedMessageIds.add(doc.id);
+                    const messages = [];
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        messages.push({
+                            id: doc.id,
+                            user: data.user,
+                            message: data.message,
+                            timestamp: data.timestamp,
+                            image: data.image || null
                         });
-                        
-                        // Display messages in reverse order (oldest first)
-                        messages.reverse().forEach(msg => {
-                            addMessageToChat(msg.user, msg.message, msg.timestamp, false);
-                        });
+                        loadedMessageIds.add(doc.id);
+                    });
+                    
+                    // Display messages in reverse order (oldest first)
+                    messages.reverse().forEach(msg => {
+                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image);
+                    });
                         scrollToBottom();
                         isInitialLoad = false;
                     } else {
@@ -202,7 +220,7 @@
                         querySnapshot.docChanges().forEach((change) => {
                             if (change.type === 'added' && !loadedMessageIds.has(change.doc.id)) {
                                 const data = change.doc.data();
-                                addMessageToChat(data.user, data.message, data.timestamp, false);
+                                addMessageToChat(data.user, data.message, data.timestamp, false, data.image || null);
                                 loadedMessageIds.add(change.doc.id);
                             }
                         });
@@ -214,35 +232,45 @@
                     // Only show the most recent messages
                     const recentMessages = messages.slice(-MAX_VISIBLE_MESSAGES);
                     recentMessages.forEach(msg => {
-                        addMessageToChat(msg.user, msg.message, msg.timestamp, false);
+                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image || null);
                     });
                 });
         }
 
         // Save message to Firestore or localStorage fallback
-        function saveMessage(user, message, timestamp) {
+        function saveMessage(user, message, timestamp, imageData = null) {
+            const messageData = {
+                user: user,
+                message: message,
+                timestamp: timestamp
+            };
+            
+            if (imageData) {
+                messageData.image = imageData;
+            }
+            
             if (db) {
                 // Save to Firestore
-                db.collection('messages').add({
-                    user: user,
-                    message: message,
-                    timestamp: timestamp
-                })
+                db.collection('messages').add(messageData)
                 .catch((error) => {
                     console.error('Error saving message to Firestore:', error);
                     // Fallback to localStorage
-                    saveMessageToLocalStorage(user, message, timestamp);
+                    saveMessageToLocalStorage(user, message, timestamp, imageData);
                 });
             } else {
                 // Fallback to localStorage
-                saveMessageToLocalStorage(user, message, timestamp);
+                saveMessageToLocalStorage(user, message, timestamp, imageData);
             }
         }
 
         // Fallback: Save messages to localStorage
-        function saveMessageToLocalStorage(user, message, timestamp) {
+        function saveMessageToLocalStorage(user, message, timestamp, imageData = null) {
             const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
-            messages.push({ user, message, timestamp });
+            const messageObj = { user, message, timestamp };
+            if (imageData) {
+                messageObj.image = imageData;
+            }
+            messages.push(messageObj);
             // Keep only last 100 messages
             if (messages.length > 100) {
                 messages.shift();
@@ -251,7 +279,7 @@
         }
 
         // Add message to chat display
-        function addMessageToChat(user, message, timestamp, shouldSave = true) {
+        function addMessageToChat(user, message, timestamp, shouldSave = true, imageData = null) {
             // Remove welcome message if it exists
             const welcomeMsg = chatMessages.querySelector('.welcome-message');
             if (welcomeMsg) {
@@ -259,7 +287,7 @@
             }
 
             if (shouldSave) {
-                saveMessage(user, message, timestamp);
+                saveMessage(user, message, timestamp, imageData);
             }
 
             // Check if message already exists (prevent duplicates)
@@ -267,8 +295,10 @@
             for (let msg of existingMessages) {
                 const msgTime = msg.getAttribute('data-timestamp');
                 const msgUser = msg.querySelector('.message-user').textContent;
-                const msgContent = msg.querySelector('.message-content p').textContent;
-                if (msgTime == timestamp && msgUser === user && msgContent === message) {
+                const msgContent = msg.querySelector('.message-content p')?.textContent || '';
+                const msgImage = msg.querySelector('.message-image');
+                const hasImage = msgImage !== null;
+                if (msgTime == timestamp && msgUser === user && msgContent === message && hasImage === !!imageData) {
                     return; // Message already exists, don't add duplicate
                 }
             }
@@ -280,13 +310,19 @@
             const time = new Date(timestamp);
             const timeString = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             
+            let imageHtml = '';
+            if (imageData) {
+                imageHtml = `<div class="message-image"><img src="${imageData}" alt="Uploaded image" onclick="this.classList.toggle('expanded')"></div>`;
+            }
+            
             messageDiv.innerHTML = `
                 <div class="message-header">
                     <span class="message-user">${escapeHtml(user)}</span>
                     <span class="message-time">${timeString}</span>
                 </div>
                 <div class="message-content">
-                    <p>${escapeHtml(message)}</p>
+                    ${imageHtml}
+                    ${message ? `<p>${escapeHtml(message)}</p>` : ''}
                 </div>
             `;
             
@@ -338,22 +374,66 @@
         // Send message
         function sendMessage() {
             const message = messageInput.value.trim();
-            if (message === '' || !currentUserName) return;
+            if ((message === '' && !selectedImage) || !currentUserName) return;
 
             const timestamp = Date.now();
+            const imageData = selectedImage;
+            
+            // Clear image preview
+            if (selectedImage) {
+                selectedImage = null;
+                document.getElementById('imagePreview').style.display = 'none';
+                document.getElementById('previewImage').src = '';
+                document.getElementById('imageInput').value = '';
+            }
             
             if (db) {
                 // Save to Firestore first
-                saveMessage(currentUserName, message, timestamp);
+                saveMessage(currentUserName, message, timestamp, imageData);
                 
                 // Add to display immediately for better UX
-                // The listener will handle it, but we add it immediately so user sees it right away
-                addMessageToChat(currentUserName, message, timestamp, false);
+                addMessageToChat(currentUserName, message, timestamp, false, imageData);
             } else {
-                addMessageToChat(currentUserName, message, timestamp);
+                addMessageToChat(currentUserName, message, timestamp, true, imageData);
             }
             messageInput.value = '';
             messageInput.focus();
+        }
+        
+        // Handle image selection
+        function handleImageSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Check file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Image is too large! Maximum size is 5MB.');
+                event.target.value = '';
+                return;
+            }
+            
+            // Check if it's an image
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file.');
+                event.target.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                selectedImage = e.target.result; // Store as base64
+                document.getElementById('previewImage').src = selectedImage;
+                document.getElementById('imagePreview').style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // Remove selected image
+        function removeImage() {
+            selectedImage = null;
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('previewImage').src = '';
+            document.getElementById('imageInput').value = '';
         }
 
         // Save name handler
@@ -382,6 +462,8 @@
                 sendMessage();
             }
         });
+        document.getElementById('imageInput').addEventListener('change', handleImageSelect);
+        document.getElementById('removeImageButton').addEventListener('click', removeImage);
 
         // Initialize on page load
         loadUserName();
