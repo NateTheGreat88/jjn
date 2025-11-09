@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Games - JNJ Website</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="minigames.css">
+    <link rel="stylesheet" href="animated-background.css">
+    <script src="page-transitions.js" defer></script>
+    <script src="animated-background.js" defer></script>
+</head>
+<body>
+    <a href="index.html" class="back-button">← Back to Home</a>
+    
+    <div class="games-container">
+        <div class="games-header">
+            <h1>🎮 Mini Games Collection</h1>
+            <p class="games-subtitle">Classic games to play and enjoy</p>
+        </div>
+
+        <!-- Game Selection Menu -->
+        <div id="gameMenu" class="game-menu">
+            <div class="game-cards">
+                <div class="game-card" data-game="snake">
+                    <div class="game-card-icon">🐍</div>
+                    <h3>Snake</h3>
+                    <p>Classic snake game</p>
+                </div>
+                <div class="game-card" data-game="tetris">
+                    <div class="game-card-icon">🧩</div>
+                    <h3>Tetris</h3>
+                    <p>Block stacking puzzle</p>
+                </div>
+                <div class="game-card" data-game="pong">
+                    <div class="game-card-icon">🏓</div>
+                    <h3>Pong</h3>
+                    <p>Classic arcade game</p>
+                </div>
+                <div class="game-card" data-game="memory">
+                    <div class="game-card-icon">🧠</div>
+                    <h3>Memory</h3>
+                    <p>Card matching game</p>
+                </div>
+                <div class="game-card" data-game="reaction">
+                    <div class="game-card-icon">⚡</div>
+                    <h3>Reaction Test</h3>
+                    <p>Test your reflexes</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Snake Game -->
+        <div id="snakeGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>🐍 Snake</h2>
+                <div class="game-stats">
+                    <div>Score: <span id="snakeScore">0</span></div>
+                    <div>High Score: <span id="snakeHighScore">0</span></div>
+                </div>
+            </div>
+            <canvas id="snakeCanvas" width="600" height="600"></canvas>
+            <div class="game-controls">
+                <p>Use arrow keys or WASD to move</p>
+                <button class="game-button" onclick="snakeGame.restart()">Restart</button>
+                <button class="game-button" onclick="snakeGame.pause()">Pause</button>
+            </div>
+        </div>
+
+        <!-- Tetris Game -->
+        <div id="tetrisGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>🧩 Tetris</h2>
+                <div class="game-stats">
+                    <div>Score: <span id="tetrisScore">0</span></div>
+                    <div>Lines: <span id="tetrisLines">0</span></div>
+                    <div>Level: <span id="tetrisLevel">1</span></div>
+                    <div>High Score: <span id="tetrisHighScore">0</span></div>
+                </div>
+            </div>
+            <div class="tetris-container">
+                <canvas id="tetrisCanvas" width="300" height="600"></canvas>
+                <div class="tetris-sidebar">
+                    <div class="next-piece">
+                        <h3>Next:</h3>
+                        <canvas id="nextPieceCanvas" width="120" height="120"></canvas>
+                    </div>
+                    <div class="tetris-controls-info">
+                        <p><strong>Controls:</strong></p>
+                        <p>← → Move</p>
+                        <p>↑ Rotate</p>
+                        <p>↓ Soft Drop</p>
+                        <p>Space Hard Drop</p>
+                        <p>P Pause</p>
+                    </div>
+                    <button class="game-button" onclick="tetrisGame.restart()">Restart</button>
+                    <button class="game-button" onclick="tetrisGame.pause()">Pause</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pong Game -->
+        <div id="pongGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>🏓 Pong</h2>
+                <div class="game-stats">
+                    <div>Player: <span id="pongPlayerScore">0</span></div>
+                    <div>AI: <span id="pongAIScore">0</span></div>
+                </div>
+            </div>
+            <canvas id="pongCanvas" width="800" height="500"></canvas>
+            <div class="game-controls">
+                <p>Use ↑ ↓ or W S to move your paddle</p>
+                <button class="game-button" onclick="pongGame.restart()">Restart</button>
+                <button class="game-button" onclick="pongGame.pause()">Pause</button>
+            </div>
+        </div>
+
+        <!-- Memory Game -->
+        <div id="memoryGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>🧠 Memory Game</h2>
+                <div class="game-stats">
+                    <div>Moves: <span id="memoryMoves">0</span></div>
+                    <div>Pairs Found: <span id="memoryPairs">0</span></div>
+                </div>
+            </div>
+            <div class="memory-container">
+                <div id="memoryBoard" class="memory-board"></div>
+            </div>
+            <div class="game-controls">
+                <button class="game-button" onclick="memoryGame.restart()">New Game</button>
+                <button class="game-button" onclick="memoryGame.changeDifficulty()">Change Difficulty</button>
+            </div>
+        </div>
+
+        <!-- Reaction Test Game -->
+        <div id="reactionGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>⚡ Reaction Test</h2>
+                <div class="game-stats">
+                    <div>Average: <span id="reactionAverage">0</span>ms</div>
+                    <div>Best: <span id="reactionBest">0</span>ms</div>
+                    <div>Tests: <span id="reactionTests">0</span></div>
+                </div>
+            </div>
+            <div class="reaction-container">
+                <div id="reactionBox" class="reaction-box">
+                    <p id="reactionText">Click when the box turns green!</p>
+                </div>
+            </div>
+            <div class="game-controls">
+                <button class="game-button" onclick="reactionGame.start()">Start Test</button>
+                <button class="game-button" onclick="reactionGame.reset()">Reset Stats</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="minigames.js"></script>
+</body>
+</html>
+
