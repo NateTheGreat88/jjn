@@ -22,6 +22,14 @@
         <header class="chat-header">
             <h1>JNJ Chat</h1>
             <p class="chat-subtitle">Junhu Choi • Jaxon Croskey • Nathan DeLuca</p>
+            <div class="room-controls">
+                <button id="createRoomButton" class="room-button" style="display: none;">Create Private Room</button>
+                <button id="joinRoomButton" class="room-button" style="display: none;">Join Room</button>
+                <button id="leaveRoomButton" class="room-button room-button-leave" style="display: none;">Leave Room</button>
+                <div id="roomCodeDisplay" class="room-code-display" style="display: none;">
+                    <span>Room: <strong id="currentRoomCodeDisplay"></strong></span>
+                </div>
+            </div>
         </header>
         
         <div class="chat-messages" id="chatMessages">
@@ -79,6 +87,31 @@
         </div>
     </div>
 
+    <!-- Room Code Modal -->
+    <div id="roomCodeModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Private Room Created!</h2>
+            <p style="color: #b0b0b0; margin-bottom: 20px; text-align: center;">Share this code with your friends:</p>
+            <div class="room-code-display-large">
+                <span id="roomCodeDisplayText"></span>
+                <button id="copyRoomCodeButton" class="copy-button" title="Copy code">📋</button>
+            </div>
+            <button id="closeRoomCodeModal" class="modal-button" style="margin-top: 20px;">Close</button>
+        </div>
+    </div>
+
+    <!-- Join Room Modal -->
+    <div id="joinRoomModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Join Private Room</h2>
+            <input type="text" id="roomCodeInput" placeholder="Enter room code..." maxlength="6" pattern="[0-9]{6}">
+            <div class="modal-buttons">
+                <button id="confirmJoinButton" class="modal-button">Join</button>
+                <button id="cancelJoinButton" class="modal-button modal-button-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Initialize Firebase
         let db = null;
@@ -96,6 +129,9 @@
             console.error('Firebase initialization error:', error);
             console.warn('Falling back to localStorage.');
         }
+        
+        // Private Room Variables
+        let currentRoomCode = null;
 
         const chatMessages = document.getElementById('chatMessages');
         const messageInput = document.getElementById('messageInput');
@@ -106,6 +142,21 @@
         const currentNameText = document.getElementById('currentNameText');
         const changeNameButton = document.getElementById('changeNameButton');
         const nameInputWrapper = userNameInput.parentElement;
+        
+        // Room UI elements
+        const createRoomButton = document.getElementById('createRoomButton');
+        const joinRoomButton = document.getElementById('joinRoomButton');
+        const leaveRoomButton = document.getElementById('leaveRoomButton');
+        const roomCodeDisplay = document.getElementById('roomCodeDisplay');
+        const currentRoomCodeDisplay = document.getElementById('currentRoomCodeDisplay');
+        const roomCodeModal = document.getElementById('roomCodeModal');
+        const roomCodeDisplayText = document.getElementById('roomCodeDisplayText');
+        const copyRoomCodeButton = document.getElementById('copyRoomCodeButton');
+        const closeRoomCodeModal = document.getElementById('closeRoomCodeModal');
+        const joinRoomModal = document.getElementById('joinRoomModal');
+        const roomCodeInput = document.getElementById('roomCodeInput');
+        const confirmJoinButton = document.getElementById('confirmJoinButton');
+        const cancelJoinButton = document.getElementById('cancelJoinButton');
 
         let currentUserName = '';
         let loadedMessageIds = new Set(); // Track loaded messages to prevent duplicates
@@ -169,53 +220,132 @@
             messageInput.placeholder = 'Enter your name above to start chatting...';
         }
 
+        // Update room UI based on current room state
+        function updateRoomUI() {
+            if (currentRoomCode) {
+                // In a room - show leave button and room code
+                createRoomButton.style.display = 'none';
+                joinRoomButton.style.display = 'none';
+                leaveRoomButton.style.display = 'block';
+                roomCodeDisplay.style.display = 'flex';
+                currentRoomCodeDisplay.textContent = currentRoomCode;
+            } else {
+                // Not in a room - show create/join buttons
+                createRoomButton.style.display = 'block';
+                joinRoomButton.style.display = 'block';
+                leaveRoomButton.style.display = 'none';
+                roomCodeDisplay.style.display = 'none';
+            }
+        }
+        
         // Load messages from Firestore or localStorage fallback
         function loadMessages() {
+            // Check if user has a room code
+            const savedRoom = localStorage.getItem('jjnChatRoomCode');
+            if (savedRoom) {
+                currentRoomCode = savedRoom;
+            }
+            
+            // Update UI based on room state
+            updateRoomUI();
+            
+            // Update welcome message
+            const welcomeMsg = chatMessages.querySelector('.welcome-message');
+            if (welcomeMsg) {
+                if (currentRoomCode) {
+                    welcomeMsg.querySelector('.message-content p').textContent = 'Welcome to Private Room ' + currentRoomCode + '!';
+                } else {
+                    welcomeMsg.querySelector('.message-content p').textContent = 'Welcome to JNJ Chat! Start a conversation below.';
+                }
+            }
+            
+            // Load messages
             if (db) {
                 // Use Firestore with real-time updates
-                loadMessagesFromFirestore();
+                loadMessagesFromFirestore(currentRoomCode);
             } else {
                 // Fallback to localStorage
                 const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
+                // Filter by room code if in a room
+                let filteredMessages = messages;
+                if (currentRoomCode) {
+                    filteredMessages = messages.filter(msg => msg.roomCode === currentRoomCode);
+                } else {
+                    filteredMessages = messages.filter(msg => !msg.roomCode);
+                }
                 // Only show the most recent messages
-                const recentMessages = messages.slice(-MAX_VISIBLE_MESSAGES);
+                const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                 recentMessages.forEach(msg => {
-                    addMessageToChat(msg.user, msg.message, msg.timestamp, false);
+                    addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image);
                 });
                 scrollToBottom();
             }
         }
 
         // Load messages from Firestore with real-time listener
-        function loadMessagesFromFirestore() {
+        function loadMessagesFromFirestore(roomCode = null) {
+            // Unsubscribe from previous listener
+            if (messagesUnsubscribe) {
+                messagesUnsubscribe();
+            }
+            
+            // Clear existing messages (except welcome message) before loading
+            const existingMessages = chatMessages.querySelectorAll('.message:not(.welcome-message)');
+            existingMessages.forEach(msg => msg.remove());
+            loadedMessageIds.clear();
+            isInitialLoad = true;
+            
+            // Determine which collection to use
+            const collection = roomCode ? 'roomMessages' : 'messages';
+            let query = db.collection(collection);
+            
+            // If in a room, filter by room code first, then order
+            if (roomCode) {
+                query = query.where('roomCode', '==', roomCode).orderBy('timestamp', 'desc').limit(MAX_VISIBLE_MESSAGES);
+            } else {
+                query = query.orderBy('timestamp', 'desc').limit(MAX_VISIBLE_MESSAGES);
+            }
+            
             // Set up real-time listener that gets all current messages and then listens for changes
-            messagesUnsubscribe = db.collection('messages')
-                .orderBy('timestamp', 'desc')
-                .limit(MAX_VISIBLE_MESSAGES)
-                .onSnapshot((querySnapshot) => {
+            messagesUnsubscribe = query.onSnapshot((querySnapshot) => {
                     // On initial load, clear and reload all messages
                     if (isInitialLoad) {
-                        const existingMessages = chatMessages.querySelectorAll('.message:not(.welcome-message)');
-                        existingMessages.forEach(msg => msg.remove());
-                        loadedMessageIds.clear();
-                        
-                    const messages = [];
-                    querySnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        messages.push({
-                            id: doc.id,
-                            user: data.user,
-                            message: data.message,
-                            timestamp: data.timestamp,
-                            image: data.image || null
+                        const messages = [];
+                        querySnapshot.forEach((doc) => {
+                            const data = doc.data();
+                            // Double-check room code match for safety
+                            if (roomCode) {
+                                // Only include messages with matching room code
+                                if (data.roomCode === roomCode) {
+                                    messages.push({
+                                        id: doc.id,
+                                        user: data.user,
+                                        message: data.message,
+                                        timestamp: data.timestamp,
+                                        image: data.image || null
+                                    });
+                                }
+                            } else {
+                                // Only include messages without roomCode in public chat
+                                if (!data.roomCode) {
+                                    messages.push({
+                                        id: doc.id,
+                                        user: data.user,
+                                        message: data.message,
+                                        timestamp: data.timestamp,
+                                        image: data.image || null
+                                    });
+                                }
+                            }
                         });
-                        loadedMessageIds.add(doc.id);
-                    });
-                    
-                    // Display messages in reverse order (oldest first)
-                    messages.reverse().forEach(msg => {
-                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image);
-                    });
+                        
+                        // Display messages in reverse order (oldest first)
+                        messages.reverse().forEach(msg => {
+                            if (!loadedMessageIds.has(msg.id)) {
+                                addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image);
+                                loadedMessageIds.add(msg.id);
+                            }
+                        });
                         scrollToBottom();
                         isInitialLoad = false;
                     } else {
@@ -223,20 +353,40 @@
                         querySnapshot.docChanges().forEach((change) => {
                             if (change.type === 'added' && !loadedMessageIds.has(change.doc.id)) {
                                 const data = change.doc.data();
-                                addMessageToChat(data.user, data.message, data.timestamp, false, data.image || null);
-                                loadedMessageIds.add(change.doc.id);
+                                // Double-check room code match
+                                if (roomCode) {
+                                    if (data.roomCode === roomCode) {
+                                        addMessageToChat(data.user, data.message, data.timestamp, false, data.image || null);
+                                        loadedMessageIds.add(change.doc.id);
+                                    }
+                                } else {
+                                    // Only show messages without roomCode in public chat
+                                    if (!data.roomCode) {
+                                        addMessageToChat(data.user, data.message, data.timestamp, false, data.image || null);
+                                        loadedMessageIds.add(change.doc.id);
+                                    }
+                                }
                             }
                         });
+                        scrollToBottom();
                     }
                 }, (error) => {
                     console.error('Error in real-time listener:', error);
                     // Fallback to localStorage
                     const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
+                    // Filter by room code if in a room
+                    let filteredMessages = messages;
+                    if (roomCode) {
+                        filteredMessages = messages.filter(msg => msg.roomCode === roomCode);
+                    } else {
+                        filteredMessages = messages.filter(msg => !msg.roomCode);
+                    }
                     // Only show the most recent messages
-                    const recentMessages = messages.slice(-MAX_VISIBLE_MESSAGES);
+                    const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                     recentMessages.forEach(msg => {
                         addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image || null);
                     });
+                    scrollToBottom();
                 });
         }
 
@@ -252,9 +402,22 @@
                 messageData.image = imageData;
             }
             
+            // Add room code if in a private room
+            if (currentRoomCode) {
+                messageData.roomCode = currentRoomCode;
+            }
+            
             if (db) {
-                // Save to Firestore
-                db.collection('messages').add(messageData)
+                // Save to Firestore - use roomMessages collection if in a room
+                const collection = currentRoomCode ? 'roomMessages' : 'messages';
+                db.collection(collection).add(messageData)
+                .then((docRef) => {
+                    // Update the message element with the actual document ID
+                    const messageElement = chatMessages.querySelector(`[data-message-id="temp-${timestamp}"]`);
+                    if (messageElement) {
+                        messageElement.setAttribute('data-message-id', docRef.id);
+                    }
+                })
                 .catch((error) => {
                     console.error('Error saving message to Firestore:', error);
                     // Fallback to localStorage
@@ -272,6 +435,10 @@
             const messageObj = { user, message, timestamp };
             if (imageData) {
                 messageObj.image = imageData;
+            }
+            // Add room code if in a private room
+            if (currentRoomCode) {
+                messageObj.roomCode = currentRoomCode;
             }
             messages.push(messageObj);
             // Keep only last 100 messages
@@ -309,6 +476,11 @@
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message';
             messageDiv.setAttribute('data-timestamp', timestamp);
+            // Add message ID for tracking
+            if (shouldSave && db) {
+                // We'll set this after saving, but for now use timestamp as ID
+                messageDiv.setAttribute('data-message-id', 'temp-' + timestamp);
+            }
             
             const time = new Date(timestamp);
             const timeString = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -500,6 +672,136 @@
             }
         }
 
+        // Generate a 6-digit room code
+        function generateRoomCode() {
+            return Math.floor(100000 + Math.random() * 900000).toString();
+        }
+        
+        // Create a private room
+        function createRoom() {
+            if (!currentUserName) {
+                alert('Please enter your name first.');
+                return;
+            }
+            
+            const roomCode = generateRoomCode();
+            currentRoomCode = roomCode;
+            localStorage.setItem('jjnChatRoomCode', roomCode);
+            
+            // Update UI
+            updateRoomUI();
+            
+            // Show modal with code to copy
+            roomCodeDisplayText.textContent = roomCode;
+            roomCodeModal.style.display = 'flex';
+            
+            // Clear chat and show welcome message for private room
+            chatMessages.innerHTML = '<div class="message welcome-message"><div class="message-content"><p>Welcome to Private Room ' + roomCode + '!</p></div></div>';
+            loadedMessageIds.clear();
+            isInitialLoad = true;
+            
+            // Load messages for this room (will be empty initially)
+            if (db) {
+                loadMessagesFromFirestore(roomCode);
+            } else {
+                // Fallback: reload from localStorage with room filter
+                loadMessages();
+            }
+        }
+        
+        // Join a private room
+        function joinRoom() {
+            if (!currentUserName) {
+                alert('Please enter your name first.');
+                return;
+            }
+            
+            joinRoomModal.style.display = 'flex';
+            roomCodeInput.focus();
+        }
+        
+        // Confirm join room
+        function confirmJoin() {
+            const code = roomCodeInput.value.trim();
+            if (code.length === 6 && /^\d+$/.test(code)) {
+                currentRoomCode = code;
+                localStorage.setItem('jjnChatRoomCode', code);
+                
+                // Update UI
+                updateRoomUI();
+                
+                // Close modal
+                joinRoomModal.style.display = 'none';
+                roomCodeInput.value = '';
+                
+                // Clear chat and show welcome message for private room
+                chatMessages.innerHTML = '<div class="message welcome-message"><div class="message-content"><p>Welcome to Private Room ' + code + '!</p></div></div>';
+                loadedMessageIds.clear();
+                isInitialLoad = true;
+                
+                // Load messages for this room
+                if (db) {
+                    loadMessagesFromFirestore(code);
+                } else {
+                    // Fallback: reload from localStorage with room filter
+                    loadMessages();
+                }
+            } else {
+                alert('Please enter a valid 6-digit room code.');
+            }
+        }
+        
+        // Leave private room and return to public chat
+        function leaveRoom() {
+            if (!confirm('Leave this private room and return to public chat?')) {
+                return;
+            }
+            
+            currentRoomCode = null;
+            localStorage.removeItem('jjnChatRoomCode');
+            
+            // Update UI
+            updateRoomUI();
+            
+            // Clear chat and show welcome message for public chat
+            chatMessages.innerHTML = '<div class="message welcome-message"><div class="message-content"><p>Welcome to JNJ Chat! Start a conversation below.</p></div></div>';
+            loadedMessageIds.clear();
+            isInitialLoad = true;
+            
+            // Load public messages
+            if (db) {
+                loadMessagesFromFirestore(null);
+            } else {
+                // Fallback: reload from localStorage
+                loadMessages();
+            }
+        }
+        
+        // Copy room code to clipboard
+        function copyRoomCode() {
+            const code = roomCodeDisplayText.textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                copyRoomCodeButton.textContent = '✓';
+                copyRoomCodeButton.style.background = 'rgba(81, 207, 102, 0.3)';
+                setTimeout(() => {
+                    copyRoomCodeButton.textContent = '📋';
+                    copyRoomCodeButton.style.background = '';
+                }, 2000);
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = code;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                copyRoomCodeButton.textContent = '✓';
+                setTimeout(() => {
+                    copyRoomCodeButton.textContent = '📋';
+                }, 2000);
+            });
+        }
+        
         // Event listeners
         saveNameButton.addEventListener('click', handleSaveName);
         userNameInput.addEventListener('keypress', (e) => {
@@ -516,6 +818,36 @@
         });
         document.getElementById('imageInput').addEventListener('change', handleImageSelect);
         document.getElementById('removeImageButton').addEventListener('click', removeImage);
+        
+        // Room event listeners
+        createRoomButton.addEventListener('click', createRoom);
+        joinRoomButton.addEventListener('click', joinRoom);
+        leaveRoomButton.addEventListener('click', leaveRoom);
+        copyRoomCodeButton.addEventListener('click', copyRoomCode);
+        closeRoomCodeModal.addEventListener('click', () => {
+            roomCodeModal.style.display = 'none';
+        });
+        confirmJoinButton.addEventListener('click', confirmJoin);
+        cancelJoinButton.addEventListener('click', () => {
+            joinRoomModal.style.display = 'none';
+            roomCodeInput.value = '';
+        });
+        roomCodeInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                confirmJoin();
+            }
+        });
+        roomCodeModal.addEventListener('click', (e) => {
+            if (e.target === roomCodeModal) {
+                roomCodeModal.style.display = 'none';
+            }
+        });
+        joinRoomModal.addEventListener('click', (e) => {
+            if (e.target === joinRoomModal) {
+                joinRoomModal.style.display = 'none';
+                roomCodeInput.value = '';
+            }
+        });
 
         // Initialize on page load
         loadUserName();
