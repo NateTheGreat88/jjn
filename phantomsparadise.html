@@ -214,6 +214,7 @@ Livin' in a phantom's paradise`;
             isTyping = false;
         });
         
+        
         // Handle case where audio might already be playing when page loads
         if (!audio.paused && audio.currentTime >= START_DELAY) {
             syncTypewriterWithAudio();
