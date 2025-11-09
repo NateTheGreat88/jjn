@@ -20,6 +20,35 @@ body {
     padding: 20px;
     position: relative;
     overflow-x: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* Page Transition Effects */
+body.page-loaded {
+    opacity: 1;
+}
+
+body.page-exit {
+    opacity: 0;
+}
+
+/* Smooth fade-in for page content */
+.container,
+.game-wrapper,
+.player-container {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Animated background particles effect */

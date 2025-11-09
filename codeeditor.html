@@ -1975,7 +1975,37 @@ body.darktheme .trytopnav a, body.darktheme .trytopnav button {
     transform: translate(-50%, -50%) scale(1);
     box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
 }
+
+/* Page Transition Effects */
+body {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+body.page-loaded {
+    opacity: 1;
+}
+
+body.page-exit {
+    opacity: 0;
+}
+
+.trytopnav {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 </style>
+<script src="page-transitions.js" defer></script>
 </head>
 <body>
 <a href="index.html" class="back-button">← Back to Home</a>
