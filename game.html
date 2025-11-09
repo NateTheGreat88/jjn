@@ -93,6 +93,7 @@
         let soundEnabled = true;
         let bossAsteroid = null;
         let bossSpawned = false;
+        let levelCompletePending = false;
 
         // Audio context for sound effects
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -151,11 +152,21 @@
         const asteroidSizes = [80, 50, 30];
 
         function createAsteroid(x, y, radius, avoidShip = false, isBoss = false) {
-            if (avoidShip && x && y) {
-                const dist = Math.sqrt((x - ship.x) ** 2 + (y - ship.y) ** 2);
-                if (dist < 150) {
+            // Ensure valid coordinates
+            if (!x || !y) {
+                x = Math.random() * canvas.width;
+                y = Math.random() * canvas.height;
+            }
+            
+            // If avoiding ship, ensure safe distance
+            if (avoidShip) {
+                let attempts = 0;
+                while (attempts < 20) {
+                    const dist = Math.sqrt((x - ship.x) ** 2 + (y - ship.y) ** 2);
+                    if (dist > 200) break; // Safe distance
                     x = Math.random() * canvas.width;
                     y = Math.random() * canvas.height;
+                    attempts++;
                 }
             }
             
@@ -191,12 +202,60 @@
         }
 
         function initLevel() {
+            // Clear all asteroids and bullets first
             asteroids = [];
+            ship.bullets = [];
+            powerUps = [];
+            particles = [];
+            
             bossAsteroid = null;
             bossSpawned = false;
-            const numAsteroids = 3 + level;
+            
+            // Reset ship position to center
+            ship.x = canvas.width / 2;
+            ship.y = canvas.height / 2;
+            ship.speed = 0;
+            ship.angle = -Math.PI / 2;
+            
+            // Give brief invulnerability at level start
+            ship.invulnerable = true;
+            ship.invulnerableTime = 180;
+            
+            // Calculate number of asteroids (capped to prevent too many)
+            const numAsteroids = Math.min(3 + Math.floor(level * 0.5), 8);
+            
+            // Spawn asteroids away from ship
+            let attempts = 0;
             for (let i = 0; i < numAsteroids; i++) {
-                createAsteroid(null, null, asteroidSizes[0], true);
+                let x, y;
+                let validPosition = false;
+                attempts = 0;
+                
+                // Try to find a safe spawn position
+                while (!validPosition && attempts < 50) {
+                    x = Math.random() * canvas.width;
+                    y = Math.random() * canvas.height;
+                    
+                    // Check distance from ship
+                    const dist = Math.sqrt((x - ship.x) ** 2 + (y - ship.y) ** 2);
+                    if (dist > 200) { // Safe distance from ship
+                        validPosition = true;
+                    }
+                    attempts++;
+                }
+                
+                // If we couldn't find a safe position, spawn at edges
+                if (!validPosition) {
+                    const side = Math.floor(Math.random() * 4);
+                    switch(side) {
+                        case 0: x = 0; y = Math.random() * canvas.height; break;
+                        case 1: x = canvas.width; y = Math.random() * canvas.height; break;
+                        case 2: x = Math.random() * canvas.width; y = 0; break;
+                        case 3: x = Math.random() * canvas.width; y = canvas.height; break;
+                    }
+                }
+                
+                createAsteroid(x, y, asteroidSizes[0], false);
             }
         }
 
@@ -363,8 +422,8 @@
                 return;
             }
 
-            // Spawn boss every 5 levels
-            if (level % 5 === 0 && !bossSpawned && asteroids.length === 0 && !bossAsteroid) {
+            // Spawn boss every 5 levels (only if level complete is not pending)
+            if (level % 5 === 0 && !bossSpawned && asteroids.length === 0 && !bossAsteroid && !levelCompletePending) {
                 spawnBoss();
             }
 
@@ -571,18 +630,25 @@
                         // Explosive bullets
                         if (b.explosive) {
                             createParticles(a.x, a.y, '#ff4d4d', 30, 8, 6);
-                            // Damage nearby asteroids
+                            // Damage nearby asteroids (but limit to prevent too many)
+                            const nearbyAsteroids = [];
                             asteroids.forEach((otherA, oi) => {
                                 if (oi !== i) {
                                     const odx = otherA.x - a.x;
                                     const ody = otherA.y - a.y;
                                     const odist = Math.sqrt(odx*odx + ody*ody);
                                     if (odist < 100) {
-                                        createParticles(otherA.x, otherA.y, '#ffc107', 15, 5, 4);
-                                        asteroids.splice(oi, 1);
-                                        asteroidsDestroyed++;
+                                        nearbyAsteroids.push(oi);
                                     }
                                 }
+                            });
+                            
+                            // Limit explosive chain to prevent too many asteroids
+                            const maxChain = 3;
+                            nearbyAsteroids.slice(0, maxChain).forEach(oi => {
+                                createParticles(asteroids[oi].x, asteroids[oi].y, '#ffc107', 15, 5, 4);
+                                asteroids.splice(oi, 1);
+                                asteroidsDestroyed++;
                             });
                         } else {
                             createParticles(a.x, a.y, '#ffc107', 20, 5, 4);
@@ -593,11 +659,13 @@
 
                         createPowerUp(a.x, a.y);
 
-                        // Split asteroid
-                        if (a.radius > 30) {
+                        // Split asteroid (only if not too small and not too many asteroids)
+                        if (a.radius > 30 && asteroids.length < 20) {
                             const newRadius = a.radius / 2;
-                            createAsteroid(a.x + (Math.random() - 0.5) * 20, a.y + (Math.random() - 0.5) * 20, newRadius);
-                            createAsteroid(a.x + (Math.random() - 0.5) * 20, a.y + (Math.random() - 0.5) * 20, newRadius);
+                            const offset1 = (Math.random() - 0.5) * 30;
+                            const offset2 = (Math.random() - 0.5) * 30;
+                            createAsteroid(a.x + offset1, a.y + offset2, newRadius, false);
+                            createAsteroid(a.x - offset1, a.y - offset2, newRadius, false);
                         }
                     }
                 });
@@ -668,23 +736,36 @@
                 });
             }
 
-            // Check for level complete
-            if (asteroids.length === 0 && !bossAsteroid) {
-                const bonus = 500 * level;
-                score += bonus;
-                updateScore();
-                
-                // Show level complete
-                document.getElementById('levelBonus').textContent = bonus.toLocaleString();
-                document.getElementById('levelComplete').style.display = 'flex';
-                playSound(600, 0.3, 'sine', 0.2);
-                
-                setTimeout(() => {
-                    document.getElementById('levelComplete').style.display = 'none';
-                    level++;
-                    updateLevel();
-                    initLevel();
-                }, 2000);
+            // Check for level complete (only if no asteroids and no boss, and no bullets in flight)
+            if (asteroids.length === 0 && !bossAsteroid && ship.bullets.length === 0) {
+                // Small delay to ensure all asteroids are cleared
+                if (!window.levelCompletePending) {
+                    window.levelCompletePending = true;
+                    
+                    setTimeout(() => {
+                        // Double check asteroids are still cleared
+                        if (asteroids.length === 0 && !bossAsteroid) {
+                            const bonus = 500 * level;
+                            score += bonus;
+                            updateScore();
+                            
+                            // Show level complete
+                            document.getElementById('levelBonus').textContent = bonus.toLocaleString();
+                            document.getElementById('levelComplete').style.display = 'flex';
+                            playSound(600, 0.3, 'sine', 0.2);
+                            
+                            setTimeout(() => {
+                                document.getElementById('levelComplete').style.display = 'none';
+                                level++;
+                                updateLevel();
+                                window.levelCompletePending = false;
+                                initLevel();
+                            }, 2000);
+                        } else {
+                            window.levelCompletePending = false;
+                        }
+                    }, 500);
+                }
             }
 
             // Update particles
