@@ -243,42 +243,96 @@
             // Check if user has a room code
             const savedRoom = localStorage.getItem('jjnChatRoomCode');
             if (savedRoom) {
-                currentRoomCode = savedRoom;
-            }
-            
-            // Update UI based on room state
-            updateRoomUI();
-            
-            // Update welcome message
-            const welcomeMsg = chatMessages.querySelector('.welcome-message');
-            if (welcomeMsg) {
-                if (currentRoomCode) {
-                    welcomeMsg.querySelector('.message-content p').textContent = 'Welcome to Private Room ' + currentRoomCode + '!';
-                } else {
+                // Validate the saved room code
+                checkRoomValidity(savedRoom).then((isValid) => {
+                    if (!isValid) {
+                        // Room expired or doesn't exist, clear it
+                        currentRoomCode = null;
+                        localStorage.removeItem('jjnChatRoomCode');
+                        updateRoomUI();
+                    } else {
+                        currentRoomCode = savedRoom;
+                    }
+                    
+                    // Update UI based on room state
+                    updateRoomUI();
+                    
+                    // Update welcome message
+                    const welcomeMsg = chatMessages.querySelector('.welcome-message');
+                    if (welcomeMsg) {
+                        if (currentRoomCode) {
+                            welcomeMsg.querySelector('.message-content p').textContent = 'Welcome to Private Room ' + currentRoomCode + '!';
+                        } else {
+                            welcomeMsg.querySelector('.message-content p').textContent = 'Welcome to JNJ Chat! Start a conversation below.';
+                        }
+                    }
+                    
+                    // Load messages
+                    if (db) {
+                        // Use Firestore with real-time updates
+                        loadMessagesFromFirestore(currentRoomCode);
+                    } else {
+                        // Fallback to localStorage
+                        const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
+                        // Filter by room code if in a room
+                        let filteredMessages = messages;
+                        if (currentRoomCode) {
+                            filteredMessages = messages.filter(msg => msg.roomCode === currentRoomCode);
+                        } else {
+                            filteredMessages = messages.filter(msg => !msg.roomCode);
+                        }
+                        // Only show the most recent messages
+                        const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
+                        recentMessages.forEach(msg => {
+                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image);
+                        });
+                        scrollToBottom();
+                    }
+                }).catch((error) => {
+                    console.error('Error validating saved room:', error);
+                    // On error, default to public chat
+                    currentRoomCode = null;
+                    localStorage.removeItem('jjnChatRoomCode');
+                    updateRoomUI();
+                    
+                    const welcomeMsg = chatMessages.querySelector('.welcome-message');
+                    if (welcomeMsg) {
+                        welcomeMsg.querySelector('.message-content p').textContent = 'Welcome to JNJ Chat! Start a conversation below.';
+                    }
+                    
+                    if (db) {
+                        loadMessagesFromFirestore(null);
+                    } else {
+                        const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
+                        const filteredMessages = messages.filter(msg => !msg.roomCode);
+                        const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
+                        recentMessages.forEach(msg => {
+                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image);
+                        });
+                        scrollToBottom();
+                    }
+                });
+            } else {
+                // No saved room, load public chat
+                currentRoomCode = null;
+                updateRoomUI();
+                
+                const welcomeMsg = chatMessages.querySelector('.welcome-message');
+                if (welcomeMsg) {
                     welcomeMsg.querySelector('.message-content p').textContent = 'Welcome to JNJ Chat! Start a conversation below.';
                 }
-            }
-            
-            // Load messages
-            if (db) {
-                // Use Firestore with real-time updates
-                loadMessagesFromFirestore(currentRoomCode);
-            } else {
-                // Fallback to localStorage
-                const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
-                // Filter by room code if in a room
-                let filteredMessages = messages;
-                if (currentRoomCode) {
-                    filteredMessages = messages.filter(msg => msg.roomCode === currentRoomCode);
+                
+                if (db) {
+                    loadMessagesFromFirestore(null);
                 } else {
-                    filteredMessages = messages.filter(msg => !msg.roomCode);
+                    const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
+                    const filteredMessages = messages.filter(msg => !msg.roomCode);
+                    const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
+                    recentMessages.forEach(msg => {
+                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image);
+                    });
+                    scrollToBottom();
                 }
-                // Only show the most recent messages
-                const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
-                recentMessages.forEach(msg => {
-                    addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image);
-                });
-                scrollToBottom();
             }
         }
 
@@ -300,6 +354,8 @@
             let query = db.collection(collection);
             
             // If in a room, filter by room code first, then order
+            // Note: This requires a Firestore composite index on (roomCode, timestamp)
+            // If index doesn't exist, we'll filter in memory as fallback
             if (roomCode) {
                 query = query.where('roomCode', '==', roomCode).orderBy('timestamp', 'desc').limit(MAX_VISIBLE_MESSAGES);
             } else {
@@ -372,6 +428,73 @@
                     }
                 }, (error) => {
                     console.error('Error in real-time listener:', error);
+                    console.error('Error code:', error.code, 'Error message:', error.message);
+                    
+                    // If it's an index error, try alternative query
+                    if (error.code === 'failed-precondition' && roomCode) {
+                        console.log('Index missing, trying alternative query...');
+                        // Try getting all room messages and filtering in memory
+                        db.collection('roomMessages')
+                            .where('roomCode', '==', roomCode)
+                            .get()
+                            .then((querySnapshot) => {
+                                const messages = [];
+                                querySnapshot.forEach((doc) => {
+                                    const data = doc.data();
+                                    if (data.roomCode === roomCode) {
+                                        messages.push({
+                                            id: doc.id,
+                                            user: data.user,
+                                            message: data.message,
+                                            timestamp: data.timestamp,
+                                            image: data.image || null
+                                        });
+                                    }
+                                });
+                                // Sort by timestamp descending
+                                messages.sort((a, b) => b.timestamp - a.timestamp);
+                                // Take only the most recent
+                                const recentMessages = messages.slice(0, MAX_VISIBLE_MESSAGES);
+                                // Reverse to show oldest first
+                                recentMessages.reverse();
+                                recentMessages.forEach(msg => {
+                                    if (!loadedMessageIds.has(msg.id)) {
+                                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image);
+                                        loadedMessageIds.add(msg.id);
+                                    }
+                                });
+                                scrollToBottom();
+                                
+                                // Set up a simpler listener without orderBy
+                                messagesUnsubscribe = db.collection('roomMessages')
+                                    .where('roomCode', '==', roomCode)
+                                    .onSnapshot((snapshot) => {
+                                        snapshot.docChanges().forEach((change) => {
+                                            if (change.type === 'added' && !loadedMessageIds.has(change.doc.id)) {
+                                                const data = change.doc.data();
+                                                if (data.roomCode === roomCode) {
+                                                    addMessageToChat(data.user, data.message, data.timestamp, false, data.image || null);
+                                                    loadedMessageIds.add(change.doc.id);
+                                                }
+                                            }
+                                        });
+                                        scrollToBottom();
+                                    });
+                            })
+                            .catch((fallbackError) => {
+                                console.error('Fallback query also failed:', fallbackError);
+                                // Final fallback to localStorage
+                                const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
+                                let filteredMessages = messages.filter(msg => msg.roomCode === roomCode);
+                                const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
+                                recentMessages.forEach(msg => {
+                                    addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image || null);
+                                });
+                                scrollToBottom();
+                            });
+                        return;
+                    }
+                    
                     // Fallback to localStorage
                     const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
                     // Filter by room code if in a room
@@ -412,6 +535,7 @@
                 const collection = currentRoomCode ? 'roomMessages' : 'messages';
                 db.collection(collection).add(messageData)
                 .then((docRef) => {
+                    console.log('Message saved successfully to', collection, 'with ID:', docRef.id);
                     // Update the message element with the actual document ID
                     const messageElement = chatMessages.querySelector(`[data-message-id="temp-${timestamp}"]`);
                     if (messageElement) {
@@ -420,6 +544,7 @@
                 })
                 .catch((error) => {
                     console.error('Error saving message to Firestore:', error);
+                    console.error('Error details:', error.code, error.message);
                     // Fallback to localStorage
                     saveMessageToLocalStorage(user, message, timestamp, imageData);
                 });
@@ -685,8 +810,33 @@
             }
             
             const roomCode = generateRoomCode();
+            const roomCreationTime = Date.now();
             currentRoomCode = roomCode;
             localStorage.setItem('jjnChatRoomCode', roomCode);
+            
+            // Save room metadata to Firestore
+            if (db) {
+                db.collection('rooms').doc(roomCode).set({
+                    code: roomCode,
+                    createdAt: roomCreationTime,
+                    createdBy: currentUserName
+                })
+                .then(() => {
+                    console.log('Room created successfully:', roomCode);
+                })
+                .catch((error) => {
+                    console.error('Error creating room:', error);
+                });
+            } else {
+                // Fallback: save to localStorage
+                const rooms = JSON.parse(localStorage.getItem('jjnChatRooms') || '{}');
+                rooms[roomCode] = {
+                    code: roomCode,
+                    createdAt: roomCreationTime,
+                    createdBy: currentUserName
+                };
+                localStorage.setItem('jjnChatRooms', JSON.stringify(rooms));
+            }
             
             // Update UI
             updateRoomUI();
@@ -723,7 +873,20 @@
         // Confirm join room
         function confirmJoin() {
             const code = roomCodeInput.value.trim();
-            if (code.length === 6 && /^\d+$/.test(code)) {
+            if (code.length !== 6 || !/^\d+$/.test(code)) {
+                alert('Please enter a valid 6-digit room code.');
+                return;
+            }
+            
+            // Check if room exists and is valid (created within past week)
+            checkRoomValidity(code).then((isValid) => {
+                if (!isValid) {
+                    alert('Room code not found or expired. Rooms expire after 7 days.');
+                    roomCodeInput.value = '';
+                    return;
+                }
+                
+                // Room is valid, join it
                 currentRoomCode = code;
                 localStorage.setItem('jjnChatRoomCode', code);
                 
@@ -746,8 +909,67 @@
                     // Fallback: reload from localStorage with room filter
                     loadMessages();
                 }
+            }).catch((error) => {
+                console.error('Error checking room validity:', error);
+                alert('Error checking room code. Please try again.');
+            });
+        }
+        
+        // Check if a room code is valid (exists and was created within past week)
+        function checkRoomValidity(roomCode) {
+            const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000); // 7 days in milliseconds
+            
+            if (db) {
+                // Check Firestore
+                return db.collection('rooms').doc(roomCode).get()
+                    .then((doc) => {
+                        if (!doc.exists) {
+                            console.log('Room does not exist:', roomCode);
+                            return false;
+                        }
+                        
+                        const roomData = doc.data();
+                        const createdAt = roomData.createdAt || 0;
+                        
+                        if (createdAt < oneWeekAgo) {
+                            console.log('Room expired:', roomCode, 'Created:', new Date(createdAt));
+                            // Optionally delete expired room
+                            db.collection('rooms').doc(roomCode).delete().catch(err => console.error('Error deleting expired room:', err));
+                            return false;
+                        }
+                        
+                        console.log('Room is valid:', roomCode);
+                        return true;
+                    })
+                    .catch((error) => {
+                        console.error('Error checking room in Firestore:', error);
+                        return false;
+                    });
             } else {
-                alert('Please enter a valid 6-digit room code.');
+                // Fallback: check localStorage
+                return new Promise((resolve) => {
+                    const rooms = JSON.parse(localStorage.getItem('jjnChatRooms') || '{}');
+                    const room = rooms[roomCode];
+                    
+                    if (!room) {
+                        console.log('Room does not exist in localStorage:', roomCode);
+                        resolve(false);
+                        return;
+                    }
+                    
+                    const createdAt = room.createdAt || 0;
+                    if (createdAt < oneWeekAgo) {
+                        console.log('Room expired:', roomCode);
+                        // Remove expired room
+                        delete rooms[roomCode];
+                        localStorage.setItem('jjnChatRooms', JSON.stringify(rooms));
+                        resolve(false);
+                        return;
+                    }
+                    
+                    console.log('Room is valid:', roomCode);
+                    resolve(true);
+                });
             }
         }
         
