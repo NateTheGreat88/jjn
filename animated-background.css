@@ -1,0 +1,38 @@
+/* Animated Background Styles */
+
+.animated-background-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+/* Ensure body background doesn't conflict when canvas exists */
+body:has(#animatedBackground) {
+    background: transparent !important;
+}
+
+/* Reduce animation on mobile for performance */
+@media (max-width: 768px) {
+    .animated-background-canvas {
+        opacity: 0.7;
+    }
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    .animated-background-canvas {
+        display: none;
+    }
+    
+    body {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        background-attachment: fixed;
+    }
+}
+
