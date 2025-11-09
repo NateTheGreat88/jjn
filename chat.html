@@ -208,6 +208,12 @@
         const MAX_VISIBLE_MESSAGES = 35; // Maximum number of messages to display
         let isInitialLoad = true; // Track if this is the first load
         let selectedImage = null; // Store selected image as base64
+        
+        // Typing indicator variables
+        let typingTimeout = null;
+        let typingStatusUnsubscribe = null;
+        let isTyping = false;
+        const TYPING_TIMEOUT = 3000; // Stop showing typing after 3 seconds of inactivity
 
         // Load saved name from localStorage (still using localStorage for user name)
         function loadUserName() {
@@ -299,12 +305,14 @@
                         currentRoomCode = null;
                         localStorage.removeItem('jjnChatRoomCode');
                         updateRoomUI();
+                        setupTypingListener();
                     } else {
                         currentRoomCode = savedRoom;
                     }
                     
                     // Update UI based on room state
                     updateRoomUI();
+                    setupTypingListener();
                     
                     // Update welcome message
                     const welcomeMsg = chatMessages.querySelector('.welcome-message');
@@ -343,6 +351,7 @@
                     currentRoomCode = null;
                     localStorage.removeItem('jjnChatRoomCode');
                     updateRoomUI();
+                    setupTypingListener();
                     
                     const welcomeMsg = chatMessages.querySelector('.welcome-message');
                     if (welcomeMsg) {
@@ -365,6 +374,7 @@
                 // No saved room, load public chat
                 currentRoomCode = null;
                 updateRoomUI();
+                setupTypingListener();
                 
                 const welcomeMsg = chatMessages.querySelector('.welcome-message');
                 if (welcomeMsg) {
@@ -827,9 +837,139 @@
             }
             messageInput.value = '';
             messageInput.focus();
+            
+            // Stop typing indicator
+            stopTyping();
         }
         
         let selectedGif = null; // Store selected GIF URL
+        
+        // Typing indicator functions
+        function handleTyping() {
+            if (!currentUserName || !db) return;
+            
+            if (!isTyping) {
+                isTyping = true;
+                updateTypingStatus(true);
+            }
+            
+            // Clear existing timeout
+            if (typingTimeout) {
+                clearTimeout(typingTimeout);
+            }
+            
+            // Set new timeout to stop typing
+            typingTimeout = setTimeout(() => {
+                stopTyping();
+            }, TYPING_TIMEOUT);
+        }
+        
+        function stopTyping() {
+            if (!isTyping) return;
+            
+            isTyping = false;
+            updateTypingStatus(false);
+            
+            if (typingTimeout) {
+                clearTimeout(typingTimeout);
+                typingTimeout = null;
+            }
+        }
+        
+        function updateTypingStatus(typing) {
+            if (!db || !currentUserName) return;
+            
+            const collection = currentRoomCode ? 'typingStatus' : 'typingStatus';
+            const docId = currentRoomCode ? `${currentRoomCode}_${currentUserName}` : currentUserName;
+            
+            if (typing) {
+                db.collection(collection).doc(docId).set({
+                    user: currentUserName,
+                    isTyping: true,
+                    timestamp: Date.now(),
+                    roomCode: currentRoomCode || null
+                }).catch(error => {
+                    console.error('Error updating typing status:', error);
+                });
+            } else {
+                db.collection(collection).doc(docId).delete().catch(error => {
+                    console.error('Error removing typing status:', error);
+                });
+            }
+        }
+        
+        function setupTypingListener() {
+            // Unsubscribe from previous listener
+            if (typingStatusUnsubscribe) {
+                typingStatusUnsubscribe();
+            }
+            
+            if (!db) return;
+            
+            const collection = 'typingStatus';
+            let query = db.collection(collection);
+            
+            // Filter by room code if in a room
+            if (currentRoomCode) {
+                query = query.where('roomCode', '==', currentRoomCode);
+            } else {
+                query = query.where('roomCode', '==', null);
+            }
+            
+            // Listen for typing status changes
+            typingStatusUnsubscribe = query.onSnapshot((snapshot) => {
+                const typingUsers = [];
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    // Don't show own typing status
+                    if (data.user !== currentUserName) {
+                        // Only show if typed recently (within last 3 seconds)
+                        const timeSinceTyping = Date.now() - (data.timestamp || 0);
+                        if (timeSinceTyping < TYPING_TIMEOUT) {
+                            typingUsers.push(data.user);
+                        }
+                    }
+                });
+                
+                updateTypingIndicator(typingUsers);
+            });
+        }
+        
+        function updateTypingIndicator(typingUsers) {
+            // Remove existing typing indicator
+            const existingIndicator = document.getElementById('typingIndicator');
+            if (existingIndicator) {
+                existingIndicator.remove();
+            }
+            
+            // Add new typing indicator if there are users typing
+            if (typingUsers.length > 0) {
+                const typingDiv = document.createElement('div');
+                typingDiv.id = 'typingIndicator';
+                typingDiv.className = 'typing-indicator';
+                
+                let typingText = '';
+                if (typingUsers.length === 1) {
+                    typingText = `${typingUsers[0]} is typing...`;
+                } else if (typingUsers.length === 2) {
+                    typingText = `${typingUsers[0]} and ${typingUsers[1]} are typing...`;
+                } else {
+                    typingText = `${typingUsers[0]} and ${typingUsers.length - 1} others are typing...`;
+                }
+                
+                typingDiv.innerHTML = `
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <span class="typing-text">${escapeHtml(typingText)}</span>
+                `;
+                
+                chatMessages.appendChild(typingDiv);
+                scrollToBottom();
+            }
+        }
         
         // Handle image selection
         function handleImageSelect(event) {
@@ -960,6 +1100,7 @@
             
             // Update UI
             updateRoomUI();
+            setupTypingListener();
             
             // Show modal with code to copy
             roomCodeDisplayText.textContent = roomCode;
@@ -1020,6 +1161,7 @@
                 
                 // Update UI
                 updateRoomUI();
+                setupTypingListener();
                 
                 // Close modal
                 joinRoomModal.style.display = 'none';
@@ -1157,6 +1299,7 @@
             
             // Update UI
             updateRoomUI();
+            setupTypingListener();
             
             // Clear chat and show welcome message for public chat
             chatMessages.innerHTML = '<div class="message welcome-message"><div class="message-content"><p>Welcome to JNJ Chat! Start a conversation below.</p></div></div>';
@@ -1209,8 +1352,11 @@
         messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 sendMessage();
+            } else {
+                handleTyping();
             }
         });
+        messageInput.addEventListener('input', handleTyping);
         document.getElementById('imageInput').addEventListener('change', handleImageSelect);
         document.getElementById('removeImageButton').addEventListener('click', removeImage);
         document.getElementById('removeGifButton').addEventListener('click', () => {
@@ -1371,6 +1517,21 @@
         // Initialize on page load
         loadUserName();
         loadMessages();
+        
+        // Setup typing indicator listener after a short delay to ensure Firebase is ready
+        setTimeout(() => {
+            setupTypingListener();
+        }, 1000);
+        
+        // Clean up typing status on page unload
+        window.addEventListener('beforeunload', () => {
+            stopTyping();
+        });
+        
+        // Also stop typing when user leaves the page
+        window.addEventListener('pagehide', () => {
+            stopTyping();
+        });
         
         // Cursor Trail Effect - Smooth line effect
         const trails = [];

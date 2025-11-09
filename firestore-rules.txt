@@ -19,6 +19,11 @@ service cloud.firestore {
     match /rooms/{roomId} {
       allow read, write: if true;
     }
+    
+    // Allow anyone to read and write typing status
+    match /typingStatus/{statusId} {
+      allow read, write: if true;
+    }
   }
 }
 
