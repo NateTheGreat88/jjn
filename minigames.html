@@ -47,6 +47,31 @@
                     <h3>Reaction Test</h3>
                     <p>Test your reflexes</p>
                 </div>
+                <div class="game-card" data-game="breakout">
+                    <div class="game-card-icon">🎯</div>
+                    <h3>Breakout</h3>
+                    <p>Brick breaker game</p>
+                </div>
+                <div class="game-card" data-game="game2048">
+                    <div class="game-card-icon">🔢</div>
+                    <h3>2048</h3>
+                    <p>Number puzzle game</p>
+                </div>
+                <div class="game-card" data-game="flappy">
+                    <div class="game-card-icon">🐦</div>
+                    <h3>Flappy Bird</h3>
+                    <p>Fly through obstacles</p>
+                </div>
+                <div class="game-card" data-game="tictactoe">
+                    <div class="game-card-icon">⭕</div>
+                    <h3>Tic-Tac-Toe</h3>
+                    <p>Classic X and O game</p>
+                </div>
+                <div class="game-card" data-game="simon">
+                    <div class="game-card-icon">🎵</div>
+                    <h3>Simon Says</h3>
+                    <p>Memory sequence game</p>
+                </div>
             </div>
         </div>
 
@@ -157,6 +182,106 @@
             <div class="game-controls">
                 <button class="game-button" onclick="reactionGame.start()">Start Test</button>
                 <button class="game-button" onclick="reactionGame.reset()">Reset Stats</button>
+            </div>
+        </div>
+
+        <!-- Breakout Game -->
+        <div id="breakoutGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>🎯 Breakout</h2>
+                <div class="game-stats">
+                    <div>Score: <span id="breakoutScore">0</span></div>
+                    <div>Lives: <span id="breakoutLives">3</span></div>
+                    <div>High Score: <span id="breakoutHighScore">0</span></div>
+                </div>
+            </div>
+            <canvas id="breakoutCanvas" width="800" height="600"></canvas>
+            <div class="game-controls">
+                <p>Use ← → arrow keys or A D to move paddle</p>
+                <button class="game-button" onclick="breakoutGame.restart()">Restart</button>
+                <button class="game-button" onclick="breakoutGame.pause()">Pause</button>
+            </div>
+        </div>
+
+        <!-- 2048 Game -->
+        <div id="game2048Game" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>🔢 2048</h2>
+                <div class="game-stats">
+                    <div>Score: <span id="game2048Score">0</span></div>
+                    <div>Best: <span id="game2048Best">0</span></div>
+                </div>
+            </div>
+            <div class="game2048-container">
+                <div id="game2048Board" class="game2048-board"></div>
+            </div>
+            <div class="game-controls">
+                <p>Use arrow keys to move tiles. Combine tiles with the same number!</p>
+                <button class="game-button" onclick="game2048.restart()">New Game</button>
+            </div>
+        </div>
+
+        <!-- Flappy Bird Game -->
+        <div id="flappyGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>🐦 Flappy Bird</h2>
+                <div class="game-stats">
+                    <div>Score: <span id="flappyScore">0</span></div>
+                    <div>Best: <span id="flappyBest">0</span></div>
+                </div>
+            </div>
+            <canvas id="flappyCanvas" width="400" height="600"></canvas>
+            <div class="game-controls">
+                <p>Press SPACE or click to flap. Avoid the pipes!</p>
+                <button class="game-button" onclick="flappyGame.restart()">Restart</button>
+            </div>
+        </div>
+
+        <!-- Tic-Tac-Toe Game -->
+        <div id="tictactoeGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>⭕ Tic-Tac-Toe</h2>
+                <div class="game-stats">
+                    <div id="tictactoeStatus">Your turn!</div>
+                </div>
+            </div>
+            <div class="tictactoe-container">
+                <div id="tictactoeBoard" class="tictactoe-board"></div>
+            </div>
+            <div class="game-controls">
+                <p>Click a cell to place your mark. Try to get three in a row!</p>
+                <button class="game-button" onclick="tictactoeGame.restart()">New Game</button>
+            </div>
+        </div>
+
+        <!-- Simon Says Game -->
+        <div id="simonGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>🎵 Simon Says</h2>
+                <div class="game-stats">
+                    <div>Level: <span id="simonLevel">1</span></div>
+                    <div>Best: <span id="simonBest">0</span></div>
+                </div>
+            </div>
+            <div class="simon-container">
+                <div id="simonBoard" class="simon-board">
+                    <div class="simon-button" data-color="red" id="simonRed"></div>
+                    <div class="simon-button" data-color="green" id="simonGreen"></div>
+                    <div class="simon-button" data-color="blue" id="simonBlue"></div>
+                    <div class="simon-button" data-color="yellow" id="simonYellow"></div>
+                    <div class="simon-center">
+                        <div id="simonStart" class="simon-start-btn">START</div>
+                    </div>
+                </div>
+            </div>
+            <div class="game-controls">
+                <p id="simonInstructions">Click START to begin. Watch the sequence and repeat it!</p>
+                <button class="game-button" onclick="simonGame.restart()">Restart</button>
             </div>
         </div>
     </div>

@@ -4,6 +4,8 @@ function showMenu() {
     if (snakeGame) snakeGame.stop();
     if (tetrisGame) tetrisGame.stop();
     if (pongGame) pongGame.stop();
+    if (breakoutGame) breakoutGame.stop();
+    if (flappyGame) flappyGame.stop();
     
     document.getElementById('gameMenu').style.display = 'flex';
     document.getElementById('snakeGame').style.display = 'none';
@@ -11,6 +13,11 @@ function showMenu() {
     document.getElementById('pongGame').style.display = 'none';
     document.getElementById('memoryGame').style.display = 'none';
     document.getElementById('reactionGame').style.display = 'none';
+    document.getElementById('breakoutGame').style.display = 'none';
+    document.getElementById('game2048Game').style.display = 'none';
+    document.getElementById('flappyGame').style.display = 'none';
+    document.getElementById('tictactoeGame').style.display = 'none';
+    document.getElementById('simonGame').style.display = 'none';
 }
 
 function showGame(gameName) {
@@ -20,6 +27,11 @@ function showGame(gameName) {
     document.getElementById('pongGame').style.display = 'none';
     document.getElementById('memoryGame').style.display = 'none';
     document.getElementById('reactionGame').style.display = 'none';
+    document.getElementById('breakoutGame').style.display = 'none';
+    document.getElementById('game2048Game').style.display = 'none';
+    document.getElementById('flappyGame').style.display = 'none';
+    document.getElementById('tictactoeGame').style.display = 'none';
+    document.getElementById('simonGame').style.display = 'none';
     
     document.getElementById(gameName + 'Game').style.display = 'block';
     
@@ -29,6 +41,11 @@ function showGame(gameName) {
     if (gameName === 'pong' && pongGame) pongGame.init();
     if (gameName === 'memory' && memoryGame) memoryGame.init();
     if (gameName === 'reaction' && reactionGame) reactionGame.init();
+    if (gameName === 'breakout' && breakoutGame) breakoutGame.init();
+    if (gameName === 'game2048' && game2048) game2048.init();
+    if (gameName === 'flappy' && flappyGame) flappyGame.init();
+    if (gameName === 'tictactoe' && tictactoeGame) tictactoeGame.init();
+    if (gameName === 'simon' && simonGame) simonGame.init();
 }
 
 // Game card click handlers
@@ -53,6 +70,8 @@ const snakeGame = {
     highScore: 0,
     gameLoop: null,
     paused: false,
+    particles: [],
+    foodPulse: 0,
     
     init() {
         this.canvas = document.getElementById('snakeCanvas');
@@ -123,6 +142,8 @@ const snakeGame = {
         this.dy = 0;
         this.score = 0;
         this.paused = false;
+        this.particles = [];
+        this.foodPulse = 0;
         this.generateFood();
         document.getElementById('snakeScore').textContent = this.score;
         
@@ -180,41 +201,158 @@ const snakeGame = {
         if (head.x === this.food.x && head.y === this.food.y) {
             this.score += 10;
             document.getElementById('snakeScore').textContent = this.score;
+            // Create particles
+            for (let i = 0; i < 8; i++) {
+                this.particles.push({
+                    x: this.food.x * this.gridSize + this.gridSize / 2,
+                    y: this.food.y * this.gridSize + this.gridSize / 2,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: (Math.random() - 0.5) * 4,
+                    life: 20,
+                    color: `hsl(${Math.random() * 60 + 0}, 100%, 50%)`
+                });
+            }
             this.generateFood();
         } else {
             this.snake.pop();
         }
         
+        // Update particles
+        this.particles = this.particles.filter(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life--;
+            return p.life > 0;
+        });
+        
+        // Update food pulse
+        this.foodPulse += 0.1;
+        
         this.draw();
     },
     
     draw() {
-        // Clear canvas
-        this.ctx.fillStyle = '#000';
+        // Clear canvas with gradient background
+        const gradient = this.ctx.createLinearGradient(0, 0, this.canvas.width, this.canvas.height);
+        gradient.addColorStop(0, '#0a0a0a');
+        gradient.addColorStop(1, '#1a1a2e');
+        this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Draw snake
-        this.ctx.fillStyle = '#4caf50';
-        for (let segment of this.snake) {
-            this.ctx.fillRect(segment.x * this.gridSize, segment.y * this.gridSize, this.gridSize - 2, this.gridSize - 2);
+        // Draw grid
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        this.ctx.lineWidth = 1;
+        for (let i = 0; i <= this.tileCount; i++) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(i * this.gridSize, 0);
+            this.ctx.lineTo(i * this.gridSize, this.canvas.height);
+            this.ctx.stroke();
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, i * this.gridSize);
+            this.ctx.lineTo(this.canvas.width, i * this.gridSize);
+            this.ctx.stroke();
         }
         
-        // Draw head
-        this.ctx.fillStyle = '#66bb6a';
-        this.ctx.fillRect(this.snake[0].x * this.gridSize, this.snake[0].y * this.gridSize, this.gridSize - 2, this.gridSize - 2);
+        // Draw snake body with gradient
+        for (let i = 0; i < this.snake.length; i++) {
+            const segment = this.snake[i];
+            const alpha = 0.5 + (i / this.snake.length) * 0.5;
+            const size = this.gridSize - 2;
+            const x = segment.x * this.gridSize + 1;
+            const y = segment.y * this.gridSize + 1;
+            
+            // Gradient for each segment
+            const segGradient = this.ctx.createRadialGradient(
+                x + size/2, y + size/2, 0,
+                x + size/2, y + size/2, size/2
+            );
+            segGradient.addColorStop(0, `rgba(76, 175, 80, ${alpha})`);
+            segGradient.addColorStop(1, `rgba(46, 125, 50, ${alpha})`);
+            
+            this.ctx.fillStyle = segGradient;
+            this.ctx.fillRect(x, y, size, size);
+            
+            // Shadow
+            this.ctx.shadowColor = 'rgba(76, 175, 80, 0.5)';
+            this.ctx.shadowBlur = 5;
+            this.ctx.fillRect(x, y, size, size);
+            this.ctx.shadowBlur = 0;
+        }
         
-        // Draw food
-        this.ctx.fillStyle = '#ff4444';
-        this.ctx.fillRect(this.food.x * this.gridSize, this.food.y * this.gridSize, this.gridSize - 2, this.gridSize - 2);
+        // Draw head with special styling
+        const head = this.snake[0];
+        const headX = head.x * this.gridSize + 1;
+        const headY = head.y * this.gridSize + 1;
+        const headSize = this.gridSize - 2;
+        
+        const headGradient = this.ctx.createRadialGradient(
+            headX + headSize/2, headY + headSize/2, 0,
+            headX + headSize/2, headY + headSize/2, headSize/2
+        );
+        headGradient.addColorStop(0, '#66bb6a');
+        headGradient.addColorStop(1, '#4caf50');
+        
+        this.ctx.fillStyle = headGradient;
+        this.ctx.shadowColor = 'rgba(102, 187, 106, 0.8)';
+        this.ctx.shadowBlur = 10;
+        this.ctx.fillRect(headX, headY, headSize, headSize);
+        this.ctx.shadowBlur = 0;
+        
+        // Draw eyes on head
+        const eyeSize = 3;
+        const eyeOffset = 5;
+        this.ctx.fillStyle = '#fff';
+        if (this.dx === 1) { // Right
+            this.ctx.fillRect(headX + headSize - eyeOffset, headY + eyeOffset, eyeSize, eyeSize);
+            this.ctx.fillRect(headX + headSize - eyeOffset, headY + headSize - eyeOffset - eyeSize, eyeSize, eyeSize);
+        } else if (this.dx === -1) { // Left
+            this.ctx.fillRect(headX + eyeOffset, headY + eyeOffset, eyeSize, eyeSize);
+            this.ctx.fillRect(headX + eyeOffset, headY + headSize - eyeOffset - eyeSize, eyeSize, eyeSize);
+        } else if (this.dy === -1) { // Up
+            this.ctx.fillRect(headX + eyeOffset, headY + eyeOffset, eyeSize, eyeSize);
+            this.ctx.fillRect(headX + headSize - eyeOffset - eyeSize, headY + eyeOffset, eyeSize, eyeSize);
+        } else if (this.dy === 1) { // Down
+            this.ctx.fillRect(headX + eyeOffset, headY + headSize - eyeOffset - eyeSize, eyeSize, eyeSize);
+            this.ctx.fillRect(headX + headSize - eyeOffset - eyeSize, headY + headSize - eyeOffset - eyeSize, eyeSize, eyeSize);
+        }
+        
+        // Draw food with pulsing animation
+        const foodSize = (this.gridSize - 2) * (1 + Math.sin(this.foodPulse) * 0.2);
+        const foodX = this.food.x * this.gridSize + (this.gridSize - foodSize) / 2;
+        const foodY = this.food.y * this.gridSize + (this.gridSize - foodSize) / 2;
+        
+        const foodGradient = this.ctx.createRadialGradient(
+            foodX + foodSize/2, foodY + foodSize/2, 0,
+            foodX + foodSize/2, foodY + foodSize/2, foodSize/2
+        );
+        foodGradient.addColorStop(0, '#ff6b6b');
+        foodGradient.addColorStop(1, '#ee5a6f');
+        
+        this.ctx.fillStyle = foodGradient;
+        this.ctx.shadowColor = 'rgba(255, 107, 107, 0.8)';
+        this.ctx.shadowBlur = 15;
+        this.ctx.fillRect(foodX, foodY, foodSize, foodSize);
+        this.ctx.shadowBlur = 0;
+        
+        // Draw particles
+        for (let particle of this.particles) {
+            this.ctx.fillStyle = particle.color;
+            this.ctx.globalAlpha = particle.life / 20;
+            this.ctx.fillRect(particle.x - 2, particle.y - 2, 4, 4);
+        }
+        this.ctx.globalAlpha = 1;
         
         // Draw pause overlay
         if (this.paused) {
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             this.ctx.fillStyle = '#fff';
-            this.ctx.font = '30px Courier New';
+            this.ctx.font = 'bold 36px Courier New';
             this.ctx.textAlign = 'center';
+            this.ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+            this.ctx.shadowBlur = 10;
             this.ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2);
+            this.ctx.shadowBlur = 0;
         }
     },
     
@@ -263,6 +401,14 @@ const tetrisGame = {
     ],
     
     colors: ['#000', '#00f0f0', '#f0f000', '#a000f0', '#00f000', '#f00000', '#0000f0', '#f0a000'],
+    
+    darkenColor(color, amount) {
+        const hex = color.replace('#', '');
+        const r = Math.max(0, parseInt(hex.substr(0, 2), 16) - amount * 255);
+        const g = Math.max(0, parseInt(hex.substr(2, 2), 16) - amount * 255);
+        const b = Math.max(0, parseInt(hex.substr(4, 2), 16) - amount * 255);
+        return `rgb(${r}, ${g}, ${b})`;
+    },
     
     init() {
         this.canvas = document.getElementById('tetrisCanvas');
@@ -497,30 +643,85 @@ const tetrisGame = {
     draw() {
         const blockSize = this.canvas.width / this.boardWidth;
         
-        // Clear canvas
-        this.ctx.fillStyle = '#000';
+        // Clear canvas with gradient
+        const bgGradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+        bgGradient.addColorStop(0, '#0a0a1a');
+        bgGradient.addColorStop(1, '#1a1a2e');
+        this.ctx.fillStyle = bgGradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Draw board
+        // Draw grid
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        this.ctx.lineWidth = 1;
+        for (let i = 0; i <= this.boardWidth; i++) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(i * blockSize, 0);
+            this.ctx.lineTo(i * blockSize, this.canvas.height);
+            this.ctx.stroke();
+        }
+        for (let i = 0; i <= this.boardHeight; i++) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, i * blockSize);
+            this.ctx.lineTo(this.canvas.width, i * blockSize);
+            this.ctx.stroke();
+        }
+        
+        // Draw board with 3D effect
         for (let y = 0; y < this.boardHeight; y++) {
             for (let x = 0; x < this.boardWidth; x++) {
                 if (this.board[y][x]) {
-                    this.ctx.fillStyle = this.colors[this.board[y][x]];
-                    this.ctx.fillRect(x * blockSize, y * blockSize, blockSize - 1, blockSize - 1);
+                    const drawX = x * blockSize;
+                    const drawY = y * blockSize;
+                    const size = blockSize - 1;
+                    
+                    // Block gradient
+                    const gradient = this.ctx.createLinearGradient(drawX, drawY, drawX + size, drawY + size);
+                    const color = this.colors[this.board[y][x]];
+                    gradient.addColorStop(0, color);
+                    gradient.addColorStop(1, this.darkenColor(color, 0.3));
+                    
+                    this.ctx.fillStyle = gradient;
+                    this.ctx.shadowColor = color;
+                    this.ctx.shadowBlur = 5;
+                    this.ctx.fillRect(drawX, drawY, size, size);
+                    
+                    // Highlight
+                    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                    this.ctx.fillRect(drawX, drawY, size, 3);
+                    this.ctx.shadowBlur = 0;
                 }
             }
         }
         
-        // Draw current piece
+        // Draw current piece with shadow
         if (this.currentPiece) {
-            this.ctx.fillStyle = this.colors[this.currentPiece.color];
+            const color = this.colors[this.currentPiece.color];
             for (let y = 0; y < this.currentPiece.matrix.length; y++) {
                 for (let x = 0; x < this.currentPiece.matrix[y].length; x++) {
                     if (this.currentPiece.matrix[y][x]) {
                         const drawX = (this.currentPiece.x + x) * blockSize;
                         const drawY = (this.currentPiece.y + y) * blockSize;
                         if (drawY >= 0) {
-                            this.ctx.fillRect(drawX, drawY, blockSize - 1, blockSize - 1);
+                            const size = blockSize - 1;
+                            
+                            // Shadow
+                            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                            this.ctx.fillRect(drawX + 2, drawY + 2, size, size);
+                            
+                            // Block gradient
+                            const gradient = this.ctx.createLinearGradient(drawX, drawY, drawX + size, drawY + size);
+                            gradient.addColorStop(0, color);
+                            gradient.addColorStop(1, this.darkenColor(color, 0.3));
+                            
+                            this.ctx.fillStyle = gradient;
+                            this.ctx.shadowColor = color;
+                            this.ctx.shadowBlur = 8;
+                            this.ctx.fillRect(drawX, drawY, size, size);
+                            
+                            // Highlight
+                            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                            this.ctx.fillRect(drawX, drawY, size, 3);
+                            this.ctx.shadowBlur = 0;
                         }
                     }
                 }
@@ -767,38 +968,71 @@ const pongGame = {
     },
     
     draw() {
-        // Clear canvas
-        this.ctx.fillStyle = '#000';
+        // Gradient background
+        const bgGradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+        bgGradient.addColorStop(0, '#0a0a1a');
+        bgGradient.addColorStop(1, '#1a1a2e');
+        this.ctx.fillStyle = bgGradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Draw center line
+        // Draw center line with glow
         this.ctx.strokeStyle = '#fff';
         this.ctx.lineWidth = 2;
-        this.ctx.setLineDash([10, 10]);
+        this.ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+        this.ctx.shadowBlur = 5;
+        this.ctx.setLineDash([15, 15]);
         this.ctx.beginPath();
         this.ctx.moveTo(this.canvas.width / 2, 0);
         this.ctx.lineTo(this.canvas.width / 2, this.canvas.height);
         this.ctx.stroke();
         this.ctx.setLineDash([]);
+        this.ctx.shadowBlur = 0;
         
-        // Draw paddles
-        this.ctx.fillStyle = '#fff';
+        // Draw paddles with gradient
+        const playerGradient = this.ctx.createLinearGradient(this.player.x, this.player.y, this.player.x, this.player.y + this.player.height);
+        playerGradient.addColorStop(0, '#4a9eff');
+        playerGradient.addColorStop(1, '#2563eb');
+        this.ctx.fillStyle = playerGradient;
+        this.ctx.shadowColor = 'rgba(74, 158, 255, 0.6)';
+        this.ctx.shadowBlur = 10;
         this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
-        this.ctx.fillRect(this.ai.x, this.ai.y, this.ai.width, this.ai.height);
+        this.ctx.shadowBlur = 0;
         
-        // Draw ball
+        const aiGradient = this.ctx.createLinearGradient(this.ai.x, this.ai.y, this.ai.x, this.ai.y + this.ai.height);
+        aiGradient.addColorStop(0, '#ff6b6b');
+        aiGradient.addColorStop(1, '#ee5a6f');
+        this.ctx.fillStyle = aiGradient;
+        this.ctx.shadowColor = 'rgba(255, 107, 107, 0.6)';
+        this.ctx.shadowBlur = 10;
+        this.ctx.fillRect(this.ai.x, this.ai.y, this.ai.width, this.ai.height);
+        this.ctx.shadowBlur = 0;
+        
+        // Draw ball with gradient and trail
+        const ballGradient = this.ctx.createRadialGradient(
+            this.ball.x - 3, this.ball.y - 3, 0,
+            this.ball.x, this.ball.y, this.ball.radius
+        );
+        ballGradient.addColorStop(0, '#fff');
+        ballGradient.addColorStop(1, '#aaa');
+        this.ctx.fillStyle = ballGradient;
+        this.ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+        this.ctx.shadowBlur = 15;
         this.ctx.beginPath();
         this.ctx.arc(this.ball.x, this.ball.y, this.ball.radius, 0, Math.PI * 2);
         this.ctx.fill();
+        this.ctx.shadowBlur = 0;
         
         // Draw pause overlay
         if (this.paused) {
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             this.ctx.fillStyle = '#fff';
-            this.ctx.font = '30px Courier New';
+            this.ctx.font = 'bold 36px Courier New';
             this.ctx.textAlign = 'center';
+            this.ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+            this.ctx.shadowBlur = 10;
             this.ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2);
+            this.ctx.shadowBlur = 0;
         }
     }
 };
@@ -987,11 +1221,1054 @@ const reactionGame = {
     }
 };
 
+// ==================== BREAKOUT GAME ====================
+const breakoutGame = {
+    canvas: null,
+    ctx: null,
+    paddle: {x: 350, y: 550, width: 100, height: 15, speed: 8},
+    ball: {x: 400, y: 300, radius: 10, vx: 5, vy: -5},
+    bricks: [],
+    score: 0,
+    lives: 3,
+    highScore: 0,
+    gameLoop: null,
+    paused: false,
+    brickRows: 5,
+    brickCols: 10,
+    particles: [],
+    trail: [],
+    
+    init() {
+        this.canvas = document.getElementById('breakoutCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.highScore = parseInt(localStorage.getItem('breakoutHighScore') || '0');
+        document.getElementById('breakoutHighScore').textContent = this.highScore;
+        this.restart();
+        this.setupControls();
+    },
+    
+    setupControls() {
+        if (this.keyHandler) {
+            document.removeEventListener('keydown', this.keyHandler);
+        }
+        
+        const keys = {};
+        this.keyHandler = (e) => {
+            const gameScreen = document.getElementById('breakoutGame');
+            if (!gameScreen || gameScreen.style.display === 'none') return;
+            
+            if (e.key === 'p' || e.key === 'P') {
+                this.pause();
+                return;
+            }
+            
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                keys.left = true;
+            } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                keys.right = true;
+            }
+        };
+        
+        this.keyUpHandler = (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                keys.left = false;
+            } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                keys.right = false;
+            }
+        };
+        
+        document.addEventListener('keydown', this.keyHandler);
+        document.addEventListener('keyup', this.keyUpHandler);
+        
+        const updatePaddle = () => {
+            const gameScreen = document.getElementById('breakoutGame');
+            if (!gameScreen || gameScreen.style.display === 'none') return;
+            
+            if (!this.paused) {
+                if (keys.left && this.paddle.x > 0) {
+                    this.paddle.x -= this.paddle.speed;
+                }
+                if (keys.right && this.paddle.x < this.canvas.width - this.paddle.width) {
+                    this.paddle.x += this.paddle.speed;
+                }
+            }
+            requestAnimationFrame(updatePaddle);
+        };
+        updatePaddle();
+    },
+    
+    restart() {
+        this.score = 0;
+        this.lives = 3;
+        this.paused = false;
+        this.particles = [];
+        this.trail = [];
+        this.ball.x = this.canvas.width / 2;
+        this.ball.y = this.canvas.height / 2;
+        this.ball.vx = (Math.random() > 0.5 ? 1 : -1) * 5;
+        this.ball.vy = -5;
+        this.paddle.x = (this.canvas.width - this.paddle.width) / 2;
+        
+        this.createBricks();
+        document.getElementById('breakoutScore').textContent = this.score;
+        document.getElementById('breakoutLives').textContent = this.lives;
+        
+        if (this.gameLoop) cancelAnimationFrame(this.gameLoop);
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    },
+    
+    createBricks() {
+        this.bricks = [];
+        const brickWidth = 75;
+        const brickHeight = 20;
+        const padding = 5;
+        const offsetTop = 50;
+        const offsetLeft = (this.canvas.width - (this.brickCols * (brickWidth + padding) - padding)) / 2;
+        
+        for (let row = 0; row < this.brickRows; row++) {
+            for (let col = 0; col < this.brickCols; col++) {
+                this.bricks.push({
+                    x: offsetLeft + col * (brickWidth + padding),
+                    y: offsetTop + row * (brickHeight + padding),
+                    width: brickWidth,
+                    height: brickHeight,
+                    visible: true
+                });
+            }
+        }
+    },
+    
+    pause() {
+        this.paused = !this.paused;
+        if (!this.paused) {
+            this.gameLoop = requestAnimationFrame(() => this.update());
+        }
+    },
+    
+    stop() {
+        if (this.gameLoop) {
+            cancelAnimationFrame(this.gameLoop);
+            this.gameLoop = null;
+        }
+        if (this.keyHandler) {
+            document.removeEventListener('keydown', this.keyHandler);
+            document.removeEventListener('keyup', this.keyUpHandler);
+            this.keyHandler = null;
+            this.keyUpHandler = null;
+        }
+        this.paused = true;
+    },
+    
+    update() {
+        const gameScreen = document.getElementById('breakoutGame');
+        if (!gameScreen || gameScreen.style.display === 'none') return;
+        
+        if (!this.paused) {
+            this.ball.x += this.ball.vx;
+            this.ball.y += this.ball.vy;
+            
+            // Wall collision
+            if (this.ball.x <= this.ball.radius || this.ball.x >= this.canvas.width - this.ball.radius) {
+                this.ball.vx = -this.ball.vx;
+            }
+            if (this.ball.y <= this.ball.radius) {
+                this.ball.vy = -this.ball.vy;
+            }
+            
+            // Paddle collision
+            if (this.ball.y + this.ball.radius >= this.paddle.y &&
+                this.ball.x >= this.paddle.x &&
+                this.ball.x <= this.paddle.x + this.paddle.width) {
+                this.ball.vy = -Math.abs(this.ball.vy);
+                this.ball.vx = ((this.ball.x - (this.paddle.x + this.paddle.width / 2)) / (this.paddle.width / 2)) * 5;
+            }
+            
+            // Brick collision
+            for (let brick of this.bricks) {
+                if (brick.visible &&
+                    this.ball.x + this.ball.radius >= brick.x &&
+                    this.ball.x - this.ball.radius <= brick.x + brick.width &&
+                    this.ball.y + this.ball.radius >= brick.y &&
+                    this.ball.y - this.ball.radius <= brick.y + brick.height) {
+                    brick.visible = false;
+                    this.ball.vy = -this.ball.vy;
+                    this.score += 10;
+                    document.getElementById('breakoutScore').textContent = this.score;
+                    
+                    // Create particles
+                    const brickCenterX = brick.x + brick.width / 2;
+                    const brickCenterY = brick.y + brick.height / 2;
+                    for (let i = 0; i < 12; i++) {
+                        this.particles.push({
+                            x: brickCenterX,
+                            y: brickCenterY,
+                            vx: (Math.random() - 0.5) * 6,
+                            vy: (Math.random() - 0.5) * 6,
+                            life: 30,
+                            size: Math.random() * 4 + 2,
+                            color: `hsl(${(brick.y / this.canvas.height) * 360}, 70%, 50%)`
+                        });
+                    }
+                    
+                    if (this.bricks.every(b => !b.visible)) {
+                        this.createBricks();
+                        this.ball.x = this.canvas.width / 2;
+                        this.ball.y = this.canvas.height / 2;
+                    }
+                }
+            }
+            
+            // Update trail
+            this.trail.push({x: this.ball.x, y: this.ball.y});
+            if (this.trail.length > 8) this.trail.shift();
+            
+            // Update particles
+            this.particles = this.particles.filter(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.2; // gravity
+                p.life--;
+                return p.life > 0;
+            });
+            
+            // Ball out of bounds
+            if (this.ball.y > this.canvas.height) {
+                this.lives--;
+                document.getElementById('breakoutLives').textContent = this.lives;
+                if (this.lives <= 0) {
+                    this.gameOver();
+                    return;
+                }
+                this.ball.x = this.canvas.width / 2;
+                this.ball.y = this.canvas.height / 2;
+                this.ball.vx = (Math.random() > 0.5 ? 1 : -1) * 5;
+                this.ball.vy = -5;
+            }
+        }
+        
+        this.draw();
+        if (!this.paused) {
+            this.gameLoop = requestAnimationFrame(() => this.update());
+        }
+    },
+    
+    draw() {
+        // Gradient background
+        const bgGradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+        bgGradient.addColorStop(0, '#0a0a1a');
+        bgGradient.addColorStop(1, '#1a1a2e');
+        this.ctx.fillStyle = bgGradient;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Draw bricks with 3D effect
+        this.bricks.forEach(brick => {
+            if (brick.visible) {
+                const hue = (brick.y / this.canvas.height) * 360;
+                const gradient = this.ctx.createLinearGradient(brick.x, brick.y, brick.x, brick.y + brick.height);
+                gradient.addColorStop(0, `hsl(${hue}, 70%, 60%)`);
+                gradient.addColorStop(1, `hsl(${hue}, 70%, 40%)`);
+                
+                this.ctx.fillStyle = gradient;
+                this.ctx.shadowColor = `hsla(${hue}, 70%, 50%, 0.5)`;
+                this.ctx.shadowBlur = 5;
+                this.ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
+                
+                // Highlight
+                this.ctx.fillStyle = `hsla(${hue}, 70%, 80%, 0.3)`;
+                this.ctx.fillRect(brick.x, brick.y, brick.width, 3);
+                this.ctx.shadowBlur = 0;
+            }
+        });
+        
+        // Draw paddle with gradient
+        const paddleGradient = this.ctx.createLinearGradient(this.paddle.x, this.paddle.y, this.paddle.x, this.paddle.y + this.paddle.height);
+        paddleGradient.addColorStop(0, '#fff');
+        paddleGradient.addColorStop(1, '#ccc');
+        this.ctx.fillStyle = paddleGradient;
+        this.ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+        this.ctx.shadowBlur = 10;
+        this.ctx.fillRect(this.paddle.x, this.paddle.y, this.paddle.width, this.paddle.height);
+        this.ctx.shadowBlur = 0;
+        
+        // Draw ball trail
+        for (let i = 0; i < this.trail.length; i++) {
+            const point = this.trail[i];
+            const alpha = i / this.trail.length * 0.5;
+            this.ctx.globalAlpha = alpha;
+            this.ctx.fillStyle = '#fff';
+            this.ctx.beginPath();
+            this.ctx.arc(point.x, point.y, this.ball.radius * alpha, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+        this.ctx.globalAlpha = 1;
+        
+        // Draw ball with gradient
+        const ballGradient = this.ctx.createRadialGradient(
+            this.ball.x - 3, this.ball.y - 3, 0,
+            this.ball.x, this.ball.y, this.ball.radius
+        );
+        ballGradient.addColorStop(0, '#fff');
+        ballGradient.addColorStop(1, '#aaa');
+        this.ctx.fillStyle = ballGradient;
+        this.ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+        this.ctx.shadowBlur = 15;
+        this.ctx.beginPath();
+        this.ctx.arc(this.ball.x, this.ball.y, this.ball.radius, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.shadowBlur = 0;
+        
+        // Draw particles
+        for (let particle of this.particles) {
+            this.ctx.globalAlpha = particle.life / 30;
+            this.ctx.fillStyle = particle.color;
+            this.ctx.beginPath();
+            this.ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+        this.ctx.globalAlpha = 1;
+        
+        if (this.paused) {
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = 'bold 36px Courier New';
+            this.ctx.textAlign = 'center';
+            this.ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+            this.ctx.shadowBlur = 10;
+            this.ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2);
+            this.ctx.shadowBlur = 0;
+        }
+    },
+    
+    gameOver() {
+        cancelAnimationFrame(this.gameLoop);
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('breakoutHighScore', this.highScore);
+            document.getElementById('breakoutHighScore').textContent = this.highScore;
+        }
+        alert(`Game Over! Score: ${this.score}`);
+        this.restart();
+    }
+};
+
+// ==================== 2048 GAME ====================
+const game2048 = {
+    board: [],
+    score: 0,
+    best: 0,
+    size: 4,
+    
+    init() {
+        this.best = parseInt(localStorage.getItem('game2048Best') || '0');
+        document.getElementById('game2048Best').textContent = this.best;
+        this.restart();
+        this.setupControls();
+    },
+    
+    setupControls() {
+        if (this.keyHandler) {
+            document.removeEventListener('keydown', this.keyHandler);
+        }
+        
+        this.keyHandler = (e) => {
+            const gameScreen = document.getElementById('game2048Game');
+            if (!gameScreen || gameScreen.style.display === 'none') return;
+            
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+                this.move(e.key.replace('Arrow', '').toLowerCase());
+            }
+        };
+        
+        document.addEventListener('keydown', this.keyHandler);
+    },
+    
+    restart() {
+        this.board = Array(this.size).fill().map(() => Array(this.size).fill(0));
+        this.score = 0;
+        this.addRandomTile();
+        this.addRandomTile();
+        this.updateDisplay();
+    },
+    
+    addRandomTile() {
+        const empty = [];
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
+                if (this.board[i][j] === 0) {
+                    empty.push({row: i, col: j});
+                }
+            }
+        }
+        if (empty.length > 0) {
+            const {row, col} = empty[Math.floor(Math.random() * empty.length)];
+            this.board[row][col] = Math.random() < 0.9 ? 2 : 4;
+        }
+    },
+    
+    move(direction) {
+        const prevBoard = this.board.map(row => [...row]);
+        
+        if (direction === 'up') {
+            for (let col = 0; col < this.size; col++) {
+                let column = [];
+                for (let row = 0; row < this.size; row++) {
+                    if (this.board[row][col] !== 0) column.push(this.board[row][col]);
+                }
+                column = this.merge(column);
+                while (column.length < this.size) column.push(0);
+                for (let row = 0; row < this.size; row++) {
+                    this.board[row][col] = column[row];
+                }
+            }
+        } else if (direction === 'down') {
+            for (let col = 0; col < this.size; col++) {
+                let column = [];
+                for (let row = this.size - 1; row >= 0; row--) {
+                    if (this.board[row][col] !== 0) column.push(this.board[row][col]);
+                }
+                column = this.merge(column);
+                while (column.length < this.size) column.push(0);
+                for (let row = this.size - 1; row >= 0; row--) {
+                    this.board[row][col] = column[this.size - 1 - row];
+                }
+            }
+        } else if (direction === 'left') {
+            for (let row = 0; row < this.size; row++) {
+                let line = this.board[row].filter(val => val !== 0);
+                line = this.merge(line);
+                while (line.length < this.size) line.push(0);
+                this.board[row] = line;
+            }
+        } else if (direction === 'right') {
+            for (let row = 0; row < this.size; row++) {
+                let line = this.board[row].filter(val => val !== 0).reverse();
+                line = this.merge(line);
+                while (line.length < this.size) line.push(0);
+                this.board[row] = line.reverse();
+            }
+        }
+        
+        if (JSON.stringify(prevBoard) !== JSON.stringify(this.board)) {
+            this.addRandomTile();
+            this.updateDisplay();
+            
+            if (this.isGameOver()) {
+                setTimeout(() => {
+                    alert(`Game Over! Final Score: ${this.score}`);
+                    this.restart();
+                }, 100);
+            }
+        }
+    },
+    
+    merge(line) {
+        for (let i = 0; i < line.length - 1; i++) {
+            if (line[i] === line[i + 1]) {
+                line[i] *= 2;
+                this.score += line[i];
+                line[i + 1] = 0;
+            }
+        }
+        return line.filter(val => val !== 0);
+    },
+    
+    isGameOver() {
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
+                if (this.board[i][j] === 0) return false;
+                if (j < this.size - 1 && this.board[i][j] === this.board[i][j + 1]) return false;
+                if (i < this.size - 1 && this.board[i][j] === this.board[i + 1][j]) return false;
+            }
+        }
+        return true;
+    },
+    
+    updateDisplay() {
+        const board = document.getElementById('game2048Board');
+        board.innerHTML = '';
+        
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
+                const cell = document.createElement('div');
+                cell.className = 'game2048-cell';
+                const value = this.board[i][j];
+                if (value !== 0) {
+                    cell.textContent = value;
+                    cell.dataset.value = value;
+                    cell.classList.add('has-value');
+                }
+                board.appendChild(cell);
+            }
+        }
+        
+        document.getElementById('game2048Score').textContent = this.score;
+        if (this.score > this.best) {
+            this.best = this.score;
+            localStorage.setItem('game2048Best', this.best);
+            document.getElementById('game2048Best').textContent = this.best;
+        }
+    }
+};
+
+// ==================== FLAPPY BIRD GAME ====================
+const flappyGame = {
+    canvas: null,
+    ctx: null,
+    bird: {x: 50, y: 250, radius: 15, vy: 0, gravity: 0.5, rotation: 0},
+    pipes: [],
+    score: 0,
+    best: 0,
+    gameLoop: null,
+    gameOver: false,
+    frameCount: 0,
+    clouds: [],
+    particles: [],
+    
+    init() {
+        this.canvas = document.getElementById('flappyCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.best = parseInt(localStorage.getItem('flappyBest') || '0');
+        document.getElementById('flappyBest').textContent = this.best;
+        this.restart();
+        this.setupControls();
+    },
+    
+    setupControls() {
+        if (this.keyHandler) {
+            document.removeEventListener('keydown', this.keyHandler);
+            this.canvas.removeEventListener('click', this.clickHandler);
+        }
+        
+        this.keyHandler = (e) => {
+            const gameScreen = document.getElementById('flappyGame');
+            if (!gameScreen || gameScreen.style.display === 'none') return;
+            
+            if (e.key === ' ') {
+                e.preventDefault();
+                this.flap();
+            }
+        };
+        
+        this.clickHandler = () => {
+            const gameScreen = document.getElementById('flappyGame');
+            if (gameScreen && gameScreen.style.display !== 'none') {
+                this.flap();
+            }
+        };
+        
+        document.addEventListener('keydown', this.keyHandler);
+        this.canvas.addEventListener('click', this.clickHandler);
+    },
+    
+    restart() {
+        this.bird.y = this.canvas.height / 2;
+        this.bird.vy = 0;
+        this.bird.rotation = 0;
+        this.pipes = [];
+        this.score = 0;
+        this.gameOver = false;
+        this.frameCount = 0;
+        this.particles = [];
+        this.clouds = [];
+        // Create initial clouds
+        for (let i = 0; i < 5; i++) {
+            this.clouds.push({
+                x: Math.random() * this.canvas.width,
+                y: Math.random() * 200,
+                size: Math.random() * 30 + 20,
+                speed: Math.random() * 0.5 + 0.2
+            });
+        }
+        document.getElementById('flappyScore').textContent = this.score;
+        
+        if (this.gameLoop) cancelAnimationFrame(this.gameLoop);
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    },
+    
+    stop() {
+        if (this.gameLoop) {
+            cancelAnimationFrame(this.gameLoop);
+            this.gameLoop = null;
+        }
+        if (this.keyHandler) {
+            document.removeEventListener('keydown', this.keyHandler);
+            this.canvas.removeEventListener('click', this.clickHandler);
+            this.keyHandler = null;
+            this.clickHandler = null;
+        }
+    },
+    
+    flap() {
+        if (this.gameOver) {
+            this.restart();
+        } else {
+            this.bird.vy = -8;
+            this.bird.rotation = -0.5;
+            // Create flap particles
+            for (let i = 0; i < 5; i++) {
+                this.particles.push({
+                    x: this.bird.x,
+                    y: this.bird.y,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: Math.random() * 2 + 1,
+                    life: 15,
+                    size: Math.random() * 3 + 2
+                });
+            }
+        }
+    },
+    
+    update() {
+        const gameScreen = document.getElementById('flappyGame');
+        if (!gameScreen || gameScreen.style.display === 'none') return;
+        
+        if (!this.gameOver) {
+            this.frameCount++;
+            
+            // Update bird
+            this.bird.vy += this.bird.gravity;
+            this.bird.y += this.bird.vy;
+            // Rotate bird based on velocity
+            this.bird.rotation = Math.min(Math.max(this.bird.vy * 0.05, -0.5), 0.5);
+            
+            // Update clouds
+            for (let cloud of this.clouds) {
+                cloud.x -= cloud.speed;
+                if (cloud.x < -cloud.size * 2) {
+                    cloud.x = this.canvas.width + cloud.size;
+                    cloud.y = Math.random() * 200;
+                }
+            }
+            
+            // Update particles
+            this.particles = this.particles.filter(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                return p.life > 0;
+            });
+            
+            // Generate pipes
+            if (this.frameCount % 100 === 0) {
+                const gap = 150;
+                const pipeHeight = Math.random() * (this.canvas.height - gap - 100) + 50;
+                this.pipes.push({
+                    x: this.canvas.width,
+                    topHeight: pipeHeight,
+                    bottomY: pipeHeight + gap,
+                    bottomHeight: this.canvas.height - (pipeHeight + gap),
+                    passed: false
+                });
+            }
+            
+            // Update pipes
+            for (let pipe of this.pipes) {
+                pipe.x -= 3;
+                
+                // Check collision
+                if (this.bird.x + this.bird.radius > pipe.x &&
+                    this.bird.x - this.bird.radius < pipe.x + 50) {
+                    if (this.bird.y - this.bird.radius < pipe.topHeight ||
+                        this.bird.y + this.bird.radius > pipe.bottomY) {
+                        this.gameOver = true;
+                    }
+                }
+                
+                // Score
+                if (!pipe.passed && this.bird.x > pipe.x + 50) {
+                    pipe.passed = true;
+                    this.score++;
+                    document.getElementById('flappyScore').textContent = this.score;
+                }
+            }
+            
+            // Remove off-screen pipes
+            this.pipes = this.pipes.filter(pipe => pipe.x > -50);
+            
+            // Check boundaries
+            if (this.bird.y - this.bird.radius < 0 || this.bird.y + this.bird.radius > this.canvas.height) {
+                this.gameOver = true;
+            }
+        }
+        
+        this.draw();
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    },
+    
+    draw() {
+        // Sky gradient
+        const skyGradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+        skyGradient.addColorStop(0, '#87ceeb');
+        skyGradient.addColorStop(0.7, '#98d8f0');
+        skyGradient.addColorStop(1, '#b8e6f5');
+        this.ctx.fillStyle = skyGradient;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Draw clouds
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        for (let cloud of this.clouds) {
+            this.ctx.beginPath();
+            this.ctx.arc(cloud.x, cloud.y, cloud.size, 0, Math.PI * 2);
+            this.ctx.arc(cloud.x + cloud.size * 0.6, cloud.y, cloud.size * 0.8, 0, Math.PI * 2);
+            this.ctx.arc(cloud.x - cloud.size * 0.6, cloud.y, cloud.size * 0.8, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+        
+        // Pipes with gradient and cap
+        for (let pipe of this.pipes) {
+            // Top pipe
+            const topGradient = this.ctx.createLinearGradient(pipe.x, 0, pipe.x + 50, 0);
+            topGradient.addColorStop(0, '#2e7d32');
+            topGradient.addColorStop(1, '#4caf50');
+            this.ctx.fillStyle = topGradient;
+            this.ctx.fillRect(pipe.x, 0, 50, pipe.topHeight);
+            // Top cap
+            this.ctx.fillStyle = '#1b5e20';
+            this.ctx.fillRect(pipe.x - 5, pipe.topHeight - 20, 60, 20);
+            
+            // Bottom pipe
+            const bottomGradient = this.ctx.createLinearGradient(pipe.x, pipe.bottomY, pipe.x + 50, pipe.bottomY);
+            bottomGradient.addColorStop(0, '#2e7d32');
+            bottomGradient.addColorStop(1, '#4caf50');
+            this.ctx.fillStyle = bottomGradient;
+            this.ctx.fillRect(pipe.x, pipe.bottomY, 50, pipe.bottomHeight);
+            // Bottom cap
+            this.ctx.fillStyle = '#1b5e20';
+            this.ctx.fillRect(pipe.x - 5, pipe.bottomY, 60, 20);
+        }
+        
+        // Ground with gradient
+        const groundGradient = this.ctx.createLinearGradient(0, this.canvas.height - 50, 0, this.canvas.height);
+        groundGradient.addColorStop(0, '#8b7355');
+        groundGradient.addColorStop(1, '#6b5b45');
+        this.ctx.fillStyle = groundGradient;
+        this.ctx.fillRect(0, this.canvas.height - 50, this.canvas.width, 50);
+        // Ground pattern
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        for (let i = 0; i < this.canvas.width; i += 20) {
+            this.ctx.fillRect(i, this.canvas.height - 50, 10, 50);
+        }
+        
+        // Draw particles
+        for (let particle of this.particles) {
+            this.ctx.globalAlpha = particle.life / 15;
+            this.ctx.fillStyle = '#fff';
+            this.ctx.beginPath();
+            this.ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+        this.ctx.globalAlpha = 1;
+        
+        // Bird with rotation and gradient
+        this.ctx.save();
+        this.ctx.translate(this.bird.x, this.bird.y);
+        this.ctx.rotate(this.bird.rotation);
+        
+        const birdGradient = this.ctx.createRadialGradient(-5, -5, 0, 0, 0, this.bird.radius);
+        birdGradient.addColorStop(0, '#ffeb3b');
+        birdGradient.addColorStop(1, '#fbc02d');
+        this.ctx.fillStyle = birdGradient;
+        this.ctx.shadowColor = 'rgba(255, 235, 59, 0.5)';
+        this.ctx.shadowBlur = 10;
+        this.ctx.beginPath();
+        this.ctx.arc(0, 0, this.bird.radius, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.shadowBlur = 0;
+        
+        // Bird eye
+        this.ctx.fillStyle = '#000';
+        this.ctx.beginPath();
+        this.ctx.arc(3, -3, 3, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        // Bird beak
+        this.ctx.fillStyle = '#ff9800';
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.bird.radius, 0);
+        this.ctx.lineTo(this.bird.radius + 5, -3);
+        this.ctx.lineTo(this.bird.radius + 5, 3);
+        this.ctx.closePath();
+        this.ctx.fill();
+        
+        this.ctx.restore();
+        
+        // Game over
+        if (this.gameOver) {
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = 'bold 28px Courier New';
+            this.ctx.textAlign = 'center';
+            this.ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+            this.ctx.shadowBlur = 10;
+            this.ctx.fillText('Game Over!', this.canvas.width / 2, this.canvas.height / 2);
+            this.ctx.font = '18px Courier New';
+            this.ctx.fillText('Click or press SPACE to restart', this.canvas.width / 2, this.canvas.height / 2 + 35);
+            this.ctx.shadowBlur = 0;
+            
+            if (this.score > this.best) {
+                this.best = this.score;
+                localStorage.setItem('flappyBest', this.best);
+                document.getElementById('flappyBest').textContent = this.best;
+            }
+        }
+    }
+};
+
+// ==================== TIC-TAC-TOE GAME ====================
+const tictactoeGame = {
+    board: [],
+    currentPlayer: 'X',
+    gameOver: false,
+    
+    init() {
+        this.restart();
+    },
+    
+    restart() {
+        this.board = Array(9).fill('');
+        this.currentPlayer = 'X';
+        this.gameOver = false;
+        document.getElementById('tictactoeStatus').textContent = "X's turn";
+        this.updateDisplay();
+    },
+    
+    makeMove(index) {
+        if (this.gameOver || this.board[index] !== '') return;
+        
+        this.board[index] = this.currentPlayer;
+        this.updateDisplay();
+        
+        if (this.checkWinner()) {
+            document.getElementById('tictactoeStatus').textContent = `${this.currentPlayer} wins!`;
+            this.gameOver = true;
+            return;
+        }
+        
+        if (this.board.every(cell => cell !== '')) {
+            document.getElementById('tictactoeStatus').textContent = "It's a tie!";
+            this.gameOver = true;
+            return;
+        }
+        
+        this.currentPlayer = this.currentPlayer === 'X' ? 'O' : 'X';
+        document.getElementById('tictactoeStatus').textContent = `${this.currentPlayer}'s turn`;
+        
+        // Simple AI for O
+        if (this.currentPlayer === 'O' && !this.gameOver) {
+            setTimeout(() => this.aiMove(), 500);
+        }
+    },
+    
+    aiMove() {
+        // Try to win
+        for (let i = 0; i < 9; i++) {
+            if (this.board[i] === '') {
+                this.board[i] = 'O';
+                if (this.checkWinner()) {
+                    this.updateDisplay();
+                    document.getElementById('tictactoeStatus').textContent = 'O wins!';
+                    this.gameOver = true;
+                    return;
+                }
+                this.board[i] = '';
+            }
+        }
+        
+        // Try to block
+        for (let i = 0; i < 9; i++) {
+            if (this.board[i] === '') {
+                this.board[i] = 'X';
+                if (this.checkWinner()) {
+                    this.board[i] = 'O';
+                    this.currentPlayer = 'X';
+                    this.updateDisplay();
+                    document.getElementById('tictactoeStatus').textContent = "X's turn";
+                    return;
+                }
+                this.board[i] = '';
+            }
+        }
+        
+        // Random move
+        const available = this.board.map((cell, i) => cell === '' ? i : null).filter(i => i !== null);
+        if (available.length > 0) {
+            const move = available[Math.floor(Math.random() * available.length)];
+            this.board[move] = 'O';
+            this.currentPlayer = 'X';
+            this.updateDisplay();
+            document.getElementById('tictactoeStatus').textContent = "X's turn";
+            
+            if (this.checkWinner()) {
+                document.getElementById('tictactoeStatus').textContent = 'O wins!';
+                this.gameOver = true;
+            } else if (this.board.every(cell => cell !== '')) {
+                document.getElementById('tictactoeStatus').textContent = "It's a tie!";
+                this.gameOver = true;
+            }
+        }
+    },
+    
+    checkWinner() {
+        const lines = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+        
+        for (let line of lines) {
+            const [a, b, c] = line;
+            if (this.board[a] && this.board[a] === this.board[b] && this.board[a] === this.board[c]) {
+                return true;
+            }
+        }
+        return false;
+    },
+    
+    updateDisplay() {
+        const board = document.getElementById('tictactoeBoard');
+        board.innerHTML = '';
+        
+        for (let i = 0; i < 9; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'tictactoe-cell';
+            if (this.board[i] !== '') {
+                cell.textContent = this.board[i];
+                cell.classList.add('occupied', this.board[i].toLowerCase());
+            }
+            cell.addEventListener('click', () => this.makeMove(i));
+            board.appendChild(cell);
+        }
+    }
+};
+
+// ==================== SIMON SAYS GAME ====================
+const simonGame = {
+    sequence: [],
+    playerSequence: [],
+    level: 1,
+    best: 0,
+    isPlaying: false,
+    isShowing: false,
+    currentIndex: 0,
+    
+    colors: ['red', 'green', 'blue', 'yellow'],
+    
+    init() {
+        this.best = parseInt(localStorage.getItem('simonBest') || '0');
+        document.getElementById('simonBest').textContent = this.best;
+        document.getElementById('simonStart').addEventListener('click', () => this.start());
+        this.setupButtons();
+    },
+    
+    setupButtons() {
+        this.colors.forEach(color => {
+            const button = document.getElementById(`simon${color.charAt(0).toUpperCase() + color.slice(1)}`);
+            button.addEventListener('click', () => this.playerClick(color));
+        });
+    },
+    
+    start() {
+        this.sequence = [];
+        this.playerSequence = [];
+        this.level = 1;
+        this.isPlaying = true;
+        this.isShowing = false;
+        this.addToSequence();
+        this.showSequence();
+        document.getElementById('simonStart').textContent = '...';
+        document.getElementById('simonStart').style.pointerEvents = 'none';
+    },
+    
+    restart() {
+        this.sequence = [];
+        this.playerSequence = [];
+        this.level = 1;
+        this.isPlaying = false;
+        this.isShowing = false;
+        document.getElementById('simonLevel').textContent = this.level;
+        document.getElementById('simonStart').textContent = 'START';
+        document.getElementById('simonStart').style.pointerEvents = 'auto';
+        document.getElementById('simonInstructions').textContent = 'Click START to begin. Watch the sequence and repeat it!';
+    },
+    
+    addToSequence() {
+        this.sequence.push(this.colors[Math.floor(Math.random() * this.colors.length)]);
+    },
+    
+    async showSequence() {
+        this.isShowing = true;
+        document.getElementById('simonInstructions').textContent = 'Watch the sequence...';
+        
+        for (let i = 0; i < this.sequence.length; i++) {
+            await this.flashColor(this.sequence[i], 500);
+            await this.wait(200);
+        }
+        
+        this.isShowing = false;
+        document.getElementById('simonInstructions').textContent = 'Now repeat the sequence!';
+        this.playerSequence = [];
+    },
+    
+    flashColor(color, duration) {
+        return new Promise(resolve => {
+            const button = document.getElementById(`simon${color.charAt(0).toUpperCase() + color.slice(1)}`);
+            button.classList.add('active');
+            setTimeout(() => {
+                button.classList.remove('active');
+                resolve();
+            }, duration);
+        });
+    },
+    
+    wait(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    },
+    
+    playerClick(color) {
+        if (!this.isPlaying || this.isShowing) return;
+        
+        this.flashColor(color, 200);
+        this.playerSequence.push(color);
+        
+        const expectedColor = this.sequence[this.playerSequence.length - 1];
+        if (color !== expectedColor) {
+            this.gameOver();
+            return;
+        }
+        
+        if (this.playerSequence.length === this.sequence.length) {
+            this.level++;
+            document.getElementById('simonLevel').textContent = this.level;
+            if (this.level > this.best) {
+                this.best = this.level;
+                localStorage.setItem('simonBest', this.best);
+                document.getElementById('simonBest').textContent = this.best;
+            }
+            this.addToSequence();
+            setTimeout(() => this.showSequence(), 1000);
+        }
+    },
+    
+    gameOver() {
+        this.isPlaying = false;
+        document.getElementById('simonInstructions').textContent = `Game Over! You reached level ${this.level}. Click START to play again.`;
+        document.getElementById('simonStart').textContent = 'START';
+        document.getElementById('simonStart').style.pointerEvents = 'auto';
+    }
+};
+
 // Initialize games when page loads
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize reaction game
     if (reactionGame) {
         reactionGame.init();
+    }
+    // Initialize simon game
+    if (simonGame) {
+        simonGame.init();
     }
 });
 
