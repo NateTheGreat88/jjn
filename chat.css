@@ -276,6 +276,126 @@ body.page-exit {
     transform: scale(1.1);
 }
 
+/* Emoji Picker Styles */
+.emoji-picker-content {
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 10px;
+    padding: 15px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.emoji-item {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+}
+
+.emoji-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+/* GIF Picker Styles */
+.gif-picker-content {
+    max-width: 700px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.gif-search-wrapper {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.gif-search-input {
+    flex: 1;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: #e0e0e0;
+    font-family: 'Courier New', monospace;
+}
+
+.gif-search-input:focus {
+    outline: none;
+    border-color: rgba(74, 158, 255, 0.6);
+}
+
+.gif-search-button {
+    padding: 10px 20px;
+    background: rgba(74, 158, 255, 0.3);
+    border: 1px solid rgba(74, 158, 255, 0.5);
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    transition: all 0.3s ease;
+}
+
+.gif-search-button:hover {
+    background: rgba(74, 158, 255, 0.5);
+}
+
+.gif-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.gif-item {
+    position: relative;
+    cursor: pointer;
+    border-radius: 8px;
+    overflow: hidden;
+    aspect-ratio: 1;
+    background: rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+}
+
+.gif-item:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.gif-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.gif-loading,
+.gif-error {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px;
+    color: #b0b0b0;
+}
+
+.gif-error a {
+    color: #4a9eff;
+    text-decoration: underline;
+}
+
 
 .chat-header h1 {
     font-size: 42px;
@@ -473,13 +593,15 @@ body.page-exit {
     align-items: center;
 }
 
+.emoji-button,
+.gif-button,
 .image-upload-button {
     padding: 12px 15px;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 12px;
     cursor: pointer;
-    font-size: 20px;
+    font-size: 16px;
     transition: all 0.3s ease;
     backdrop-filter: blur(10px);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
@@ -488,8 +610,21 @@ body.page-exit {
     justify-content: center;
     min-width: 45px;
     height: 45px;
+    color: #e0e0e0;
+    font-family: 'Courier New', monospace;
 }
 
+.emoji-button {
+    font-size: 20px;
+}
+
+.gif-button {
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.emoji-button:hover,
+.gif-button:hover,
 .image-upload-button:hover {
     background: rgba(255, 255, 255, 0.15);
     border-color: rgba(255, 255, 255, 0.3);
@@ -497,11 +632,22 @@ body.page-exit {
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
+.emoji-button:active,
+.gif-button:active,
 .image-upload-button:active {
     transform: translateY(0);
 }
 
-.image-preview {
+.emoji-button:disabled,
+.gif-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+
+.image-preview,
+.gif-preview {
     margin-top: 10px;
     position: relative;
     display: flex;
@@ -544,14 +690,16 @@ body.page-exit {
     transform: scale(1.1);
 }
 
-.message-image {
+.message-image,
+.message-gif {
     margin-bottom: 10px;
     border-radius: 8px;
     overflow: hidden;
     max-width: 100%;
 }
 
-.message-image img {
+.message-image img,
+.message-gif img {
     max-width: 100%;
     max-height: 300px;
     border-radius: 8px;
@@ -559,6 +707,10 @@ body.page-exit {
     transition: all 0.3s ease;
     object-fit: contain;
     display: block;
+}
+
+.chat-gif {
+    cursor: pointer;
 }
 
 .chat-image {

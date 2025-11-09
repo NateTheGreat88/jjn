@@ -60,6 +60,7 @@
                 </div>
             </div>
             <div class="input-wrapper">
+                <button id="emojiButton" class="emoji-button" title="Add Emoji">😀</button>
                 <input 
                     type="text" 
                     id="messageInput" 
@@ -68,6 +69,7 @@
                     autocomplete="off"
                     disabled
                 >
+                <button id="gifButton" class="gif-button" title="Add GIF">GIF</button>
                 <label for="imageInput" class="image-upload-button" title="Upload Image">
                     📷
                 </label>
@@ -83,6 +85,10 @@
             <div id="imagePreview" class="image-preview" style="display: none;">
                 <img id="previewImage" src="" alt="Preview">
                 <button id="removeImageButton" class="remove-image-button">✕</button>
+            </div>
+            <div id="gifPreview" class="gif-preview" style="display: none;">
+                <img id="previewGif" src="" alt="GIF Preview">
+                <button id="removeGifButton" class="remove-image-button">✕</button>
             </div>
         </div>
     </div>
@@ -109,6 +115,30 @@
                 <button id="confirmJoinButton" class="modal-button">Join</button>
                 <button id="cancelJoinButton" class="modal-button modal-button-cancel">Cancel</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Emoji Picker Modal -->
+    <div id="emojiPickerModal" class="modal emoji-picker-modal" style="display: none;">
+        <div class="modal-content emoji-picker-content">
+            <h2>Choose an Emoji</h2>
+            <div class="emoji-grid" id="emojiGrid"></div>
+            <button id="closeEmojiPicker" class="modal-button" style="margin-top: 15px;">Close</button>
+        </div>
+    </div>
+
+    <!-- GIF Picker Modal -->
+    <div id="gifPickerModal" class="modal gif-picker-modal" style="display: none;">
+        <div class="modal-content gif-picker-content">
+            <h2>Search GIFs</h2>
+            <div class="gif-search-wrapper">
+                <input type="text" id="gifSearchInput" class="gif-search-input" placeholder="Search for GIFs...">
+                <button id="gifSearchButton" class="gif-search-button">Search</button>
+            </div>
+            <div class="gif-grid" id="gifGrid">
+                <div class="gif-loading">Loading trending GIFs...</div>
+            </div>
+            <button id="closeGifPicker" class="modal-button" style="margin-top: 15px;">Close</button>
         </div>
     </div>
 
@@ -157,6 +187,21 @@
         const roomCodeInput = document.getElementById('roomCodeInput');
         const confirmJoinButton = document.getElementById('confirmJoinButton');
         const cancelJoinButton = document.getElementById('cancelJoinButton');
+        
+        // Emoji and GIF picker elements
+        const emojiButton = document.getElementById('emojiButton');
+        const gifButton = document.getElementById('gifButton');
+        const emojiPickerModal = document.getElementById('emojiPickerModal');
+        const gifPickerModal = document.getElementById('gifPickerModal');
+        const emojiGrid = document.getElementById('emojiGrid');
+        const gifGrid = document.getElementById('gifGrid');
+        const gifSearchInput = document.getElementById('gifSearchInput');
+        const gifSearchButton = document.getElementById('gifSearchButton');
+        const closeEmojiPicker = document.getElementById('closeEmojiPicker');
+        const closeGifPicker = document.getElementById('closeGifPicker');
+        
+        // Giphy API key
+        const GIPHY_API_KEY = 'Dhphjb15RHAVVMl43LwS3V73cS3oYj9J';
 
         let currentUserName = '';
         let loadedMessageIds = new Set(); // Track loaded messages to prevent duplicates
@@ -209,6 +254,8 @@
             messageInput.disabled = false;
             sendButton.disabled = false;
             document.getElementById('imageInput').disabled = false;
+            emojiButton.disabled = false;
+            gifButton.disabled = false;
             messageInput.placeholder = 'Type a message...';
         }
 
@@ -217,6 +264,8 @@
             messageInput.disabled = true;
             sendButton.disabled = true;
             document.getElementById('imageInput').disabled = true;
+            emojiButton.disabled = true;
+            gifButton.disabled = true;
             messageInput.placeholder = 'Enter your name above to start chatting...';
         }
 
@@ -284,7 +333,7 @@
                         // Only show the most recent messages
                         const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                         recentMessages.forEach(msg => {
-                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image);
+                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif);
                         });
                         scrollToBottom();
                     }
@@ -307,7 +356,7 @@
                         const filteredMessages = messages.filter(msg => !msg.roomCode);
                         const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                         recentMessages.forEach(msg => {
-                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image);
+                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif);
                         });
                         scrollToBottom();
                     }
@@ -329,7 +378,7 @@
                     const filteredMessages = messages.filter(msg => !msg.roomCode);
                     const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                     recentMessages.forEach(msg => {
-                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image);
+                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif);
                     });
                     scrollToBottom();
                 }
@@ -378,7 +427,8 @@
                                         user: data.user,
                                         message: data.message,
                                         timestamp: data.timestamp,
-                                        image: data.image || null
+                                        image: data.image || null,
+                                        gif: data.gif || null
                                     });
                                 }
                             } else {
@@ -389,7 +439,8 @@
                                         user: data.user,
                                         message: data.message,
                                         timestamp: data.timestamp,
-                                        image: data.image || null
+                                        image: data.image || null,
+                                        gif: data.gif || null
                                     });
                                 }
                             }
@@ -402,7 +453,8 @@
                         // Display messages in reverse order (oldest first)
                         recentMessages.reverse().forEach(msg => {
                             if (!loadedMessageIds.has(msg.id)) {
-                                addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image);
+                                console.log('Loading message from initial load:', { user: msg.user, hasGif: !!msg.gif, gifUrl: msg.gif });
+                                addMessageToChat(msg.user, msg.message || '', msg.timestamp, false, msg.image, msg.gif);
                                 loadedMessageIds.add(msg.id);
                             }
                         });
@@ -413,16 +465,24 @@
                         querySnapshot.docChanges().forEach((change) => {
                             if (change.type === 'added' && !loadedMessageIds.has(change.doc.id)) {
                                 const data = change.doc.data();
+                                console.log('New message received:', { 
+                                    user: data.user, 
+                                    message: data.message,
+                                    hasImage: !!data.image, 
+                                    hasGif: !!data.gif, 
+                                    gifUrl: data.gif,
+                                    fullData: data
+                                });
                                 // Double-check room code match
                                 if (roomCode) {
                                     if (data.roomCode === roomCode) {
-                                        addMessageToChat(data.user, data.message, data.timestamp, false, data.image || null);
+                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null);
                                         loadedMessageIds.add(change.doc.id);
                                     }
                                 } else {
                                     // Only show messages without roomCode in public chat
                                     if (!data.roomCode) {
-                                        addMessageToChat(data.user, data.message, data.timestamp, false, data.image || null);
+                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null);
                                         loadedMessageIds.add(change.doc.id);
                                     }
                                 }
@@ -451,7 +511,8 @@
                                             user: data.user,
                                             message: data.message,
                                             timestamp: data.timestamp,
-                                            image: data.image || null
+                                            image: data.image || null,
+                                            gif: data.gif || null
                                         });
                                     }
                                 });
@@ -463,7 +524,7 @@
                                 recentMessages.reverse();
                                 recentMessages.forEach(msg => {
                                     if (!loadedMessageIds.has(msg.id)) {
-                                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image);
+                                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif);
                                         loadedMessageIds.add(msg.id);
                                     }
                                 });
@@ -476,8 +537,9 @@
                                         snapshot.docChanges().forEach((change) => {
                                             if (change.type === 'added' && !loadedMessageIds.has(change.doc.id)) {
                                                 const data = change.doc.data();
+                                                console.log('Fallback listener - New message:', { user: data.user, hasGif: !!data.gif, gifUrl: data.gif, fullData: data });
                                                 if (data.roomCode === roomCode) {
-                                                    addMessageToChat(data.user, data.message, data.timestamp, false, data.image || null);
+                                                    addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null);
                                                     loadedMessageIds.add(change.doc.id);
                                                 }
                                             }
@@ -492,7 +554,7 @@
                                 let filteredMessages = messages.filter(msg => msg.roomCode === roomCode);
                                 const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                                 recentMessages.forEach(msg => {
-                                    addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image || null);
+                                    addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image || null, msg.gif || null);
                                 });
                                 scrollToBottom();
                             });
@@ -511,14 +573,14 @@
                     // Only show the most recent messages
                     const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                     recentMessages.forEach(msg => {
-                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image || null);
+                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image || null, msg.gif || null);
                     });
                     scrollToBottom();
                 });
         }
 
         // Save message to Firestore or localStorage fallback
-        function saveMessage(user, message, timestamp, imageData = null) {
+        function saveMessage(user, message, timestamp, imageData = null, gifData = null) {
             const messageData = {
                 user: user,
                 message: message,
@@ -527,6 +589,13 @@
             
             if (imageData) {
                 messageData.image = imageData;
+            }
+            
+            if (gifData) {
+                messageData.gif = gifData;
+                console.log('Saving GIF with message:', { gifUrl: gifData, fullMessageData: messageData });
+            } else {
+                console.log('No GIF data to save');
             }
             
             // Add room code if in a private room
@@ -550,20 +619,23 @@
                     console.error('Error saving message to Firestore:', error);
                     console.error('Error details:', error.code, error.message);
                     // Fallback to localStorage
-                    saveMessageToLocalStorage(user, message, timestamp, imageData);
+                    saveMessageToLocalStorage(user, message, timestamp, imageData, gifData);
                 });
             } else {
                 // Fallback to localStorage
-                saveMessageToLocalStorage(user, message, timestamp, imageData);
+                saveMessageToLocalStorage(user, message, timestamp, imageData, gifData);
             }
         }
 
         // Fallback: Save messages to localStorage
-        function saveMessageToLocalStorage(user, message, timestamp, imageData = null) {
+        function saveMessageToLocalStorage(user, message, timestamp, imageData = null, gifData = null) {
             const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
             const messageObj = { user, message, timestamp };
             if (imageData) {
                 messageObj.image = imageData;
+            }
+            if (gifData) {
+                messageObj.gif = gifData;
             }
             // Add room code if in a private room
             if (currentRoomCode) {
@@ -578,7 +650,7 @@
         }
 
         // Add message to chat display
-        function addMessageToChat(user, message, timestamp, shouldSave = true, imageData = null) {
+        function addMessageToChat(user, message, timestamp, shouldSave = true, imageData = null, gifData = null) {
             // Remove welcome message if it exists
             const welcomeMsg = chatMessages.querySelector('.welcome-message');
             if (welcomeMsg) {
@@ -586,7 +658,7 @@
             }
 
             if (shouldSave) {
-                saveMessage(user, message, timestamp, imageData);
+                saveMessage(user, message, timestamp, imageData, gifData);
             }
 
             // Check if message already exists (prevent duplicates)
@@ -596,9 +668,15 @@
                 const msgUser = msg.querySelector('.message-user').textContent;
                 const msgContent = msg.querySelector('.message-content p')?.textContent || '';
                 const msgImage = msg.querySelector('.message-image');
+                const msgGif = msg.querySelector('.message-gif');
                 const hasImage = msgImage !== null;
-                if (msgTime == timestamp && msgUser === user && msgContent === message && hasImage === !!imageData) {
-                    return; // Message already exists, don't add duplicate
+                const hasGif = msgGif !== null;
+                // Check if this is the same message (same timestamp, user, content, and media)
+                if (msgTime == timestamp && msgUser === user && msgContent === message) {
+                    // If both have the same media state (both have image, both have gif, both have neither)
+                    if (hasImage === !!imageData && hasGif === !!gifData) {
+                        return; // Message already exists, don't add duplicate
+                    }
                 }
             }
 
@@ -620,6 +698,19 @@
                 imageHtml = `<div class="message-image"><img id="${imageId}" src="${imageData}" alt="Uploaded image" class="chat-image"></div>`;
             }
             
+            let gifHtml = '';
+            if (gifData) {
+                const gifId = 'gif-' + timestamp;
+                console.log('Displaying GIF:', { gifUrl: gifData, timestamp: timestamp, user: user });
+                gifHtml = `<div class="message-gif"><img id="${gifId}" src="${gifData}" alt="GIF" class="chat-gif" onerror="console.error('GIF failed to load:', this.src)"></div>`;
+            } else {
+                console.log('No GIF data to display for message:', { user: user, timestamp: timestamp });
+            }
+            
+            // Convert emoji codes in message to actual emojis (basic support)
+            let messageHtml = message ? escapeHtml(message) : '';
+            // Emojis are already Unicode, so they should display fine
+            
             messageDiv.innerHTML = `
                 <div class="message-header">
                     <span class="message-user">${escapeHtml(user)}</span>
@@ -627,7 +718,8 @@
                 </div>
                 <div class="message-content">
                     ${imageHtml}
-                    ${message ? `<p>${escapeHtml(message)}</p>` : ''}
+                    ${gifHtml}
+                    ${messageHtml ? `<p>${messageHtml}</p>` : (imageHtml || gifHtml ? '' : '<p></p>')}
                 </div>
             `;
             
@@ -637,6 +729,17 @@
                 const img = messageDiv.querySelector('#' + imageId);
                 if (img) {
                     img.addEventListener('click', function() {
+                        expandImage(this);
+                    });
+                }
+            }
+            
+            // Add click handler for GIF expansion
+            if (gifData) {
+                const gifId = 'gif-' + timestamp;
+                const gif = messageDiv.querySelector('#' + gifId);
+                if (gif) {
+                    gif.addEventListener('click', function() {
                         expandImage(this);
                     });
                 }
@@ -690,10 +793,11 @@
         // Send message
         function sendMessage() {
             const message = messageInput.value.trim();
-            if ((message === '' && !selectedImage) || !currentUserName) return;
+            if ((message === '' && !selectedImage && !selectedGif) || !currentUserName) return;
 
             const timestamp = Date.now();
             const imageData = selectedImage;
+            const gifData = selectedGif;
             
             // Clear image preview
             if (selectedImage) {
@@ -703,18 +807,29 @@
                 document.getElementById('imageInput').value = '';
             }
             
+            // Clear GIF preview
+            if (selectedGif) {
+                selectedGif = null;
+                document.getElementById('gifPreview').style.display = 'none';
+                document.getElementById('previewGif').src = '';
+            }
+            
+            console.log('Sending message:', { user: currentUserName, message: message, hasImage: !!imageData, hasGif: !!gifData, gifUrl: gifData });
+            
             if (db) {
                 // Save to Firestore first
-                saveMessage(currentUserName, message, timestamp, imageData);
+                saveMessage(currentUserName, message || '', timestamp, imageData, gifData);
                 
                 // Add to display immediately for better UX
-                addMessageToChat(currentUserName, message, timestamp, false, imageData);
+                addMessageToChat(currentUserName, message || '', timestamp, false, imageData, gifData);
             } else {
-                addMessageToChat(currentUserName, message, timestamp, true, imageData);
+                addMessageToChat(currentUserName, message || '', timestamp, true, imageData, gifData);
             }
             messageInput.value = '';
             messageInput.focus();
         }
+        
+        let selectedGif = null; // Store selected GIF URL
         
         // Handle image selection
         function handleImageSelect(event) {
@@ -1098,6 +1213,130 @@
         });
         document.getElementById('imageInput').addEventListener('change', handleImageSelect);
         document.getElementById('removeImageButton').addEventListener('click', removeImage);
+        document.getElementById('removeGifButton').addEventListener('click', () => {
+            selectedGif = null;
+            document.getElementById('gifPreview').style.display = 'none';
+            document.getElementById('previewGif').src = '';
+        });
+        
+        // Emoji picker
+        const commonEmojis = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾'];
+        
+        function initEmojiPicker() {
+            emojiGrid.innerHTML = '';
+            commonEmojis.forEach(emoji => {
+                const emojiButton = document.createElement('button');
+                emojiButton.className = 'emoji-item';
+                emojiButton.textContent = emoji;
+                emojiButton.title = emoji;
+                emojiButton.addEventListener('click', () => {
+                    const cursorPos = messageInput.selectionStart;
+                    const textBefore = messageInput.value.substring(0, cursorPos);
+                    const textAfter = messageInput.value.substring(cursorPos);
+                    messageInput.value = textBefore + emoji + textAfter;
+                    messageInput.focus();
+                    messageInput.setSelectionRange(cursorPos + emoji.length, cursorPos + emoji.length);
+                    emojiPickerModal.style.display = 'none';
+                });
+                emojiGrid.appendChild(emojiButton);
+            });
+        }
+        
+        // GIF picker functions
+        async function loadGIFs(query = 'trending') {
+            gifGrid.innerHTML = '<div class="gif-loading">Loading GIFs...</div>';
+            
+            // If no API key, use a fallback or show message
+            if (GIPHY_API_KEY === 'YOUR_GIPHY_API_KEY') {
+                gifGrid.innerHTML = '<div class="gif-error">Please add your Giphy API key in chat.html. Get one free at <a href="https://developers.giphy.com/" target="_blank">developers.giphy.com</a></div>';
+                return;
+            }
+            
+            try {
+                let url;
+                if (query === 'trending' || query === '') {
+                    url = `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=24&rating=g`;
+                } else {
+                    url = `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(query)}&limit=24&rating=g`;
+                }
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                gifGrid.innerHTML = '';
+                
+                if (data.data && data.data.length > 0) {
+                    data.data.forEach(gif => {
+                        const gifItem = document.createElement('div');
+                        gifItem.className = 'gif-item';
+                        const gifImg = document.createElement('img');
+                        gifImg.src = gif.images.fixed_height_small.url;
+                        gifImg.alt = gif.title || 'GIF';
+                        gifImg.loading = 'lazy';
+                        gifImg.addEventListener('click', () => {
+                            selectedGif = gif.images.original.url;
+                            console.log('GIF selected:', selectedGif);
+                            document.getElementById('previewGif').src = selectedGif;
+                            document.getElementById('gifPreview').style.display = 'flex';
+                            gifPickerModal.style.display = 'none';
+                            gifSearchInput.value = '';
+                        });
+                        gifItem.appendChild(gifImg);
+                        gifGrid.appendChild(gifItem);
+                    });
+                } else {
+                    gifGrid.innerHTML = '<div class="gif-error">No GIFs found. Try a different search.</div>';
+                }
+            } catch (error) {
+                console.error('Error loading GIFs:', error);
+                gifGrid.innerHTML = '<div class="gif-error">Error loading GIFs. Please check your API key.</div>';
+            }
+        }
+        
+        // Event listeners for emoji and GIF pickers
+        emojiButton.addEventListener('click', () => {
+            emojiPickerModal.style.display = 'flex';
+            initEmojiPicker();
+        });
+        
+        gifButton.addEventListener('click', () => {
+            gifPickerModal.style.display = 'flex';
+            loadGIFs('trending');
+        });
+        
+        closeEmojiPicker.addEventListener('click', () => {
+            emojiPickerModal.style.display = 'none';
+        });
+        
+        closeGifPicker.addEventListener('click', () => {
+            gifPickerModal.style.display = 'none';
+            gifSearchInput.value = '';
+        });
+        
+        gifSearchButton.addEventListener('click', () => {
+            const query = gifSearchInput.value.trim();
+            loadGIFs(query || 'trending');
+        });
+        
+        gifSearchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const query = gifSearchInput.value.trim();
+                loadGIFs(query || 'trending');
+            }
+        });
+        
+        emojiPickerModal.addEventListener('click', (e) => {
+            if (e.target === emojiPickerModal) {
+                emojiPickerModal.style.display = 'none';
+            }
+        });
+        
+        gifPickerModal.addEventListener('click', (e) => {
+            if (e.target === gifPickerModal) {
+                gifPickerModal.style.display = 'none';
+                gifSearchInput.value = '';
+            }
+        });
         
         // Room event listeners
         createRoomButton.addEventListener('click', createRoom);
