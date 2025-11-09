@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Songs - JNJ Website</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="container">
+        <div class="top-controls">
+            <a href="index.html" class="about-button">← Back to Home</a>
+        </div>
+        
+        <header>
+            <h1>JNJ Songs</h1>
+            <p class="subtitle">Original compositions by JNJ</p>
+        </header>
+
+        <main>
+            <div class="song-card" data-title="stolen" data-description="music song nathan jaxon junhu">
+                <a href="stolen.html" class="song-link">
+                    <div class="song-button">
+                        <img src="favicon.png" alt="Stolen" class="song-image">
+                        <div class="song-info">
+                            <h2>Stolen</h2>
+                            <p>by JNJ (Junhu Choi, Jaxon Croskey, Nathan DeLuca)</p>
+                        </div>
+                    </div>
+                    <span class="recent-indicator" title="Recently visited">⭐</span>
+                </a>
+            </div>
+            <div class="song-card" data-title="phantoms paradise" data-description="music song nathan jaxon junhu">
+                <a href="phantomsparadise.html" class="song-link">
+                    <div class="song-button">
+                        <img src="favicon.png" alt="Phantom's Paradise" class="song-image">
+                        <div class="song-info">
+                            <h2>Phantom's Paradise</h2>
+                            <p>by JNJ (Junhu Choi, Jaxon Croskey, Nathan DeLuca)</p>
+                        </div>
+                    </div>
+                    <span class="recent-indicator" title="Recently visited">⭐</span>
+                </a>
+            </div>
+            <div class="song-card" data-title="a sad truth" data-description="music song nathan jaxon junhu">
+                <a href="asadtruth.html" class="song-link">
+                    <div class="song-button">
+                        <img src="favicon.png" alt="A Sad Truth" class="song-image">
+                        <div class="song-info">
+                            <h2>A Sad Truth</h2>
+                            <p>by JNJ (Junhu Choi, Jaxon Croskey, Nathan DeLuca)</p>
+                        </div>
+                    </div>
+                    <span class="recent-indicator" title="Recently visited">⭐</span>
+                </a>
+            </div>
+            <div class="song-card" data-title="you and i" data-description="music song nathan jaxon junhu">
+                <a href="youandi.html" class="song-link">
+                    <div class="song-button">
+                        <img src="favicon.png" alt="You and I" class="song-image">
+                        <div class="song-info">
+                            <h2>You and I</h2>
+                            <p>by JNJ (Junhu Choi, Jaxon Croskey, Nathan DeLuca)</p>
+                        </div>
+                    </div>
+                    <span class="recent-indicator" title="Recently visited">⭐</span>
+                </a>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p class="footer-text">Built with creativity and collaboration</p>
+            <p class="footer-year">© 2025 JNJ</p>
+        </footer>
+    </div>
+
+    <script>
+        // Recently Visited Tracking
+        function trackPageVisit(page) {
+            const recentPages = JSON.parse(localStorage.getItem('jjnRecentPages') || '[]');
+            const index = recentPages.indexOf(page);
+            if (index > -1) {
+                recentPages.splice(index, 1);
+            }
+            recentPages.unshift(page);
+            if (recentPages.length > 5) {
+                recentPages.pop();
+            }
+            localStorage.setItem('jjnRecentPages', JSON.stringify(recentPages));
+        }
+        
+        function showRecentIndicators() {
+            const recentPages = JSON.parse(localStorage.getItem('jjnRecentPages') || '[]');
+            const pageMap = {
+                'stolen.html': 'stolen',
+                'phantomsparadise.html': 'phantoms paradise',
+                'asadtruth.html': 'a sad truth',
+                'youandi.html': 'you and i',
+            };
+            
+            const songCards = document.querySelectorAll('.song-card');
+            songCards.forEach(card => {
+                const link = card.querySelector('a');
+                const href = link.getAttribute('href');
+                const pageName = pageMap[href] || href.replace('.html', '');
+                
+                const indicator = card.querySelector('.recent-indicator');
+                if (recentPages.includes(href)) {
+                    indicator.style.display = 'block';
+                } else {
+                    indicator.style.display = 'none';
+                }
+            });
+        }
+        
+        // Track when user clicks a link
+        document.querySelectorAll('.song-link').forEach(link => {
+            link.addEventListener('click', () => {
+                const href = link.getAttribute('href');
+                trackPageVisit(href);
+            });
+        });
+        
+        // Show indicators on page load
+        showRecentIndicators();
+        
+        // Cursor Trail Effect - Smooth line effect
+        const trails = [];
+        const maxTrails = 50;
+        let lastTime = 0;
+        
+        function createCursorTrail(x, y, delay = 0) {
+            setTimeout(() => {
+                const trail = document.createElement('div');
+                trail.className = 'cursor-trail';
+                trail.style.left = x + 'px';
+                trail.style.top = y + 'px';
+                trail.style.opacity = '0.6';
+                document.body.appendChild(trail);
+                
+                requestAnimationFrame(() => {
+                    trail.style.opacity = '0';
+                    trail.style.transform = 'translate(-50%, -50%) scale(0.2)';
+                });
+                
+                setTimeout(() => {
+                    if (trail.parentNode) {
+                        trail.remove();
+                    }
+                }, 800);
+                
+                trails.push(trail);
+                if (trails.length > maxTrails) {
+                    const oldTrail = trails.shift();
+                    if (oldTrail && oldTrail.parentNode) {
+                        oldTrail.remove();
+                    }
+                }
+            }, delay);
+        }
+        
+        let lastX = 0;
+        let lastY = 0;
+        let mouseX = 0;
+        let mouseY = 0;
+        
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            const now = Date.now();
+            const timeSinceLastTrail = now - lastTime;
+            
+            if (timeSinceLastTrail > 8) {
+                const distance = Math.sqrt(
+                    Math.pow(mouseX - lastX, 2) + Math.pow(mouseY - lastY, 2)
+                );
+                
+                if (distance > 2) {
+                    createCursorTrail(mouseX, mouseY);
+                    lastX = mouseX;
+                    lastY = mouseY;
+                    lastTime = now;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+

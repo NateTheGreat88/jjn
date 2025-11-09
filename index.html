@@ -56,25 +56,13 @@
         </section>
         
         <main>
-            <div class="song-card" data-title="stolen" data-description="music song nathan jaxon junhu">
-                <a href="stolen.html" class="song-link">
+            <div class="song-card" data-title="songs" data-description="music songs nathan jaxon junhu">
+                <a href="songs.html" class="song-link">
                     <div class="song-button">
-                        <img src="favicon.png" alt="Stolen" class="song-image">
+                        <div class="song-image" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); display: flex; align-items: center; justify-content: center; font-size: 48px; color: white;">🎵</div>
                         <div class="song-info">
-                            <h2>Stolen</h2>
-                            <p>by JNJ (Junhu Choi, Jaxon Croskey, Nathan DeLuca)</p>
-                        </div>
-                    </div>
-                    <span class="recent-indicator" title="Recently visited">⭐</span>
-                </a>
-            </div>
-            <div class="song-card" data-title="phantoms paradise" data-description="music song nathan jaxon junhu">
-                <a href="phantomsparadise.html" class="song-link">
-                    <div class="song-button">
-                        <img src="favicon.png" alt="Phantom's Paradise" class="song-image">
-                        <div class="song-info">
-                            <h2>Phantom's Paradise</h2>
-                            <p>by JNJ (Junhu Choi, Jaxon Croskey, Nathan DeLuca)</p>
+                            <h2>Songs</h2>
+                            <p>Original compositions by JNJ</p>
                         </div>
                     </div>
                     <span class="recent-indicator" title="Recently visited">⭐</span>
@@ -177,8 +165,7 @@
         function showRecentIndicators() {
             const recentPages = JSON.parse(localStorage.getItem('jjnRecentPages') || '[]');
             const pageMap = {
-                'stolen.html': 'stolen',
-                'phantomsparadise.html': 'phantoms paradise',
+                'songs.html': 'songs',
                 'codeeditor.html': 'code editor',
                 'chat.html': 'chat',
                 'imageeditor.html': 'image editor',
