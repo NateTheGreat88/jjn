@@ -36,14 +36,47 @@
             <div class="ui-right">
                 <button id="pauseBtn" class="ui-button">⏸ Pause</button>
                 <button id="soundBtn" class="ui-button sound-btn">🔊 Sound</button>
+                <button id="leaderboardBtn" class="ui-button">🏆 Leaderboard</button>
+                <button id="achievementsBtn" class="ui-button">⭐ Achievements</button>
             </div>
         </div>
         
         <div class="game-instructions">
             <p><strong>Controls:</strong> ← → Rotate | ↑ Thrust | Space Shoot | P Pause</p>
+            <p id="gameModeDisplay" style="margin-top: 5px; font-size: 12px; opacity: 0.8;"></p>
         </div>
         
         <canvas id="gameCanvas"></canvas>
+        
+        <!-- Mode Selection Screen -->
+        <div id="modeSelectionScreen" class="mode-selection-screen">
+            <div class="mode-selection-content">
+                <h1>🚀 Asteroids</h1>
+                <h2>Select Game Mode</h2>
+                <div class="mode-buttons">
+                    <button class="mode-button" data-mode="classic">
+                        <div class="mode-icon">🎮</div>
+                        <div class="mode-name">Classic</div>
+                        <div class="mode-desc">Standard gameplay with lives and levels</div>
+                    </button>
+                    <button class="mode-button" data-mode="hardcore">
+                        <div class="mode-icon">💀</div>
+                        <div class="mode-name">Hardcore</div>
+                        <div class="mode-desc">One life, no power-ups, faster asteroids</div>
+                    </button>
+                    <button class="mode-button" data-mode="endless">
+                        <div class="mode-icon">♾️</div>
+                        <div class="mode-name">Endless</div>
+                        <div class="mode-desc">Infinite levels, increasing difficulty</div>
+                    </button>
+                    <button class="mode-button" data-mode="survival">
+                        <div class="mode-icon">⏱️</div>
+                        <div class="mode-name">Survival</div>
+                        <div class="mode-desc">Survive as long as possible, time-based</div>
+                    </button>
+                </div>
+            </div>
+        </div>
         
         <div id="gameOverScreen" class="game-over-screen" style="display: none;">
             <div class="game-over-content">
@@ -52,7 +85,14 @@
                 <p class="high-score-text">High Score: <span id="finalHighScore">0</span></p>
                 <p class="level-reached">Level Reached: <span id="finalLevel">1</span></p>
                 <p class="asteroids-destroyed">Asteroids Destroyed: <span id="finalAsteroids">0</span></p>
-                <button id="restartBtn" class="restart-button">🔄 Play Again</button>
+                <div id="newAchievements" class="new-achievements" style="display: none;">
+                    <h3>🎉 New Achievements Unlocked!</h3>
+                    <div id="newAchievementsList"></div>
+                </div>
+                <div class="game-over-buttons">
+                    <button id="restartBtn" class="restart-button">🔄 Play Again</button>
+                    <button id="mainMenuBtn" class="restart-button">🏠 Main Menu</button>
+                </div>
             </div>
         </div>
         
@@ -60,6 +100,7 @@
             <div class="pause-content">
                 <h2>⏸ Paused</h2>
                 <p>Press P to resume</p>
+                <button id="mainMenuFromPauseBtn" class="restart-button" style="margin-top: 20px;">🏠 Main Menu</button>
             </div>
         </div>
         
@@ -67,6 +108,31 @@
             <div class="level-complete-content">
                 <h2>Level Complete!</h2>
                 <p>Bonus: <span id="levelBonus">0</span> points</p>
+            </div>
+        </div>
+        
+        <!-- Leaderboard Screen -->
+        <div id="leaderboardScreen" class="leaderboard-screen" style="display: none;">
+            <div class="leaderboard-content">
+                <h2>🏆 Leaderboard</h2>
+                <div class="leaderboard-tabs">
+                    <button class="tab-button active" data-tab="all">All</button>
+                    <button class="tab-button" data-tab="classic">Classic</button>
+                    <button class="tab-button" data-tab="hardcore">Hardcore</button>
+                    <button class="tab-button" data-tab="endless">Endless</button>
+                    <button class="tab-button" data-tab="survival">Survival</button>
+                </div>
+                <div id="leaderboardList" class="leaderboard-list"></div>
+                <button id="closeLeaderboardBtn" class="restart-button">Close</button>
+            </div>
+        </div>
+        
+        <!-- Achievements Screen -->
+        <div id="achievementsScreen" class="achievements-screen" style="display: none;">
+            <div class="achievements-content">
+                <h2>⭐ Achievements</h2>
+                <div id="achievementsList" class="achievements-list"></div>
+                <button id="closeAchievementsBtn" class="restart-button">Close</button>
             </div>
         </div>
     </div>
@@ -77,6 +143,12 @@
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
+        // Game Mode
+        let gameMode = 'classic'; // classic, hardcore, endless, survival
+        let gameStartTime = 0;
+        let survivalTime = 0;
+        let lastSurvivalSpawn = 0; // Track last asteroid spawn time in survival mode
+        
         let score = 0;
         let highScore = parseInt(localStorage.getItem('asteroidsHighScore') || '0');
         let level = 1;
@@ -99,6 +171,164 @@
         let levelCompletePending = false;
         let killStreak = 0;
         let lastKillStreakTime = 0;
+        
+        // Leaderboard System
+        function getLeaderboard() {
+            return JSON.parse(localStorage.getItem('asteroidsLeaderboard') || '[]');
+        }
+        
+        function saveToLeaderboard(entry) {
+            const leaderboard = getLeaderboard();
+            leaderboard.push(entry);
+            leaderboard.sort((a, b) => b.score - a.score);
+            // Keep top 50 entries
+            if (leaderboard.length > 50) {
+                leaderboard.splice(50);
+            }
+            localStorage.setItem('asteroidsLeaderboard', JSON.stringify(leaderboard));
+        }
+        
+        function displayLeaderboard(mode = 'all') {
+            const leaderboard = getLeaderboard();
+            const filtered = mode === 'all' ? leaderboard : leaderboard.filter(e => e.mode === mode);
+            const list = document.getElementById('leaderboardList');
+            list.innerHTML = '';
+            
+            if (filtered.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">No scores yet. Be the first!</p>';
+                return;
+            }
+            
+            filtered.slice(0, 20).forEach((entry, index) => {
+                const item = document.createElement('div');
+                item.className = 'leaderboard-item';
+                item.innerHTML = `
+                    <div class="leaderboard-rank">#${index + 1}</div>
+                    <div class="leaderboard-info">
+                        <div class="leaderboard-score">${entry.score.toLocaleString()}</div>
+                        <div class="leaderboard-details">
+                            <span class="leaderboard-mode">${entry.mode.toUpperCase()}</span>
+                            <span>•</span>
+                            <span>Level ${entry.level}</span>
+                            <span>•</span>
+                            <span>${entry.asteroidsDestroyed} destroyed</span>
+                        </div>
+                    </div>
+                    <div class="leaderboard-date">${new Date(entry.date).toLocaleDateString()}</div>
+                `;
+                list.appendChild(item);
+            });
+        }
+        
+        // Achievements System
+        const achievements = [
+            { id: 'first_blood', name: 'First Blood', desc: 'Destroy your first asteroid', icon: '🎯', unlocked: false },
+            { id: 'century', name: 'Century Club', desc: 'Reach 100 points', icon: '💯', unlocked: false },
+            { id: 'thousand', name: 'Thousandaire', desc: 'Reach 1,000 points', icon: '💰', unlocked: false },
+            { id: 'ten_thousand', name: 'Ten Thousand', desc: 'Reach 10,000 points', icon: '💎', unlocked: false },
+            { id: 'level_5', name: 'Level 5', desc: 'Reach level 5', icon: '⭐', unlocked: false },
+            { id: 'level_10', name: 'Level 10', desc: 'Reach level 10', icon: '🌟', unlocked: false },
+            { id: 'level_20', name: 'Level 20', desc: 'Reach level 20', icon: '✨', unlocked: false },
+            { id: 'boss_killer', name: 'Boss Killer', desc: 'Defeat a boss asteroid', icon: '👹', unlocked: false },
+            { id: 'combo_master', name: 'Combo Master', desc: 'Get a 10x combo', icon: '🔥', unlocked: false },
+            { id: 'survivor', name: 'Survivor', desc: 'Survive for 5 minutes', icon: '⏱️', unlocked: false },
+            { id: 'asteroid_hunter', name: 'Asteroid Hunter', desc: 'Destroy 100 asteroids', icon: '🎯', unlocked: false },
+            { id: 'asteroid_slayer', name: 'Asteroid Slayer', desc: 'Destroy 500 asteroids', icon: '⚔️', unlocked: false },
+            { id: 'hardcore_warrior', name: 'Hardcore Warrior', desc: 'Complete hardcore mode', icon: '💀', unlocked: false },
+            { id: 'endless_runner', name: 'Endless Runner', desc: 'Reach level 15 in endless mode', icon: '♾️', unlocked: false },
+            { id: 'power_up_collector', name: 'Power-Up Collector', desc: 'Collect 10 power-ups', icon: '⚡', unlocked: false },
+            { id: 'perfect_level', name: 'Perfect Level', desc: 'Complete a level without taking damage', icon: '🛡️', unlocked: false },
+        ];
+        
+        let powerUpsCollected = 0;
+        let levelsWithoutDamage = 0;
+        let currentLevelStartLives = 3;
+        
+        function getAchievements() {
+            const saved = localStorage.getItem('asteroidsAchievements');
+            if (saved) {
+                const savedIds = JSON.parse(saved);
+                achievements.forEach(ach => {
+                    ach.unlocked = savedIds.includes(ach.id);
+                });
+            }
+            return achievements;
+        }
+        
+        function unlockAchievement(id) {
+            const achievement = achievements.find(a => a.id === id);
+            if (achievement && !achievement.unlocked) {
+                achievement.unlocked = true;
+                const saved = JSON.parse(localStorage.getItem('asteroidsAchievements') || '[]');
+                if (!saved.includes(id)) {
+                    saved.push(id);
+                    localStorage.setItem('asteroidsAchievements', JSON.stringify(saved));
+                    return achievement;
+                }
+            }
+            return null;
+        }
+        
+        function checkAchievements() {
+            const newlyUnlocked = [];
+            
+            // Score-based achievements
+            if (score >= 100 && unlockAchievement('century')) newlyUnlocked.push(achievements.find(a => a.id === 'century'));
+            if (score >= 1000 && unlockAchievement('thousand')) newlyUnlocked.push(achievements.find(a => a.id === 'thousand'));
+            if (score >= 10000 && unlockAchievement('ten_thousand')) newlyUnlocked.push(achievements.find(a => a.id === 'ten_thousand'));
+            
+            // Level-based achievements
+            if (level >= 5 && unlockAchievement('level_5')) newlyUnlocked.push(achievements.find(a => a.id === 'level_5'));
+            if (level >= 10 && unlockAchievement('level_10')) newlyUnlocked.push(achievements.find(a => a.id === 'level_10'));
+            if (level >= 20 && unlockAchievement('level_20')) newlyUnlocked.push(achievements.find(a => a.id === 'level_20'));
+            
+            // Combo achievements
+            if (comboCount >= 10 && unlockAchievement('combo_master')) newlyUnlocked.push(achievements.find(a => a.id === 'combo_master'));
+            
+            // Asteroid count achievements
+            if (asteroidsDestroyed >= 100 && unlockAchievement('asteroid_hunter')) newlyUnlocked.push(achievements.find(a => a.id === 'asteroid_hunter'));
+            if (asteroidsDestroyed >= 500 && unlockAchievement('asteroid_slayer')) newlyUnlocked.push(achievements.find(a => a.id === 'asteroid_slayer'));
+            
+            // Mode-specific achievements
+            if (gameMode === 'hardcore' && level >= 5 && unlockAchievement('hardcore_warrior')) {
+                newlyUnlocked.push(achievements.find(a => a.id === 'hardcore_warrior'));
+            }
+            if (gameMode === 'endless' && level >= 15 && unlockAchievement('endless_runner')) {
+                newlyUnlocked.push(achievements.find(a => a.id === 'endless_runner'));
+            }
+            
+            // Power-up achievements
+            if (powerUpsCollected >= 10 && unlockAchievement('power_up_collector')) {
+                newlyUnlocked.push(achievements.find(a => a.id === 'power_up_collector'));
+            }
+            
+            // Survival time achievement
+            if (gameMode === 'survival' && survivalTime >= 300 && unlockAchievement('survivor')) {
+                newlyUnlocked.push(achievements.find(a => a.id === 'survivor'));
+            }
+            
+            return newlyUnlocked;
+        }
+        
+        function displayAchievements() {
+            const list = document.getElementById('achievementsList');
+            list.innerHTML = '';
+            const unlocked = getAchievements();
+            
+            unlocked.forEach(ach => {
+                const item = document.createElement('div');
+                item.className = `achievement-item ${ach.unlocked ? 'unlocked' : 'locked'}`;
+                item.innerHTML = `
+                    <div class="achievement-icon">${ach.unlocked ? ach.icon : '🔒'}</div>
+                    <div class="achievement-info">
+                        <div class="achievement-name">${ach.name}</div>
+                        <div class="achievement-desc">${ach.desc}</div>
+                    </div>
+                    ${ach.unlocked ? '<div class="achievement-badge">✓</div>' : ''}
+                `;
+                list.appendChild(item);
+            });
+        }
 
         // Audio context for sound effects
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -142,7 +372,7 @@
             angle: -Math.PI / 2,
             rotation: 0,
             speed: 0,
-            maxSpeed: 6,
+            maxSpeed: 4,
             thrust: 0,
             bullets: [],
             invulnerable: false,
@@ -175,12 +405,24 @@
                 }
             }
             
+            // Calculate speed based on game mode
+            let speedMultiplier = 1;
+            if (gameMode === 'hardcore') {
+                speedMultiplier = 1.5; // 50% faster
+            } else if (gameMode === 'survival') {
+                // Get survival time for speed calculation
+                const currentSurvivalTime = Math.floor((Date.now() - gameStartTime) / 1000);
+                speedMultiplier = 1 + (currentSurvivalTime / 300); // Gets faster over time
+            } else if (gameMode === 'endless') {
+                speedMultiplier = 1 + (level * 0.1); // Gets faster each level
+            }
+            
             let a = {
                 x: x || Math.random() * canvas.width,
                 y: y || Math.random() * canvas.height,
                 radius: radius,
-                dx: (Math.random() - 0.5) * (2 + level * 0.3),
-                dy: (Math.random() - 0.5) * (2 + level * 0.3),
+                dx: (Math.random() - 0.5) * (2 + level * 0.3) * speedMultiplier,
+                dy: (Math.random() - 0.5) * (2 + level * 0.3) * speedMultiplier,
                 rotation: (Math.random() - 0.5) * 0.1,
                 rotationSpeed: (Math.random() - 0.5) * 0.08,
                 vertices: [],
@@ -210,11 +452,16 @@
             // Clear all asteroids and bullets first
             asteroids = [];
             ship.bullets = [];
-            powerUps = [];
+            if (gameMode !== 'hardcore') {
+                powerUps = [];
+            } else {
+                powerUps = []; // No power-ups in hardcore
+            }
             particles = [];
             
             bossAsteroid = null;
             bossSpawned = false;
+            levelCompletePending = false;
             
             // Reset ship position to center
             ship.x = canvas.width / 2;
@@ -226,8 +473,21 @@
             ship.invulnerable = true;
             ship.invulnerableTime = 180;
             
-            // Calculate number of asteroids (capped to prevent too many)
-            const numAsteroids = Math.min(3 + Math.floor(level * 0.5), 8);
+            // Track starting lives for perfect level achievement
+            currentLevelStartLives = lives;
+            
+            // Calculate number of asteroids based on mode
+            let numAsteroids;
+            if (gameMode === 'hardcore') {
+                numAsteroids = Math.min(4 + Math.floor(level * 0.7), 10); // More asteroids
+            } else if (gameMode === 'endless') {
+                numAsteroids = Math.min(3 + Math.floor(level * 0.6), 12); // More for endless
+            } else if (gameMode === 'survival') {
+                // Survival mode: start with 3 asteroids, more spawn over time
+                numAsteroids = 3;
+            } else {
+                numAsteroids = Math.min(3 + Math.floor(level * 0.5), 8); // Classic
+            }
             
             // Spawn asteroids away from ship
             let attempts = 0;
@@ -279,6 +539,7 @@
         };
 
         function createPowerUp(x, y) {
+            if (gameMode === 'hardcore') return; // No power-ups in hardcore mode
             if (Math.random() > 0.25) return; // 25% chance
             
             const types = Object.values(PowerUpTypes);
@@ -296,8 +557,11 @@
         }
 
         function activatePowerUp(type) {
+            if (gameMode === 'hardcore') return; // No power-ups in hardcore
+            
             activePowerUp = type;
             powerUpTime = 600;
+            powerUpsCollected++;
             
             switch(type) {
                 case PowerUpTypes.SHIELD:
@@ -453,9 +717,27 @@
                 requestAnimationFrame(update);
                 return;
             }
+            
+            // Update survival time for survival mode
+            if (gameMode === 'survival') {
+                survivalTime = Math.floor((Date.now() - gameStartTime) / 1000);
+                
+                // Spawn more asteroids over time in survival mode
+                // Spawn a new asteroid every 15 seconds, but limit total asteroids
+                const targetAsteroids = Math.min(3 + Math.floor(survivalTime / 15), 15);
+                if (asteroids.length < targetAsteroids && survivalTime > 0 && survivalTime >= lastSurvivalSpawn + 15) {
+                    createAsteroid(null, null, asteroidSizes[0], true);
+                    lastSurvivalSpawn = survivalTime;
+                }
+                
+                // Update level display to show survival time
+                const minutes = Math.floor(survivalTime / 60);
+                const seconds = survivalTime % 60;
+                document.getElementById("level").innerText = `Survival: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
 
             // Spawn boss every 5 levels (only if level complete is not pending)
-            if (level % 5 === 0 && !bossSpawned && asteroids.length === 0 && !bossAsteroid && !levelCompletePending) {
+            if (level % 5 === 0 && !bossSpawned && asteroids.length === 0 && !bossAsteroid && !levelCompletePending && gameMode !== 'survival') {
                 spawnBoss();
             }
 
@@ -504,8 +786,8 @@
             else if (keys["ArrowRight"]) ship.rotation = 0.08;
             else ship.rotation *= 0.9;
 
-            if (keys["ArrowUp"]) {
-                ship.thrust = 0.15;
+                    if (keys["ArrowUp"]) {
+                        ship.thrust = 0.1;
                 // Ship trail
                 ship.trail.push({
                     x: ship.x - Math.cos(ship.angle) * 25,
@@ -706,11 +988,19 @@
                         score += points;
                         asteroidsDestroyed++;
                         
+                        // Check first blood achievement
+                        if (asteroidsDestroyed === 1) {
+                            unlockAchievement('first_blood');
+                        }
+                        
                         if (score > highScore) {
                             highScore = score;
                             localStorage.setItem('asteroidsHighScore', highScore.toString());
                         }
                         updateScore();
+                        
+                        // Check achievements periodically
+                        checkAchievements();
                         
                         addScreenShake(8);
                         playSound(300, 0.1, 'square', 0.15);
@@ -813,6 +1103,7 @@
                         if (bossAsteroid.health <= 0) {
                             score += 1000 * level;
                             asteroidsDestroyed++;
+                            unlockAchievement('boss_killer');
                             addScreenShake(25);
                             playSound(100, 0.5, 'sawtooth', 0.3);
                             createParticles(bossAsteroid.x, bossAsteroid.y, '#ffc107', 60, 10, 6);
@@ -825,7 +1116,8 @@
             }
 
             // Check for level complete (only if no asteroids and no boss, and no bullets in flight)
-            if (asteroids.length === 0 && !bossAsteroid && ship.bullets.length === 0) {
+            // Survival mode doesn't have levels - it's continuous
+            if (gameMode !== 'survival' && asteroids.length === 0 && !bossAsteroid && ship.bullets.length === 0) {
                 // Small delay to ensure all asteroids are cleared
                 if (!window.levelCompletePending) {
                     window.levelCompletePending = true;
@@ -843,11 +1135,25 @@
                             playSound(600, 0.3, 'sine', 0.2);
                             
                             setTimeout(() => {
+                                // Check for perfect level achievement
+                                if (lives >= currentLevelStartLives) {
+                                    unlockAchievement('perfect_level');
+                                }
+                                
                                 document.getElementById('levelComplete').style.display = 'none';
                                 level++;
                                 updateLevel();
                                 window.levelCompletePending = false;
-                                initLevel();
+                                
+                                // Endless mode: no level cap
+                                if (gameMode === 'endless') {
+                                    initLevel();
+                                } else if (level <= 20) { // Classic and hardcore have level 20 cap
+                                    initLevel();
+                                } else {
+                                    // Game complete!
+                                    gameOver();
+                                }
                             }, 2000);
                         } else {
                             window.levelCompletePending = false;
@@ -1112,6 +1418,10 @@
         }
 
         function updateLevel() {
+            if (gameMode === 'survival') {
+                // Don't update level display in survival mode - it's handled in update loop
+                return;
+            }
             document.getElementById("level").innerText = `Level ${level}`;
         }
 
@@ -1122,24 +1432,188 @@
 
         function gameOver() {
             isGameOver = true;
+            isPaused = true;
+            
+            // Calculate survival time for survival mode
+            if (gameMode === 'survival') {
+                survivalTime = Math.floor((Date.now() - gameStartTime) / 1000);
+            }
+            
+            // Check achievements
+            const newlyUnlocked = checkAchievements();
+            
+            // Save to leaderboard
+            saveToLeaderboard({
+                mode: gameMode,
+                score: score,
+                level: level,
+                asteroidsDestroyed: asteroidsDestroyed,
+                survivalTime: gameMode === 'survival' ? survivalTime : null,
+                date: Date.now()
+            });
+            
+            // Update high score
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('asteroidsHighScore', highScore.toString());
+            }
+            
+            // Display game over screen
             document.getElementById("finalScore").textContent = score.toLocaleString();
             document.getElementById("finalHighScore").textContent = highScore.toLocaleString();
             document.getElementById("finalLevel").textContent = level;
             document.getElementById("finalAsteroids").textContent = asteroidsDestroyed.toLocaleString();
+            
+            // Show newly unlocked achievements
+            if (newlyUnlocked.length > 0) {
+                const newAchDiv = document.getElementById('newAchievements');
+                const newAchList = document.getElementById('newAchievementsList');
+                newAchList.innerHTML = '';
+                newlyUnlocked.forEach(ach => {
+                    const item = document.createElement('div');
+                    item.className = 'new-achievement-item';
+                    item.innerHTML = `${ach.icon} ${ach.name} - ${ach.desc}`;
+                    newAchList.appendChild(item);
+                });
+                newAchDiv.style.display = 'block';
+            } else {
+                document.getElementById('newAchievements').style.display = 'none';
+            }
+            
             document.getElementById("gameOverScreen").style.display = 'flex';
             playSound(150, 0.5, 'sawtooth', 0.3);
         }
+        
+        function startGame(mode) {
+            gameMode = mode;
+            gameStartTime = Date.now();
+            survivalTime = 0;
+            lastSurvivalSpawn = 0;
+            score = 0;
+            level = 1;
+            lives = gameMode === 'hardcore' ? 1 : 3;
+            asteroidsDestroyed = 0;
+            powerUpsCollected = 0;
+            comboCount = 0;
+            killStreak = 0;
+            activePowerUp = null;
+            powerUpTime = 0;
+            
+            // Update mode display
+            const modeNames = {
+                'classic': 'Classic Mode',
+                'hardcore': 'Hardcore Mode',
+                'endless': 'Endless Mode',
+                'survival': 'Survival Mode'
+            };
+            document.getElementById('gameModeDisplay').textContent = modeNames[mode];
+            
+            // Hide all screens, show game
+            document.getElementById('modeSelectionScreen').style.display = 'none';
+            document.getElementById('gameOverScreen').style.display = 'none';
+            document.getElementById('pauseScreen').style.display = 'none';
+            document.getElementById('gameCanvas').style.display = 'block';
+            document.querySelector('.game-ui').style.display = 'flex';
+            document.querySelector('.game-instructions').style.display = 'block';
+            
+            // Initialize game
+            initLevel();
+            updateScore();
+            if (gameMode === 'survival') {
+                // Initialize survival time display
+                document.getElementById("level").innerText = `Survival: 0:00`;
+            } else {
+                updateLevel();
+            }
+            updateLivesDisplay();
+            isGameOver = false;
+            isPaused = false;
+            
+            // Start game loop
+            update();
+        }
+        
+        function restartGame() {
+            // Hide game over screen
+            document.getElementById('gameOverScreen').style.display = 'none';
+            document.getElementById('pauseScreen').style.display = 'none';
+            
+            // Reset game state
+            isGameOver = false;
+            isPaused = false;
+            
+            // Restart the game with current mode
+            startGame(gameMode);
+        }
+        
+        function showMainMenu() {
+            document.getElementById('gameOverScreen').style.display = 'none';
+            document.getElementById('pauseScreen').style.display = 'none';
+            document.getElementById('modeSelectionScreen').style.display = 'flex';
+            document.getElementById('gameCanvas').style.display = 'none';
+            document.querySelector('.game-ui').style.display = 'none';
+            document.querySelector('.game-instructions').style.display = 'none';
+            isPaused = false;
+            isGameOver = false;
+        }
 
+        // Mode selection handlers
+        document.querySelectorAll('.mode-button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mode = btn.dataset.mode;
+                startGame(mode);
+            });
+        });
+        
+        // Leaderboard handlers
+        document.getElementById('leaderboardBtn').addEventListener('click', () => {
+            displayLeaderboard('all');
+            document.getElementById('leaderboardScreen').style.display = 'flex';
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.tab === 'all') btn.classList.add('active');
+            });
+        });
+        
+        document.getElementById('closeLeaderboardBtn').addEventListener('click', () => {
+            document.getElementById('leaderboardScreen').style.display = 'none';
+        });
+        
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                displayLeaderboard(btn.dataset.tab);
+            });
+        });
+        
+        // Achievements handlers
+        document.getElementById('achievementsBtn').addEventListener('click', () => {
+            displayAchievements();
+            document.getElementById('achievementsScreen').style.display = 'flex';
+        });
+        
+        document.getElementById('closeAchievementsBtn').addEventListener('click', () => {
+            document.getElementById('achievementsScreen').style.display = 'none';
+        });
+        
+        // Game over handlers
+        document.getElementById('restartBtn').addEventListener('click', restartGame);
+        document.getElementById('mainMenuBtn').addEventListener('click', showMainMenu);
+        document.getElementById('mainMenuFromPauseBtn').addEventListener('click', showMainMenu);
+        
+        // Pause and sound handlers
         document.getElementById('pauseBtn').addEventListener('click', togglePause);
         document.getElementById('soundBtn').addEventListener('click', toggleSound);
-        document.getElementById('restartBtn').addEventListener('click', () => {
-            location.reload();
-        });
-
-        updateScore();
-        updateLivesDisplay();
-
-        update();
+        
+        // Initialize achievements
+        getAchievements();
+        
+        // Hide game initially, show mode selection
+        document.getElementById('gameCanvas').style.display = 'none';
+        document.querySelector('.game-ui').style.display = 'none';
+        document.querySelector('.game-instructions').style.display = 'none';
+        document.getElementById('modeSelectionScreen').style.display = 'flex';
         
         // Cursor Trail Effect
         const trails = [];
