@@ -116,6 +116,52 @@ body {
     color: #ff4d4d;
 }
 
+.combo-display {
+    color: #ffc107;
+    font-size: 20px;
+    font-weight: bold;
+    text-shadow: 0 0 10px #ffc107;
+    animation: pulse 0.3s ease-out;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+.power-up-display {
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(255, 193, 7, 0.2);
+    border: 1px solid rgba(255, 193, 7, 0.4);
+    border-radius: 8px;
+    text-align: center;
+    min-width: 150px;
+}
+
+#powerUpText {
+    display: block;
+    color: #ffc107;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.power-up-timer {
+    width: 100%;
+    height: 4px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.power-up-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #ffc107, #ff9800);
+    transition: width 0.1s linear;
+    box-shadow: 0 0 10px #ffc107;
+}
+
 .ui-button {
     padding: 10px 20px;
     background: rgba(74, 158, 255, 0.2);
@@ -227,6 +273,18 @@ body {
     font-weight: bold;
 }
 
+.level-reached {
+    font-size: 18px;
+    color: #4a9eff;
+    margin: 10px 0;
+}
+
+.level-reached span {
+    font-size: 24px;
+    font-weight: bold;
+    color: #fff;
+}
+
 .restart-button {
     margin-top: 30px;
     padding: 15px 40px;
@@ -250,6 +308,99 @@ body {
 
 .restart-button:active {
     transform: translateY(0);
+}
+
+.boss-warning {
+    margin-top: 10px;
+    padding: 15px;
+    background: rgba(255, 77, 77, 0.3);
+    border: 2px solid rgba(255, 77, 77, 0.6);
+    border-radius: 12px;
+    text-align: center;
+    animation: warningPulse 0.5s ease-in-out infinite;
+}
+
+.boss-warning-text {
+    color: #ff4d4d;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 0 0 10px #ff4d4d;
+    animation: shake 0.1s ease-in-out infinite;
+}
+
+@keyframes warningPulse {
+    0%, 100% { 
+        box-shadow: 0 0 20px rgba(255, 77, 77, 0.5);
+    }
+    50% { 
+        box-shadow: 0 0 40px rgba(255, 77, 77, 0.8);
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    75% { transform: translateX(2px); }
+}
+
+.level-complete {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.level-complete-content {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    animation: fadeInUp 0.5s ease-out;
+}
+
+.level-complete-content h2 {
+    font-size: 48px;
+    color: #4a9eff;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.level-complete-content p {
+    font-size: 24px;
+    color: #ffc107;
+    margin: 10px 0;
+}
+
+.level-complete-content span {
+    font-size: 32px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.asteroids-destroyed {
+    font-size: 18px;
+    color: #51cf66;
+    margin: 10px 0;
+}
+
+.asteroids-destroyed span {
+    font-size: 24px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.sound-btn {
+    margin-top: 10px;
 }
 
 .pause-content p {
