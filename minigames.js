@@ -18,6 +18,7 @@ function showMenu() {
     document.getElementById('flappyGame').style.display = 'none';
     document.getElementById('tictactoeGame').style.display = 'none';
     document.getElementById('simonGame').style.display = 'none';
+    document.getElementById('calculatorGame').style.display = 'none';
 }
 
 function showGame(gameName) {
@@ -32,6 +33,7 @@ function showGame(gameName) {
     document.getElementById('flappyGame').style.display = 'none';
     document.getElementById('tictactoeGame').style.display = 'none';
     document.getElementById('simonGame').style.display = 'none';
+    document.getElementById('calculatorGame').style.display = 'none';
     
     document.getElementById(gameName + 'Game').style.display = 'block';
     
@@ -46,6 +48,7 @@ function showGame(gameName) {
     if (gameName === 'flappy' && flappyGame) flappyGame.init();
     if (gameName === 'tictactoe' && tictactoeGame) tictactoeGame.init();
     if (gameName === 'simon' && simonGame) simonGame.init();
+    if (gameName === 'calculator' && calculatorGame) calculatorGame.init();
 }
 
 // Game card click handlers
@@ -2257,6 +2260,299 @@ const simonGame = {
         document.getElementById('simonInstructions').textContent = `Game Over! You reached level ${this.level}. Click START to play again.`;
         document.getElementById('simonStart').textContent = 'START';
         document.getElementById('simonStart').style.pointerEvents = 'auto';
+    }
+};
+
+// ==================== CALCULATOR CLICKER GAME ====================
+const calculatorGame = {
+    numbers: 0,
+    perClick: 1,
+    perSecond: 0,
+    upgrades: [],
+    autoClickers: [],
+    autoClickerInterval: null,
+    saveInterval: null,
+    
+    upgradesList: [
+        { name: 'Better Calculator', desc: '+1 per click', cost: 10, multiplier: 1, owned: 0 },
+        { name: 'Scientific Calc', desc: '+2 per click', cost: 50, multiplier: 2, owned: 0 },
+        { name: 'Graphing Calc', desc: '+5 per click', cost: 200, multiplier: 5, owned: 0 },
+        { name: 'Quantum Calc', desc: '+10 per click', cost: 1000, multiplier: 10, owned: 0 },
+        { name: 'AI Calculator', desc: '+25 per click', cost: 5000, multiplier: 25, owned: 0 },
+        { name: 'Super Computer', desc: '+50 per click', cost: 25000, multiplier: 50, owned: 0 },
+        { name: 'Quantum Computer', desc: '+100 per click', cost: 100000, multiplier: 100, owned: 0 },
+        { name: 'Universe Simulator', desc: '+500 per click', cost: 1000000, multiplier: 500, owned: 0 }
+    ],
+    
+    autoClickersList: [
+        { name: 'Auto-Adder', desc: '+1 per second', cost: 50, production: 1, owned: 0 },
+        { name: 'Auto-Multiplier', desc: '+5 per second', cost: 250, production: 5, owned: 0 },
+        { name: 'Auto-Divider', desc: '+10 per second', cost: 1000, production: 10, owned: 0 },
+        { name: 'Auto-Processor', desc: '+25 per second', cost: 5000, production: 25, owned: 0 },
+        { name: 'Auto-Computer', desc: '+50 per second', cost: 25000, production: 50, owned: 0 },
+        { name: 'Auto-Server', desc: '+100 per second', cost: 100000, production: 100, owned: 0 },
+        { name: 'Auto-Cloud', desc: '+250 per second', cost: 500000, production: 250, owned: 0 },
+        { name: 'Auto-Quantum', desc: '+1000 per second', cost: 5000000, production: 1000, owned: 0 }
+    ],
+    
+    init() {
+        this.load();
+        this.setupClickButton();
+        this.renderUpgrades();
+        this.renderAutoClickers();
+        this.updateDisplay();
+        this.startAutoClickers();
+        this.startAutoSave();
+    },
+    
+    setupClickButton() {
+        const button = document.getElementById('calcClickButton');
+        button.onclick = () => this.click();
+    },
+    
+    click() {
+        this.numbers += this.perClick;
+        this.updateDisplay();
+        this.showClickAnimation();
+        this.updateUpgrades();
+        this.updateAutoClickers();
+    },
+    
+    showClickAnimation() {
+        const button = document.getElementById('calcClickButton');
+        const rect = button.getBoundingClientRect();
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height / 2;
+        
+        const anim = document.createElement('div');
+        anim.className = 'click-animation';
+        anim.textContent = `+${this.formatNumber(this.perClick)}`;
+        anim.style.left = x + 'px';
+        anim.style.top = y + 'px';
+        document.body.appendChild(anim);
+        
+        setTimeout(() => anim.remove(), 1000);
+    },
+    
+    buyUpgrade(index) {
+        const upgrade = this.upgradesList[index];
+        const cost = this.getUpgradeCost(upgrade);
+        
+        if (this.numbers >= cost) {
+            this.numbers -= cost;
+            upgrade.owned++;
+            this.perClick += upgrade.multiplier;
+            this.updateDisplay();
+            this.updateUpgrades();
+            this.updateAutoClickers();
+        }
+    },
+    
+    getUpgradeCost(upgrade) {
+        return Math.floor(upgrade.cost * Math.pow(1.5, upgrade.owned));
+    },
+    
+    buyAutoClicker(index) {
+        const clicker = this.autoClickersList[index];
+        const cost = this.getAutoClickerCost(clicker);
+        
+        if (this.numbers >= cost) {
+            this.numbers -= cost;
+            clicker.owned++;
+            this.updatePerSecond();
+            this.updateDisplay();
+            this.updateUpgrades();
+            this.updateAutoClickers();
+        }
+    },
+    
+    getAutoClickerCost(clicker) {
+        return Math.floor(clicker.cost * Math.pow(1.5, clicker.owned));
+    },
+    
+    updatePerSecond() {
+        this.perSecond = this.autoClickersList.reduce((total, clicker) => {
+            return total + (clicker.owned * clicker.production);
+        }, 0);
+    },
+    
+    startAutoClickers() {
+        if (this.autoClickerInterval) clearInterval(this.autoClickerInterval);
+        this.autoClickerInterval = setInterval(() => {
+            if (this.perSecond > 0) {
+                this.numbers += this.perSecond;
+                this.updateDisplay();
+            }
+        }, 1000);
+    },
+    
+    startAutoSave() {
+        if (this.saveInterval) clearInterval(this.saveInterval);
+        this.saveInterval = setInterval(() => {
+            this.save();
+        }, 30000); // Auto-save every 30 seconds
+    },
+    
+    renderUpgrades() {
+        const grid = document.getElementById('upgradesGrid');
+        grid.innerHTML = '';
+        
+        this.upgradesList.forEach((upgrade, index) => {
+            const item = document.createElement('div');
+            item.className = 'upgrade-item';
+            item.innerHTML = `
+                <div class="upgrade-name">${upgrade.name}</div>
+                <div class="upgrade-desc">${upgrade.desc}</div>
+                <div class="upgrade-cost">Cost: ${this.formatNumber(this.getUpgradeCost(upgrade))}</div>
+                <div class="upgrade-level">Level: ${upgrade.owned}</div>
+            `;
+            
+            item.onclick = () => this.buyUpgrade(index);
+            grid.appendChild(item);
+        });
+    },
+    
+    renderAutoClickers() {
+        const grid = document.getElementById('autoClickersGrid');
+        grid.innerHTML = '';
+        
+        this.autoClickersList.forEach((clicker, index) => {
+            const item = document.createElement('div');
+            item.className = 'auto-clicker-item';
+            item.innerHTML = `
+                <div class="upgrade-name">${clicker.name}</div>
+                <div class="upgrade-desc">${clicker.desc}</div>
+                <div class="upgrade-cost">Cost: ${this.formatNumber(this.getAutoClickerCost(clicker))}</div>
+                <div class="upgrade-level">Owned: ${clicker.owned}</div>
+            `;
+            
+            item.onclick = () => this.buyAutoClicker(index);
+            grid.appendChild(item);
+        });
+    },
+    
+    updateUpgrades() {
+        const items = document.querySelectorAll('.upgrade-item');
+        items.forEach((item, index) => {
+            const upgrade = this.upgradesList[index];
+            const cost = this.getUpgradeCost(upgrade);
+            const costEl = item.querySelector('.upgrade-cost');
+            const levelEl = item.querySelector('.upgrade-level');
+            
+            costEl.textContent = `Cost: ${this.formatNumber(cost)}`;
+            levelEl.textContent = `Level: ${upgrade.owned}`;
+            
+            if (this.numbers >= cost) {
+                item.classList.remove('disabled');
+            } else {
+                item.classList.add('disabled');
+            }
+            
+            if (upgrade.owned > 0) {
+                item.classList.add('owned');
+            } else {
+                item.classList.remove('owned');
+            }
+        });
+    },
+    
+    updateAutoClickers() {
+        const items = document.querySelectorAll('.auto-clicker-item');
+        items.forEach((item, index) => {
+            const clicker = this.autoClickersList[index];
+            const cost = this.getAutoClickerCost(clicker);
+            const costEl = item.querySelector('.upgrade-cost');
+            const levelEl = item.querySelector('.upgrade-level');
+            
+            costEl.textContent = `Cost: ${this.formatNumber(cost)}`;
+            levelEl.textContent = `Owned: ${clicker.owned}`;
+            
+            if (this.numbers >= cost) {
+                item.classList.remove('disabled');
+            } else {
+                item.classList.add('disabled');
+            }
+        });
+    },
+    
+    updateDisplay() {
+        document.getElementById('calcNumbers').textContent = this.formatNumber(this.numbers);
+        document.getElementById('calcPerClick').textContent = this.formatNumber(this.perClick);
+        document.getElementById('calcPerSecond').textContent = this.formatNumber(this.perSecond);
+        document.getElementById('calcScreen').textContent = this.formatNumber(this.numbers);
+    },
+    
+    formatNumber(num) {
+        if (num >= 1e15) return (num / 1e15).toFixed(2) + 'Q';
+        if (num >= 1e12) return (num / 1e12).toFixed(2) + 'T';
+        if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+        if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+        if (num >= 1e3) return (num / 1e3).toFixed(2) + 'K';
+        return Math.floor(num).toLocaleString();
+    },
+    
+    save() {
+        const saveData = {
+            numbers: this.numbers,
+            perClick: this.perClick,
+            upgrades: this.upgradesList.map(u => u.owned),
+            autoClickers: this.autoClickersList.map(c => c.owned)
+        };
+        localStorage.setItem('calculatorClickerSave', JSON.stringify(saveData));
+    },
+    
+    load() {
+        const saveData = localStorage.getItem('calculatorClickerSave');
+        if (saveData) {
+            try {
+                const data = JSON.parse(saveData);
+                this.numbers = data.numbers || 0;
+                
+                if (data.upgrades) {
+                    data.upgrades.forEach((owned, index) => {
+                        if (this.upgradesList[index]) {
+                            this.upgradesList[index].owned = owned || 0;
+                        }
+                    });
+                    
+                    // Recalculate perClick from all upgrades
+                    this.perClick = 1;
+                    this.upgradesList.forEach(upgrade => {
+                        this.perClick += upgrade.owned * upgrade.multiplier;
+                    });
+                } else {
+                    this.perClick = data.perClick || 1;
+                }
+                
+                if (data.autoClickers) {
+                    data.autoClickers.forEach((owned, index) => {
+                        if (this.autoClickersList[index]) {
+                            this.autoClickersList[index].owned = owned || 0;
+                        }
+                    });
+                }
+                
+                this.updatePerSecond();
+            } catch (e) {
+                console.error('Error loading save:', e);
+            }
+        }
+    },
+    
+    reset() {
+        if (confirm('Are you sure you want to reset? This will delete all progress!')) {
+            this.numbers = 0;
+            this.perClick = 1;
+            this.perSecond = 0;
+            this.upgradesList.forEach(u => u.owned = 0);
+            this.autoClickersList.forEach(c => c.owned = 0);
+            localStorage.removeItem('calculatorClickerSave');
+            this.updateDisplay();
+            this.renderUpgrades();
+            this.renderAutoClickers();
+            this.updateUpgrades();
+            this.updateAutoClickers();
+        }
     }
 };
 

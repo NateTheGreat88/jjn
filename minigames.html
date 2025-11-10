@@ -72,6 +72,11 @@
                     <h3>Simon Says</h3>
                     <p>Memory sequence game</p>
                 </div>
+                <div class="game-card" data-game="calculator">
+                    <div class="game-card-icon">🔢</div>
+                    <h3>Calculator Clicker</h3>
+                    <p>Incremental clicker game</p>
+                </div>
             </div>
         </div>
 
@@ -282,6 +287,42 @@
             <div class="game-controls">
                 <p id="simonInstructions">Click START to begin. Watch the sequence and repeat it!</p>
                 <button class="game-button" onclick="simonGame.restart()">Restart</button>
+            </div>
+        </div>
+
+        <!-- Calculator Clicker Game -->
+        <div id="calculatorGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>🔢 Calculator Clicker</h2>
+                <div class="game-stats">
+                    <div>Numbers: <span id="calcNumbers">0</span></div>
+                    <div>Per Click: <span id="calcPerClick">1</span></div>
+                    <div>Per Second: <span id="calcPerSecond">0</span></div>
+                </div>
+            </div>
+            <div class="calculator-container">
+                <div class="calculator-display">
+                    <div class="calc-screen" id="calcScreen">0</div>
+                </div>
+                <div class="calculator-click-area">
+                    <button id="calcClickButton" class="calc-click-btn">
+                        <span class="calc-click-icon">➕</span>
+                        <span class="calc-click-text">CLICK!</span>
+                    </button>
+                </div>
+                <div class="calculator-upgrades">
+                    <h3>Upgrades</h3>
+                    <div class="upgrades-grid" id="upgradesGrid"></div>
+                </div>
+                <div class="calculator-auto-clickers">
+                    <h3>Auto-Clickers</h3>
+                    <div class="auto-clickers-grid" id="autoClickersGrid"></div>
+                </div>
+            </div>
+            <div class="game-controls">
+                <button class="game-button" onclick="calculatorGame.reset()">Reset Game</button>
+                <button class="game-button" onclick="calculatorGame.save()">Save Progress</button>
             </div>
         </div>
     </div>
