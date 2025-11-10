@@ -140,6 +140,17 @@ body.page-exit {
     filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
 }
 
+.member-icon img,
+img.member-icon {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    margin: 0 auto;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
 .team-member h2 {
     font-size: 28px;
     color: #fff;
