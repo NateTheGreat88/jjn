@@ -998,6 +998,14 @@
                 return;
             }
             
+            // Special dev code: 000001 redirects to dev secrets page
+            if (code === '000001') {
+                joinRoomModal.style.display = 'none';
+                roomCodeInput.value = '';
+                window.location.href = 'dev-secrets.html';
+                return;
+            }
+            
             // Show loading state
             const originalButtonText = confirmJoinButton.textContent;
             confirmJoinButton.textContent = 'Checking...';

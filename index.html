@@ -6,8 +6,10 @@
     <title>JNJ Website</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="secret-pages.css">
     <link rel="stylesheet" href="animated-background.css">
     <script src="page-transitions.js" defer></script>
+    <script src="secret-pages.js" defer></script>
     <script src="animated-background.js" defer></script>
 </head>
 <body>
@@ -131,11 +133,24 @@
                     <span class="recent-indicator" title="Recently visited">⭐</span>
                 </a>
             </div>
+            <div id="secretsCard" class="song-card" data-title="secrets" data-description="hidden pages easter eggs unlock" style="display: none;">
+                <a href="secrets.html" class="song-link">
+                    <div class="song-button">
+                        <div class="song-image" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); display: flex; align-items: center; justify-content: center; font-size: 48px; color: white;">🔐</div>
+                        <div class="song-info">
+                            <h2>Secrets</h2>
+                            <p>Hidden pages and easter eggs</p>
+                        </div>
+                    </div>
+                    <span class="recent-indicator" title="Discovered">🔓</span>
+                </a>
+            </div>
         </main>
 
         <footer class="footer">
             <p class="footer-text">Built with creativity and collaboration</p>
-            <p class="footer-year">© 2025 JNJ</p>
+            <p class="footer-year">© 2025 JNJ <span class="secret-footer-hint" style="opacity: 0.01; font-size: 1px;">🔐</span></p>
+            <a href="secret-footer.html" class="secret-footer-link" title="Secret">🔐</a>
         </footer>
     </div>
 
@@ -186,6 +201,7 @@
                 'imageeditor.html': 'image editor',
                 'game.html': 'asteroids game',
                 'minigames.html': 'mini games',
+                'secrets.html': 'secrets',
             };
             
             songCards.forEach(card => {
@@ -212,6 +228,29 @@
         
         // Show indicators on page load
         showRecentIndicators();
+        
+        // Show Secrets button if any secrets are unlocked
+        function checkAndShowSecretsButton() {
+            if (window.secretPages) {
+                const secrets = window.secretPages.getAll();
+                const hasUnlocked = Object.values(secrets).some(secret => secret.unlocked);
+                if (hasUnlocked) {
+                    const secretsCard = document.getElementById('secretsCard');
+                    if (secretsCard) {
+                        secretsCard.style.display = 'block';
+                    }
+                }
+            } else {
+                // Retry after a short delay if secretPages isn't loaded yet
+                setTimeout(checkAndShowSecretsButton, 100);
+            }
+        }
+        
+        // Check on page load
+        checkAndShowSecretsButton();
+        
+        // Also check when secretPages becomes available
+        window.addEventListener('load', checkAndShowSecretsButton);
         
         // Cursor Trail Effect - Smooth line effect
         const trails = [];
