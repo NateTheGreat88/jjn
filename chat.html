@@ -636,9 +636,30 @@
             if (db) {
                 // Save to Firestore - use roomMessages collection if in a room
                 const collection = currentRoomCode ? 'roomMessages' : 'messages';
+                
+                // Log exactly what we're sending to Firestore
+                console.log('About to save to Firestore:', {
+                    collection: collection,
+                    messageDataKeys: Object.keys(messageData),
+                    hasAvatar: 'avatar' in messageData,
+                    hasAvatarImage: 'avatarImage' in messageData,
+                    avatarValue: messageData.avatar,
+                    avatarImageLength: messageData.avatarImage ? messageData.avatarImage.length : 0,
+                    fullMessageData: messageData
+                });
+                
                 db.collection(collection).add(messageData)
                 .then((docRef) => {
                     console.log('Message saved successfully to', collection, 'with ID:', docRef.id);
+                    // Verify what was actually saved by reading it back
+                    docRef.get().then((doc) => {
+                        const savedData = doc.data();
+                        console.log('Verifying saved data:', {
+                            hasAvatar: 'avatar' in savedData,
+                            hasAvatarImage: 'avatarImage' in savedData,
+                            savedKeys: Object.keys(savedData)
+                        });
+                    });
                     // Update the message element with the actual document ID
                     const messageElement = chatMessages.querySelector(`[data-message-id="temp-${timestamp}"]`);
                     if (messageElement) {
@@ -648,6 +669,7 @@
                 .catch((error) => {
                     console.error('Error saving message to Firestore:', error);
                     console.error('Error details:', error.code, error.message);
+                    console.error('Message data that failed:', messageData);
                     // Fallback to localStorage
                     saveMessageToLocalStorage(user, message, timestamp, imageData, gifData, avatar, avatarImage);
                 });
