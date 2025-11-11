@@ -43,22 +43,10 @@
         </div>
         
         <div class="chat-input-container">
-            <div class="user-name-container" id="userNameContainer">
-                <label for="userNameInput">Your name:</label>
-                <div class="name-input-wrapper">
-                    <input 
-                        type="text" 
-                        id="userNameInput" 
-                        class="user-name-input" 
-                        placeholder="Enter your name..."
-                        autocomplete="off"
-                        maxlength="30"
-                    >
-                    <button id="saveNameButton" class="save-name-button">Save</button>
-                </div>
-                <div class="current-name-display" id="currentNameDisplay" style="display: none;">
+            <div class="user-name-container" id="userNameContainer" style="display: none;">
+                <div class="current-name-display" id="currentNameDisplay">
                     <span>Chatting as: <strong id="currentNameText"></strong></span>
-                    <button id="changeNameButton" class="change-name-button">Change</button>
+                    <a href="profile.html" class="change-name-button" style="text-decoration: none;">Edit Profile</a>
                 </div>
             </div>
             <div class="input-wrapper">
@@ -168,12 +156,9 @@
         const chatMessages = document.getElementById('chatMessages');
         const messageInput = document.getElementById('messageInput');
         const sendButton = document.getElementById('sendButton');
-        const userNameInput = document.getElementById('userNameInput');
-        const saveNameButton = document.getElementById('saveNameButton');
         const currentNameDisplay = document.getElementById('currentNameDisplay');
         const currentNameText = document.getElementById('currentNameText');
-        const changeNameButton = document.getElementById('changeNameButton');
-        const nameInputWrapper = userNameInput.parentElement;
+        const userNameContainer = document.getElementById('userNameContainer');
         
         // Room UI elements
         const createRoomButton = document.getElementById('createRoomButton');
@@ -211,44 +196,59 @@
         let isInitialLoad = true; // Track if this is the first load
         let selectedImage = null; // Store selected image as base64
 
-        // Load saved name from localStorage (still using localStorage for user name)
+        // Load saved name from profile only
         function loadUserName() {
-            const savedName = localStorage.getItem('jjnChatUserName');
-            if (savedName && savedName.trim() !== '') {
-                currentUserName = savedName.trim();
-                showNameDisplay();
-                enableChat();
-            } else {
-                showNameInput();
+            // Only check profile - no fallback to chat name input
+            const profileData = localStorage.getItem('jnjUserProfile');
+            if (profileData) {
+                try {
+                    const profile = JSON.parse(profileData);
+                    // Use username if available, otherwise fallback to displayName
+                    if (profile.username && profile.username.trim() !== '') {
+                        currentUserName = profile.username.trim();
+                        showNameDisplay();
+                        enableChat();
+                        return;
+                    } else if (profile.displayName && profile.displayName.trim() !== '') {
+                        currentUserName = profile.displayName.trim();
+                        showNameDisplay();
+                        enableChat();
+                        return;
+                    }
+                } catch (e) {
+                    console.error('Error loading profile:', e);
+                }
             }
-        }
-
-        // Save name to localStorage (still using localStorage for user name)
-        function saveUserName(name) {
-            const trimmedName = name.trim();
-            if (trimmedName === '') return false;
             
-            localStorage.setItem('jjnChatUserName', trimmedName);
-            currentUserName = trimmedName;
-            showNameDisplay();
-            enableChat();
-            return true;
-        }
-
-        // Show name input field
-        function showNameInput() {
-            nameInputWrapper.style.display = 'flex';
-            currentNameDisplay.style.display = 'none';
-            userNameInput.value = '';
-            userNameInput.focus();
+            // No profile - show message to create profile
+            showNoProfileMessage();
             disableChat();
         }
 
         // Show current name display
         function showNameDisplay() {
-            nameInputWrapper.style.display = 'none';
-            currentNameDisplay.style.display = 'flex';
-            currentNameText.textContent = currentUserName;
+            if (userNameContainer) {
+                userNameContainer.style.display = 'block';
+            }
+            if (currentNameDisplay) {
+                currentNameDisplay.style.display = 'flex';
+            }
+            if (currentNameText) {
+                currentNameText.textContent = currentUserName;
+            }
+        }
+        
+        // Show message when no profile exists
+        function showNoProfileMessage() {
+            if (userNameContainer) {
+                userNameContainer.style.display = 'block';
+            }
+            if (currentNameDisplay) {
+                currentNameDisplay.style.display = 'flex';
+            }
+            if (currentNameText) {
+                currentNameText.innerHTML = '<a href="profile.html" style="color: #4a9eff; text-decoration: underline;">Create a profile</a> to start chatting';
+            }
         }
 
         // Enable chat input
@@ -323,6 +323,9 @@
                             welcomeMsg.querySelector('.message-content p').textContent = 'Welcome to JNJ Chat! Start a conversation below.';
                         }
                     }
+                    
+                    // Reload username from profile to ensure it's up to date
+                    loadUserName();
                     
                     // Load messages
                     if (db) {
@@ -719,10 +722,45 @@
             let messageHtml = message ? escapeHtml(message) : '';
             // Emojis are already Unicode, so they should display fine
             
+            // Get user avatar and username from profile if available
+            let userAvatar = '👤';
+            let userAvatarImage = null;
+            let displayUsername = user; // Default to the user value
+            try {
+                const profileData = localStorage.getItem('jnjUserProfile');
+                if (profileData) {
+                    const profile = JSON.parse(profileData);
+                    // Check if this message is from the current user (match by username or displayName)
+                    if (user === profile.username || user === profile.displayName) {
+                        // Use username for display if available
+                        if (profile.username && profile.username.trim() !== '') {
+                            displayUsername = profile.username.trim();
+                        }
+                        // Get avatar
+                        if (profile.avatarImage) {
+                            userAvatarImage = profile.avatarImage;
+                        } else if (profile.avatar) {
+                            userAvatar = profile.avatar;
+                        }
+                    }
+                }
+            } catch (e) {
+                // Ignore errors
+            }
+            
+            // Create avatar HTML
+            let avatarHtml = '';
+            if (userAvatarImage) {
+                avatarHtml = `<img src="${userAvatarImage}" alt="Avatar" class="message-avatar-image" style="width: 32px; height: 32px; border-radius: 50%; margin-right: 8px; object-fit: cover; border: 2px solid rgba(255, 255, 255, 0.2);">`;
+            } else {
+                avatarHtml = `<span class="message-avatar" style="font-size: 20px; margin-right: 8px;">${userAvatar}</span>`;
+            }
+            
             messageDiv.innerHTML = `
-                <div class="message-header">
-                    <span class="message-user">${escapeHtml(user)}</span>
-                    <span class="message-time">${timeString}</span>
+                <div class="message-header" style="display: flex; align-items: center; gap: 8px;">
+                    ${avatarHtml}
+                    <span class="message-user">${escapeHtml(displayUsername)}</span>
+                    <span class="message-time" style="margin-left: auto;">${timeString}</span>
                 </div>
                 <div class="message-content">
                     ${imageHtml}
@@ -833,16 +871,36 @@
                 document.getElementById('previewGif').src = '';
             }
             
-            console.log('Sending message:', { user: currentUserName, message: message, hasImage: !!imageData, hasGif: !!gifData, gifUrl: gifData });
+            // Always get the latest username from profile
+            let messageUsername = currentUserName;
+            try {
+                const profileData = localStorage.getItem('jnjUserProfile');
+                if (profileData) {
+                    const profile = JSON.parse(profileData);
+                    // Use username if available, otherwise use displayName
+                    if (profile.username && profile.username.trim() !== '') {
+                        messageUsername = profile.username.trim();
+                        // Update currentUserName to keep it in sync
+                        currentUserName = messageUsername;
+                    } else if (profile.displayName && profile.displayName.trim() !== '') {
+                        messageUsername = profile.displayName.trim();
+                        currentUserName = messageUsername;
+                    }
+                }
+            } catch (e) {
+                // Ignore errors, use currentUserName
+            }
+            
+            console.log('Sending message:', { user: messageUsername, message: message, hasImage: !!imageData, hasGif: !!gifData, gifUrl: gifData });
             
             if (db) {
                 // Save to Firestore first
-                saveMessage(currentUserName, message || '', timestamp, imageData, gifData);
+                saveMessage(messageUsername, message || '', timestamp, imageData, gifData);
                 
                 // Add to display immediately for better UX
-                addMessageToChat(currentUserName, message || '', timestamp, false, imageData, gifData);
+                addMessageToChat(messageUsername, message || '', timestamp, false, imageData, gifData);
             } else {
-                addMessageToChat(currentUserName, message || '', timestamp, true, imageData, gifData);
+                addMessageToChat(messageUsername, message || '', timestamp, true, imageData, gifData);
             }
             messageInput.value = '';
             messageInput.focus();
@@ -924,16 +982,6 @@
         }
 
         // Save name handler
-        function handleSaveName() {
-            const name = userNameInput.value.trim();
-            if (name === '') {
-                userNameInput.focus();
-                return;
-            }
-            if (saveUserName(name)) {
-                userNameInput.value = '';
-            }
-        }
 
         // Generate a 6-digit room code
         function generateRoomCode() {
@@ -1285,13 +1333,6 @@
         }
         
         // Event listeners
-        saveNameButton.addEventListener('click', handleSaveName);
-        userNameInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                handleSaveName();
-            }
-        });
-        changeNameButton.addEventListener('click', showNameInput);
         sendButton.addEventListener('click', sendMessage);
         messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {

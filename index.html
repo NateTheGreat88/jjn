@@ -25,6 +25,7 @@
                 >
                 <span class="search-icon">🔍</span>
             </div>
+            <a href="profile.html" class="about-button" id="profileButton" style="margin-right: 10px;">👤 Profile</a>
             <a href="about.html" class="about-button">About Us</a>
         </div>
         
@@ -175,6 +176,34 @@
             });
         });
         
+        // Update profile button with user avatar
+        function updateProfileButton() {
+            try {
+                const profileData = localStorage.getItem('jnjUserProfile');
+                const profileButton = document.getElementById('profileButton');
+                if (profileButton && profileData) {
+                    const profile = JSON.parse(profileData);
+                    if (profile.avatarImage) {
+                        profileButton.innerHTML = `<img src="${profile.avatarImage}" alt="Profile" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 6px; display: inline-block;"> Profile`;
+                    } else if (profile.avatar) {
+                        profileButton.innerHTML = `${profile.avatar} Profile`;
+                    }
+                }
+            } catch (e) {
+                console.error('Error updating profile button:', e);
+            }
+        }
+        
+        // Update profile button on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateProfileButton();
+        });
+        
+        // Also update when returning to page (in case profile was updated)
+        window.addEventListener('focus', () => {
+            updateProfileButton();
+        });
+        
         // Recently Visited Tracking
         function trackPageVisit(page) {
             const recentPages = JSON.parse(localStorage.getItem('jjnRecentPages') || '[]');
@@ -201,6 +230,7 @@
                 'imageeditor.html': 'image editor',
                 'game.html': 'asteroids game',
                 'minigames.html': 'mini games',
+                'profile.html': 'profile',
                 'secrets.html': 'secrets',
             };
             
