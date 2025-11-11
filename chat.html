@@ -440,7 +440,9 @@
                                         message: data.message,
                                         timestamp: data.timestamp,
                                         image: data.image || null,
-                                        gif: data.gif || null
+                                        gif: data.gif || null,
+                                        avatar: data.avatar || null,
+                                        avatarImage: data.avatarImage || null
                                     });
                                 }
                             } else {
@@ -452,7 +454,9 @@
                                         message: data.message,
                                         timestamp: data.timestamp,
                                         image: data.image || null,
-                                        gif: data.gif || null
+                                        gif: data.gif || null,
+                                        avatar: data.avatar || null,
+                                        avatarImage: data.avatarImage || null
                                     });
                                 }
                             }
@@ -605,9 +609,6 @@
             
             if (gifData) {
                 messageData.gif = gifData;
-                console.log('Saving GIF with message:', { gifUrl: gifData, fullMessageData: messageData });
-            } else {
-                console.log('No GIF data to save');
             }
             
             // Save avatar with message
@@ -616,6 +617,16 @@
             } else if (avatar) {
                 messageData.avatar = avatar;
             }
+            
+            // Log what we're saving
+            console.log('Saving message to Firestore:', { 
+                user: user, 
+                hasImage: !!imageData, 
+                hasGif: !!gifData, 
+                hasAvatar: !!avatar, 
+                hasAvatarImage: !!avatarImage,
+                fullMessageData: messageData 
+            });
             
             // Add room code if in a private room
             if (currentRoomCode) {
