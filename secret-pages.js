@@ -28,10 +28,40 @@
             hint: 'Type "secret" in the search...',
             unlocked: false
         },
-        'cursor': {
-            name: 'Cursor Secret',
-            page: 'secret-cursor.html',
-            hint: 'Draw a circle with your cursor...',
+        'subtitle': {
+            name: 'Subtitle Secret',
+            page: 'secret-subtitle.html',
+            hint: 'Double-click the subtitle...',
+            unlocked: false
+        },
+        'rightclick': {
+            name: 'Right-Click Secret',
+            page: 'secret-rightclick.html',
+            hint: 'Right-click on the header...',
+            unlocked: false
+        },
+        'devtools': {
+            name: 'Dev Tools Secret',
+            page: 'secret-devtools.html',
+            hint: 'Press Ctrl+Shift+J (or Cmd+Option+J)...',
+            unlocked: false
+        },
+        'favicon': {
+            name: 'Favicon Secret',
+            page: 'secret-favicon.html',
+            hint: 'Click the favicon 5 times...',
+            unlocked: false
+        },
+        'chatcode': {
+            name: 'Chat Code Secret',
+            page: 'secret-chatcode.html',
+            hint: 'Type "JNJ2025" in chat...',
+            unlocked: false
+        },
+        'tripleclick': {
+            name: 'Triple-Click Secret',
+            page: 'secret-tripleclick.html',
+            hint: 'Triple-click the "About Us" button...',
             unlocked: false
         }
     };
@@ -68,6 +98,10 @@
             secrets[key].unlocked = true;
             saveSecrets();
             showSecretNotification(secrets[key].name);
+            // Always redirect to secrets page when a secret is unlocked
+            setTimeout(() => {
+                window.location.href = 'secrets.html';
+            }, 2000);
             return true;
         }
         return false;
@@ -141,9 +175,7 @@
             
             if (match) {
                 if (unlockSecret('konami')) {
-                    setTimeout(() => {
-                        window.location.href = 'secrets.html';
-                    }, 1500);
+                    // Redirect is handled in unlockSecret
                 } else if (isUnlocked('konami')) {
                     window.location.href = 'secrets.html';
                 }
@@ -173,9 +205,7 @@
                 
                 if (headerClickCount === 7) {
                     if (unlockSecret('header')) {
-                        setTimeout(() => {
-                            window.location.href = 'secrets.html';
-                        }, 1500);
+                        // Redirect is handled in unlockSecret
                     } else if (isUnlocked('header')) {
                         window.location.href = 'secrets.html';
                     }
@@ -193,9 +223,7 @@
                 const value = e.target.value.toLowerCase().trim();
                 if (value === 'secret' || value === 'secrets') {
                     if (unlockSecret('search')) {
-                        setTimeout(() => {
-                            window.location.href = 'secrets.html';
-                        }, 1500);
+                        // Redirect is handled in unlockSecret
                     } else if (isUnlocked('search')) {
                         window.location.href = 'secrets.html';
                     }
@@ -208,30 +236,44 @@
     document.addEventListener('DOMContentLoaded', () => {
         const footerLink = document.querySelector('.secret-footer-link');
         if (footerLink) {
+            // Make sure the link is visible and clickable
+            footerLink.style.display = 'block';
+            footerLink.style.position = 'absolute';
+            footerLink.style.right = '20px';
+            footerLink.style.bottom = '10px';
+            footerLink.style.width = '30px';
+            footerLink.style.height = '30px';
+            footerLink.style.opacity = '0.1';
+            footerLink.style.cursor = 'pointer';
+            footerLink.style.zIndex = '10';
+            footerLink.style.textDecoration = 'none';
+            footerLink.style.fontSize = '20px';
+            footerLink.style.textAlign = 'center';
+            footerLink.style.lineHeight = '30px';
+            
             // Position the link over the copyright area
             const footer = document.querySelector('.footer');
             if (footer) {
                 footer.style.position = 'relative';
-                const footerYear = footer.querySelector('.footer-year');
-                if (footerYear) {
-                    footerLink.style.position = 'absolute';
-                    footerLink.style.right = '20px';
-                    footerLink.style.bottom = '10px';
-                    footerLink.style.width = '30px';
-                    footerLink.style.height = '30px';
-                }
             }
             
             footerLink.addEventListener('click', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 if (unlockSecret('footer')) {
-                    setTimeout(() => {
-                        window.location.href = 'secrets.html';
-                    }, 1500);
+                    // Redirect is handled in unlockSecret
                 } else if (isUnlocked('footer')) {
                     window.location.href = 'secrets.html';
                 }
             });
+            
+            // Also make the footer year area clickable as a hint
+            const footerYear = document.querySelector('.footer-year');
+            if (footerYear) {
+                footerYear.style.cursor = 'pointer';
+                footerYear.style.position = 'relative';
+                footerYear.title = 'Look for the secret...';
+            }
         }
     });
     
@@ -255,66 +297,127 @@
         }
     });
     
-    // ==================== CURSOR CIRCLE SECRET ====================
-    let cursorPath = [];
-    let lastCursorTime = 0;
-    const CIRCLE_THRESHOLD = 50; // Minimum points for a circle
-    const CIRCLE_TIME_LIMIT = 3000; // 3 seconds to complete circle
-    
-    document.addEventListener('mousemove', (e) => {
-        const now = Date.now();
-        if (now - lastCursorTime > 50) { // Sample every 50ms
-            cursorPath.push({ x: e.clientX, y: e.clientY, time: now });
-            lastCursorTime = now;
+    // ==================== SUBTITLE DOUBLE-CLICK SECRET ====================
+    document.addEventListener('DOMContentLoaded', () => {
+        const subtitle = document.querySelector('.subtitle, .chat-subtitle, .about-subtitle');
+        if (subtitle) {
+            let clickCount = 0;
+            let clickTimeout = null;
             
-            // Remove old points
-            cursorPath = cursorPath.filter(p => now - p.time < CIRCLE_TIME_LIMIT);
-            
-            if (cursorPath.length >= CIRCLE_THRESHOLD) {
-                if (isCircle(cursorPath)) {
-                    if (unlockSecret('cursor')) {
-                        setTimeout(() => {
-                            window.location.href = 'secrets.html';
-                        }, 1500);
-                    } else if (isUnlocked('cursor')) {
-                        window.location.href = 'secrets.html';
-                    }
-                    cursorPath = [];
+            subtitle.addEventListener('dblclick', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (unlockSecret('subtitle')) {
+                    // Redirect is handled in unlockSecret
+                } else if (isUnlocked('subtitle')) {
+                    window.location.href = 'secrets.html';
                 }
+            });
+        }
+    });
+    
+    // ==================== RIGHT-CLICK HEADER SECRET ====================
+    document.addEventListener('DOMContentLoaded', () => {
+        const header = document.querySelector('header h1');
+        if (header) {
+            header.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                if (unlockSecret('rightclick')) {
+                    // Redirect is handled in unlockSecret
+                } else if (isUnlocked('rightclick')) {
+                    window.location.href = 'secrets.html';
+                }
+                return false;
+            });
+        }
+    });
+    
+    // ==================== DEV TOOLS SECRET ====================
+    let devToolsSequence = [];
+    document.addEventListener('keydown', (e) => {
+        // Detect Ctrl+Shift+J (Windows/Linux) or Cmd+Option+J (Mac)
+        if ((e.ctrlKey && e.shiftKey && e.key === 'J') || 
+            (e.metaKey && e.altKey && e.key === 'J')) {
+            if (unlockSecret('devtools')) {
+                // Redirect is handled in unlockSecret
+            } else if (isUnlocked('devtools')) {
+                window.location.href = 'secrets.html';
             }
         }
     });
     
-    function isCircle(path) {
-        if (path.length < CIRCLE_THRESHOLD) return false;
+    // ==================== FAVICON CLICK SECRET ====================
+    // Since we can't directly click the favicon in the browser tab,
+    // we'll use clicks on the page title area (top-left corner)
+    document.addEventListener('DOMContentLoaded', () => {
+        let faviconClickCount = 0;
+        let faviconClickTimeout = null;
         
-        // Calculate center
-        let sumX = 0, sumY = 0;
-        for (let p of path) {
-            sumX += p.x;
-            sumY += p.y;
-        }
-        const centerX = sumX / path.length;
-        const centerY = sumY / path.length;
+        // Create invisible clickable area in top-left corner (where favicon would be conceptually)
+        const faviconArea = document.createElement('div');
+        faviconArea.style.position = 'fixed';
+        faviconArea.style.top = '0';
+        faviconArea.style.left = '0';
+        faviconArea.style.width = '50px';
+        faviconArea.style.height = '50px';
+        faviconArea.style.zIndex = '10000';
+        faviconArea.style.cursor = 'pointer';
+        faviconArea.style.opacity = '0';
+        faviconArea.style.backgroundColor = 'transparent';
+        document.body.appendChild(faviconArea);
         
-        // Calculate average distance from center
-        let sumDist = 0;
-        for (let p of path) {
-            const dist = Math.sqrt((p.x - centerX) ** 2 + (p.y - centerY) ** 2);
-            sumDist += dist;
-        }
-        const avgDist = sumDist / path.length;
-        
-        // Check if most points are roughly the same distance from center (circle)
-        let withinRange = 0;
-        for (let p of path) {
-            const dist = Math.sqrt((p.x - centerX) ** 2 + (p.y - centerY) ** 2);
-            if (Math.abs(dist - avgDist) < avgDist * 0.3) { // Within 30% of average
-                withinRange++;
+        faviconArea.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            faviconClickCount++;
+            
+            if (faviconClickTimeout) {
+                clearTimeout(faviconClickTimeout);
             }
+            
+            faviconClickTimeout = setTimeout(() => {
+                faviconClickCount = 0;
+            }, 2000);
+            
+            if (faviconClickCount === 5) {
+                if (unlockSecret('favicon')) {
+                    // Redirect is handled in unlockSecret
+                } else if (isUnlocked('favicon')) {
+                    window.location.href = 'secrets.html';
+                }
+                faviconClickCount = 0;
+            }
+        });
+    });
+    
+    // ==================== TRIPLE-CLICK ABOUT BUTTON SECRET ====================
+    document.addEventListener('DOMContentLoaded', () => {
+        const aboutButton = document.querySelector('.about-button');
+        if (aboutButton) {
+            let clickCount = 0;
+            let clickTimeout = null;
+            
+            aboutButton.addEventListener('click', (e) => {
+                clickCount++;
+                
+                if (clickTimeout) {
+                    clearTimeout(clickTimeout);
+                }
+                
+                clickTimeout = setTimeout(() => {
+                    if (clickCount === 3) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (unlockSecret('tripleclick')) {
+                            // Redirect is handled in unlockSecret
+                        } else if (isUnlocked('tripleclick')) {
+                            window.location.href = 'secrets.html';
+                        }
+                    }
+                    clickCount = 0;
+                }, 500);
+            });
         }
-        
-        return withinRange / path.length > 0.7; // 70% of points form a circle
-    }
+    });
 })();
 

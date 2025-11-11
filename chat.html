@@ -7,7 +7,9 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="chat.css">
     <link rel="stylesheet" href="animated-background.css">
+    <link rel="stylesheet" href="secret-pages.css">
     <script src="page-transitions.js" defer></script>
+    <script src="secret-pages.js" defer></script>
     <script src="animated-background.js" defer></script>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -18,9 +20,9 @@
 <body>
     <a href="index.html" class="back-button">← Back to Home</a>
     
-    <div class="chat-container">
-        <header class="chat-header">
-            <h1>JNJ Chat</h1>
+    <div class="chat-container" id="chatContainer">
+        <header class="chat-header" id="chatHeader">
+            <h1 id="chatTitle">JNJ Chat</h1>
             <p class="chat-subtitle">Junhu Choi • Jaxon Croskey • Nathan DeLuca</p>
             <div class="room-controls">
                 <button id="createRoomButton" class="room-button" style="display: none;">Create Private Room</button>
@@ -306,10 +308,16 @@
                     // Update UI based on room state
                     updateRoomUI();
                     
+                    // Check if dev chat and apply styling
+                    checkDevChatOnLoad();
+                    
                     // Update welcome message
                     const welcomeMsg = chatMessages.querySelector('.welcome-message');
                     if (welcomeMsg) {
-                        if (currentRoomCode) {
+                        if (currentRoomCode === 'devchat') {
+                            welcomeMsg.classList.add('dev-welcome');
+                            welcomeMsg.querySelector('.message-content').innerHTML = '<p>🔧 Welcome to Dev Chat Room!</p><p style="margin-top: 10px; font-size: 14px; opacity: 0.8;">This is a secret developer chat room.</p>';
+                        } else if (currentRoomCode) {
                             welcomeMsg.querySelector('.message-content p').textContent = 'Welcome to Private Room ' + currentRoomCode + '!';
                         } else {
                             welcomeMsg.querySelector('.message-content p').textContent = 'Welcome to JNJ Chat! Start a conversation below.';
@@ -795,6 +803,17 @@
             const message = messageInput.value.trim();
             if ((message === '' && !selectedImage && !selectedGif) || !currentUserName) return;
 
+            // Check for chat code secret: "JNJ2025"
+            if (message.toLowerCase() === 'jnj2025' && window.secretPages) {
+                if (window.secretPages.unlock('chatcode')) {
+                    // Redirect is handled in unlockSecret
+                } else if (window.secretPages.isUnlocked('chatcode')) {
+                    window.location.href = 'secrets.html';
+                }
+                messageInput.value = '';
+                return;
+            }
+
             const timestamp = Date.now();
             const imageData = selectedImage;
             const gifData = selectedGif;
@@ -1011,11 +1030,20 @@
                 currentRoomCode = 'devchat';
                 localStorage.setItem('jjnChatRoomCode', 'devchat');
                 
+                // Apply dev chat styling
+                document.body.classList.add('dev-chat-active');
+                const chatContainer = document.getElementById('chatContainer');
+                const chatHeader = document.getElementById('chatHeader');
+                const chatTitle = document.getElementById('chatTitle');
+                if (chatContainer) chatContainer.classList.add('dev-chat');
+                if (chatHeader) chatHeader.classList.add('dev-chat-header');
+                if (chatTitle) chatTitle.textContent = '🔧 Dev Chat';
+                
                 // Update UI
                 updateRoomUI();
                 
                 // Clear chat and show welcome message for dev room
-                chatMessages.innerHTML = '<div class="message welcome-message"><div class="message-content"><p>🔧 Welcome to Dev Chat Room!</p><p style="margin-top: 10px; font-size: 14px; opacity: 0.8;">This is a secret developer chat room.</p></div></div>';
+                chatMessages.innerHTML = '<div class="message welcome-message dev-welcome"><div class="message-content"><p>🔧 Welcome to Dev Chat Room!</p><p style="margin-top: 10px; font-size: 14px; opacity: 0.8;">This is a secret developer chat room.</p></div></div>';
                 loadedMessageIds.clear();
                 isInitialLoad = true;
                 
@@ -1183,11 +1211,33 @@
             }
         }
         
+        // Check if dev chat is active on page load
+        function checkDevChatOnLoad() {
+            if (currentRoomCode === 'devchat') {
+                document.body.classList.add('dev-chat-active');
+                const chatContainer = document.getElementById('chatContainer');
+                const chatHeader = document.getElementById('chatHeader');
+                const chatTitle = document.getElementById('chatTitle');
+                if (chatContainer) chatContainer.classList.add('dev-chat');
+                if (chatHeader) chatHeader.classList.add('dev-chat-header');
+                if (chatTitle) chatTitle.textContent = '🔧 Dev Chat';
+            }
+        }
+        
         // Leave private room and return to public chat
         function leaveRoom() {
             if (!confirm('Leave this private room and return to public chat?')) {
                 return;
             }
+            
+            // Remove dev chat styling if active
+            document.body.classList.remove('dev-chat-active');
+            const chatContainer = document.getElementById('chatContainer');
+            const chatHeader = document.getElementById('chatHeader');
+            const chatTitle = document.getElementById('chatTitle');
+            if (chatContainer) chatContainer.classList.remove('dev-chat');
+            if (chatHeader) chatHeader.classList.remove('dev-chat-header');
+            if (chatTitle) chatTitle.textContent = 'JNJ Chat';
             
             currentRoomCode = null;
             localStorage.removeItem('jjnChatRoomCode');
