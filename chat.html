@@ -110,7 +110,7 @@
     <div id="joinRoomModal" class="modal" style="display: none;">
         <div class="modal-content">
             <h2>Join Private Room</h2>
-            <input type="text" id="roomCodeInput" placeholder="Enter room code..." maxlength="6" pattern="[0-9]{6}">
+            <input type="text" id="roomCodeInput" placeholder="Enter room code..." maxlength="10">
             <div class="modal-buttons">
                 <button id="confirmJoinButton" class="modal-button">Join</button>
                 <button id="cancelJoinButton" class="modal-button modal-button-cancel">Cancel</button>
@@ -992,17 +992,46 @@
         
         // Confirm join room
         function confirmJoin() {
-            const code = roomCodeInput.value.trim();
-            if (code.length !== 6 || !/^\d+$/.test(code)) {
-                alert('Please enter a valid 6-digit room code.');
-                return;
-            }
+            const code = roomCodeInput.value.trim().toLowerCase();
             
             // Special dev code: 000001 redirects to dev secrets page
             if (code === '000001') {
                 joinRoomModal.style.display = 'none';
                 roomCodeInput.value = '';
                 window.location.href = 'dev-secrets.html';
+                return;
+            }
+            
+            // Special dev chat room code: "bzn mt" or "bznmt"
+            if (code === 'bzn mt' || code === 'bznmt') {
+                joinRoomModal.style.display = 'none';
+                roomCodeInput.value = '';
+                
+                // Join the dev chat room
+                currentRoomCode = 'devchat';
+                localStorage.setItem('jjnChatRoomCode', 'devchat');
+                
+                // Update UI
+                updateRoomUI();
+                
+                // Clear chat and show welcome message for dev room
+                chatMessages.innerHTML = '<div class="message welcome-message"><div class="message-content"><p>🔧 Welcome to Dev Chat Room!</p><p style="margin-top: 10px; font-size: 14px; opacity: 0.8;">This is a secret developer chat room.</p></div></div>';
+                loadedMessageIds.clear();
+                isInitialLoad = true;
+                
+                // Load messages for dev room
+                if (db) {
+                    loadMessagesFromFirestore('devchat');
+                } else {
+                    // Fallback: reload from localStorage with room filter
+                    loadMessages();
+                }
+                return;
+            }
+            
+            // Regular room code validation (6 digits)
+            if (code.length !== 6 || !/^\d+$/.test(code)) {
+                alert('Please enter a valid 6-digit room code.');
                 return;
             }
             
