@@ -370,12 +370,16 @@
                 lastUpdated: new Date().toISOString()
             };
 
-            // Load existing profile to preserve join date
+            // Load existing profile to preserve join date and check for username change
+            let oldUsername = null;
+            let oldDisplayName = null;
             const existing = localStorage.getItem(PROFILE_STORAGE_KEY);
             if (existing) {
                 try {
                     const existingProfile = JSON.parse(existing);
                     profile.joinDate = existingProfile.joinDate || new Date().toISOString();
+                    oldUsername = existingProfile.username || null;
+                    oldDisplayName = existingProfile.displayName || null;
                 } catch (e) {
                     // If error, use defaults
                     profile.joinDate = new Date().toISOString();
@@ -390,9 +394,47 @@
             // Update profile button on homepage
             updateProfileButton();
             
-            // Update chat to use new username (if chat page is open, it will reload on next message)
-            // The chat will automatically pick up the new username on next page load
+            // Update all previous messages if username changed
+            if (profile.username && profile.username.trim() !== '' && 
+                (oldUsername !== profile.username || oldDisplayName !== profile.displayName)) {
+                updateAllMessagesUsername(oldUsername, oldDisplayName, profile.username, profile.displayName);
+            }
         }
+        
+        // Update all previous messages with new username
+        function updateAllMessagesUsername(oldUsername, oldDisplayName, newUsername, newDisplayName) {
+            // Update localStorage messages
+            try {
+                const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
+                let updated = false;
+                messages.forEach(msg => {
+                    // Check if message is from this user (match by old username or displayName)
+                    if ((oldUsername && msg.user === oldUsername) || 
+                        (oldDisplayName && msg.user === oldDisplayName) ||
+                        (!oldUsername && !oldDisplayName && msg.user)) {
+                        msg.user = newUsername || newDisplayName;
+                        updated = true;
+                    }
+                });
+                if (updated) {
+                    localStorage.setItem('jjnChatMessages', JSON.stringify(messages));
+                }
+            } catch (e) {
+                console.error('Error updating localStorage messages:', e);
+            }
+            
+            // Update Firestore messages if available (will be done when chat page loads or when user sends next message)
+            // We'll trigger this by posting a message to the chat page if it's open
+            if (window.updateFirestoreMessagesUsername) {
+                window.updateFirestoreMessagesUsername(oldUsername, oldDisplayName, newUsername || newDisplayName);
+            }
+            
+            // Update displayed messages in chat if it's open
+            if (window.updateChatMessagesUsername) {
+                window.updateChatMessagesUsername(oldUsername, oldDisplayName, newUsername || newDisplayName);
+            }
+        }
+        
 
         // Reset profile
         function resetProfile() {

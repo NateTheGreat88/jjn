@@ -141,6 +141,7 @@
             if (typeof firebaseConfig !== 'undefined') {
                 firebase.initializeApp(firebaseConfig);
                 db = firebase.firestore();
+                window.db = db; // Expose db to window for profile page access
                 console.log('Firebase connected successfully!');
             } else {
                 console.warn('Firebase config not found. Using localStorage fallback.');
@@ -344,7 +345,7 @@
                         // Only show the most recent messages
                         const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                         recentMessages.forEach(msg => {
-                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif);
+                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage);
                         });
                         scrollToBottom();
                     }
@@ -367,7 +368,7 @@
                         const filteredMessages = messages.filter(msg => !msg.roomCode);
                         const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                         recentMessages.forEach(msg => {
-                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif);
+                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage);
                         });
                         scrollToBottom();
                     }
@@ -465,7 +466,7 @@
                         recentMessages.reverse().forEach(msg => {
                             if (!loadedMessageIds.has(msg.id)) {
                                 console.log('Loading message from initial load:', { user: msg.user, hasGif: !!msg.gif, gifUrl: msg.gif });
-                                addMessageToChat(msg.user, msg.message || '', msg.timestamp, false, msg.image, msg.gif);
+                                addMessageToChat(msg.user, msg.message || '', msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage);
                                 loadedMessageIds.add(msg.id);
                             }
                         });
@@ -487,13 +488,13 @@
                                 // Double-check room code match
                                 if (roomCode) {
                                     if (data.roomCode === roomCode) {
-                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null);
+                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage);
                                         loadedMessageIds.add(change.doc.id);
                                     }
                                 } else {
                                     // Only show messages without roomCode in public chat
                                     if (!data.roomCode) {
-                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null);
+                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage);
                                         loadedMessageIds.add(change.doc.id);
                                     }
                                 }
@@ -535,7 +536,7 @@
                                 recentMessages.reverse();
                                 recentMessages.forEach(msg => {
                                     if (!loadedMessageIds.has(msg.id)) {
-                                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif);
+                                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage);
                                         loadedMessageIds.add(msg.id);
                                     }
                                 });
@@ -550,7 +551,7 @@
                                                 const data = change.doc.data();
                                                 console.log('Fallback listener - New message:', { user: data.user, hasGif: !!data.gif, gifUrl: data.gif, fullData: data });
                                                 if (data.roomCode === roomCode) {
-                                                    addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null);
+                                                    addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage);
                                                     loadedMessageIds.add(change.doc.id);
                                                 }
                                             }
@@ -565,7 +566,7 @@
                                 let filteredMessages = messages.filter(msg => msg.roomCode === roomCode);
                                 const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                                 recentMessages.forEach(msg => {
-                                    addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image || null, msg.gif || null);
+                                    addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image || null, msg.gif || null, msg.avatar, msg.avatarImage);
                                 });
                                 scrollToBottom();
                             });
@@ -584,14 +585,14 @@
                     // Only show the most recent messages
                     const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                     recentMessages.forEach(msg => {
-                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image || null, msg.gif || null);
+                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image || null, msg.gif || null, msg.avatar, msg.avatarImage);
                     });
                     scrollToBottom();
                 });
         }
 
         // Save message to Firestore or localStorage fallback
-        function saveMessage(user, message, timestamp, imageData = null, gifData = null) {
+        function saveMessage(user, message, timestamp, imageData = null, gifData = null, avatar = null, avatarImage = null) {
             const messageData = {
                 user: user,
                 message: message,
@@ -607,6 +608,13 @@
                 console.log('Saving GIF with message:', { gifUrl: gifData, fullMessageData: messageData });
             } else {
                 console.log('No GIF data to save');
+            }
+            
+            // Save avatar with message
+            if (avatarImage) {
+                messageData.avatarImage = avatarImage;
+            } else if (avatar) {
+                messageData.avatar = avatar;
             }
             
             // Add room code if in a private room
@@ -630,16 +638,16 @@
                     console.error('Error saving message to Firestore:', error);
                     console.error('Error details:', error.code, error.message);
                     // Fallback to localStorage
-                    saveMessageToLocalStorage(user, message, timestamp, imageData, gifData);
+                    saveMessageToLocalStorage(user, message, timestamp, imageData, gifData, avatar, avatarImage);
                 });
             } else {
                 // Fallback to localStorage
-                saveMessageToLocalStorage(user, message, timestamp, imageData, gifData);
+                saveMessageToLocalStorage(user, message, timestamp, imageData, gifData, avatar, avatarImage);
             }
         }
 
         // Fallback: Save messages to localStorage
-        function saveMessageToLocalStorage(user, message, timestamp, imageData = null, gifData = null) {
+        function saveMessageToLocalStorage(user, message, timestamp, imageData = null, gifData = null, avatar = null, avatarImage = null) {
             const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
             const messageObj = { user, message, timestamp };
             if (imageData) {
@@ -647,6 +655,12 @@
             }
             if (gifData) {
                 messageObj.gif = gifData;
+            }
+            // Save avatar with message
+            if (avatarImage) {
+                messageObj.avatarImage = avatarImage;
+            } else if (avatar) {
+                messageObj.avatar = avatar;
             }
             // Add room code if in a private room
             if (currentRoomCode) {
@@ -661,7 +675,7 @@
         }
 
         // Add message to chat display
-        function addMessageToChat(user, message, timestamp, shouldSave = true, imageData = null, gifData = null) {
+        function addMessageToChat(user, message, timestamp, shouldSave = true, imageData = null, gifData = null, avatar = null, avatarImage = null) {
             // Remove welcome message if it exists
             const welcomeMsg = chatMessages.querySelector('.welcome-message');
             if (welcomeMsg) {
@@ -722,37 +736,43 @@
             let messageHtml = message ? escapeHtml(message) : '';
             // Emojis are already Unicode, so they should display fine
             
-            // Get user avatar and username from profile if available
-            let userAvatar = '👤';
-            let userAvatarImage = null;
+            // Use avatar from message data (saved with message), or fallback to profile if it's the current user
+            let userAvatar = avatar || '👤';
+            let userAvatarImage = avatarImage || null;
             let displayUsername = user; // Default to the user value
-            try {
-                const profileData = localStorage.getItem('jnjUserProfile');
-                if (profileData) {
-                    const profile = JSON.parse(profileData);
-                    // Check if this message is from the current user (match by username or displayName)
-                    if (user === profile.username || user === profile.displayName) {
-                        // Use username for display if available
-                        if (profile.username && profile.username.trim() !== '') {
-                            displayUsername = profile.username.trim();
-                        }
-                        // Get avatar
-                        if (profile.avatarImage) {
-                            userAvatarImage = profile.avatarImage;
-                        } else if (profile.avatar) {
-                            userAvatar = profile.avatar;
+            
+            // If no avatar in message data, check if it's the current user and use their profile
+            if (!avatar && !avatarImage) {
+                try {
+                    const profileData = localStorage.getItem('jnjUserProfile');
+                    if (profileData) {
+                        const profile = JSON.parse(profileData);
+                        // Check if this message is from the current user (match by username or displayName)
+                        if (user === profile.username || user === profile.displayName) {
+                            // Use username for display if available
+                            if (profile.username && profile.username.trim() !== '') {
+                                displayUsername = profile.username.trim();
+                            }
+                            // Get avatar from profile
+                            if (profile.avatarImage) {
+                                userAvatarImage = profile.avatarImage;
+                            } else if (profile.avatar) {
+                                userAvatar = profile.avatar;
+                            }
                         }
                     }
+                } catch (e) {
+                    // Ignore errors
                 }
-            } catch (e) {
-                // Ignore errors
             }
             
             // Create avatar HTML
             let avatarHtml = '';
             if (userAvatarImage) {
+                // Base64 data URLs are safe to use directly (they come from profile or message data)
                 avatarHtml = `<img src="${userAvatarImage}" alt="Avatar" class="message-avatar-image" style="width: 32px; height: 32px; border-radius: 50%; margin-right: 8px; object-fit: cover; border: 2px solid rgba(255, 255, 255, 0.2);">`;
             } else {
+                // Emoji is safe to use directly
                 avatarHtml = `<span class="message-avatar" style="font-size: 20px; margin-right: 8px;">${userAvatar}</span>`;
             }
             
@@ -835,6 +855,105 @@
         function scrollToBottom() {
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
+        
+        // Update all displayed messages with new username
+        function updateChatMessagesUsername(oldUsername, oldDisplayName, newUsername) {
+            // Get current user's profile to identify their messages
+            try {
+                const profileData = localStorage.getItem('jnjUserProfile');
+                if (!profileData) return;
+                
+                const profile = JSON.parse(profileData);
+                const currentUsername = profile.username || profile.displayName;
+                
+                // Update all message elements in the chat
+                const messageElements = chatMessages.querySelectorAll('.message');
+                messageElements.forEach(msgEl => {
+                    const userSpan = msgEl.querySelector('.message-user');
+                    if (userSpan) {
+                        const currentText = userSpan.textContent.trim();
+                        // Check if this message is from the current user
+                        if (currentText === oldUsername || currentText === oldDisplayName) {
+                            userSpan.textContent = newUsername;
+                        }
+                    }
+                });
+                
+                // Also update currentUserName if it matches
+                if (currentUserName === oldUsername || currentUserName === oldDisplayName) {
+                    currentUserName = newUsername;
+                    if (currentNameText) {
+                        currentNameText.textContent = newUsername;
+                    }
+                }
+            } catch (e) {
+                console.error('Error updating chat messages:', e);
+            }
+        }
+        
+        // Update Firestore messages with new username
+        function updateFirestoreMessagesUsername(oldUsername, oldDisplayName, newUsername) {
+            if (!db) return;
+            
+            // Update public messages
+            updateFirestoreCollection('messages', oldUsername, oldDisplayName, newUsername);
+            // Update room messages
+            updateFirestoreCollection('roomMessages', oldUsername, oldDisplayName, newUsername);
+        }
+        
+        function updateFirestoreCollection(collectionName, oldUsername, oldDisplayName, newUsername) {
+            if (!db) return;
+            
+            const collection = db.collection(collectionName);
+            
+            // Update messages with old username
+            if (oldUsername) {
+                collection.where('user', '==', oldUsername).get()
+                    .then(querySnapshot => {
+                        if (querySnapshot.empty) return;
+                        const batch = db.batch();
+                        let updateCount = 0;
+                        querySnapshot.forEach(doc => {
+                            batch.update(doc.ref, { user: newUsername });
+                            updateCount++;
+                        });
+                        if (updateCount > 0) {
+                            return batch.commit().then(() => {
+                                console.log(`Updated ${updateCount} ${collectionName} messages from ${oldUsername} to ${newUsername}`);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error(`Error updating ${collectionName} messages:`, error);
+                    });
+            }
+            
+            // Update messages with old displayName (if different from username)
+            if (oldDisplayName && oldDisplayName !== oldUsername) {
+                collection.where('user', '==', oldDisplayName).get()
+                    .then(querySnapshot => {
+                        if (querySnapshot.empty) return;
+                        const batch2 = db.batch();
+                        let updateCount2 = 0;
+                        querySnapshot.forEach(doc => {
+                            batch2.update(doc.ref, { user: newUsername });
+                            updateCount2++;
+                        });
+                        if (updateCount2 > 0) {
+                            return batch2.commit().then(() => {
+                                console.log(`Updated ${updateCount2} ${collectionName} messages from ${oldDisplayName} to ${newUsername}`);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error(`Error updating ${collectionName} messages:`, error);
+                    });
+            }
+        }
+        
+        // Expose functions to profile page
+        window.updateChatMessagesUsername = updateChatMessagesUsername;
+        window.updateFirestoreMessagesUsername = updateFirestoreMessagesUsername;
 
         // Send message
         function sendMessage() {
@@ -871,8 +990,10 @@
                 document.getElementById('previewGif').src = '';
             }
             
-            // Always get the latest username from profile
+            // Always get the latest username and avatar from profile
             let messageUsername = currentUserName;
+            let messageAvatar = '👤';
+            let messageAvatarImage = null;
             try {
                 const profileData = localStorage.getItem('jnjUserProfile');
                 if (profileData) {
@@ -886,21 +1007,27 @@
                         messageUsername = profile.displayName.trim();
                         currentUserName = messageUsername;
                     }
+                    // Get avatar
+                    if (profile.avatarImage) {
+                        messageAvatarImage = profile.avatarImage;
+                    } else if (profile.avatar) {
+                        messageAvatar = profile.avatar;
+                    }
                 }
             } catch (e) {
                 // Ignore errors, use currentUserName
             }
             
-            console.log('Sending message:', { user: messageUsername, message: message, hasImage: !!imageData, hasGif: !!gifData, gifUrl: gifData });
+            console.log('Sending message:', { user: messageUsername, message: message, hasImage: !!imageData, hasGif: !!gifData, gifUrl: gifData, avatar: messageAvatar, avatarImage: !!messageAvatarImage });
             
             if (db) {
                 // Save to Firestore first
-                saveMessage(messageUsername, message || '', timestamp, imageData, gifData);
+                saveMessage(messageUsername, message || '', timestamp, imageData, gifData, messageAvatar, messageAvatarImage);
                 
                 // Add to display immediately for better UX
-                addMessageToChat(messageUsername, message || '', timestamp, false, imageData, gifData);
+                addMessageToChat(messageUsername, message || '', timestamp, false, imageData, gifData, messageAvatar, messageAvatarImage);
             } else {
-                addMessageToChat(messageUsername, message || '', timestamp, true, imageData, gifData);
+                addMessageToChat(messageUsername, message || '', timestamp, true, imageData, gifData, messageAvatar, messageAvatarImage);
             }
             messageInput.value = '';
             messageInput.focus();
