@@ -147,10 +147,16 @@
         canvas.height = window.innerHeight;
 
         // Game Mode
-        let gameMode = 'classic'; // classic, hardcore, endless, survival
+        let gameMode = 'classic'; // classic, hardcore, endless, survival, hardcore2
         let gameStartTime = 0;
         let survivalTime = 0;
         let lastSurvivalSpawn = 0; // Track last asteroid spawn time in survival mode
+        
+        // Hardcore 2 mode (global flag for all games)
+        let hardcore2Global = false;
+        let spaceHoldStartTime = 0;
+        let spaceHeld = false;
+        const SPACE_HOLD_TIME = 2000; // 2 seconds to activate hardcore 2
         
         let score = 0;
         let highScore = parseInt(localStorage.getItem('asteroidsHighScore') || '0');
@@ -410,7 +416,7 @@
             
             // Calculate speed based on game mode
             let speedMultiplier = 1;
-            if (gameMode === 'hardcore') {
+            if (gameMode === 'hardcore' || gameMode === 'hardcore2') {
                 speedMultiplier = 1.5; // 50% faster
             } else if (gameMode === 'survival') {
                 // Get survival time for speed calculation
@@ -430,8 +436,8 @@
                 rotationSpeed: (Math.random() - 0.5) * 0.08,
                 vertices: [],
                 isBoss: isBoss,
-                health: isBoss ? 5 : 1,
-                maxHealth: isBoss ? 5 : 1
+                health: isBoss ? 5 : (gameMode === 'hardcore2' ? 2 : 1), // Hardcore 2: asteroids need 2 hits
+                maxHealth: isBoss ? 5 : (gameMode === 'hardcore2' ? 2 : 1)
             };
             
             const numVertices = isBoss ? 16 : (8 + Math.floor(Math.random() * 4));
@@ -455,10 +461,10 @@
             // Clear all asteroids and bullets first
             asteroids = [];
             ship.bullets = [];
-            if (gameMode !== 'hardcore') {
-                powerUps = [];
+            if (gameMode === 'hardcore' || gameMode === 'hardcore2') {
+                powerUps = []; // No power-ups in hardcore/hardcore2
             } else {
-                powerUps = []; // No power-ups in hardcore
+                powerUps = [];
             }
             particles = [];
             
@@ -481,7 +487,10 @@
             
             // Calculate number of asteroids based on mode
             let numAsteroids;
-            if (gameMode === 'hardcore') {
+            if (gameMode === 'hardcore2') {
+                // Hardcore 2: Double asteroid spawn
+                numAsteroids = Math.min((4 + Math.floor(level * 0.7)) * 2, 20);
+            } else if (gameMode === 'hardcore') {
                 numAsteroids = Math.min(4 + Math.floor(level * 0.7), 10); // More asteroids
             } else if (gameMode === 'endless') {
                 numAsteroids = Math.min(3 + Math.floor(level * 0.6), 12); // More for endless
@@ -543,6 +552,20 @@
 
         function createPowerUp(x, y) {
             if (gameMode === 'hardcore') return; // No power-ups in hardcore mode
+            if (gameMode === 'hardcore2') {
+                // Hardcore 2: Only explosion power-up, lower chance
+                if (Math.random() > 0.15) return; // 15% chance
+                powerUps.push({
+                    x: x,
+                    y: y,
+                    type: PowerUpTypes.EXPLOSIVE,
+                    rotation: 0,
+                    rotationSpeed: 0.05,
+                    life: 600,
+                    pulse: 0
+                });
+                return;
+            }
             if (Math.random() > 0.25) return; // 25% chance
             
             const types = Object.values(PowerUpTypes);
@@ -561,6 +584,7 @@
 
         function activatePowerUp(type) {
             if (gameMode === 'hardcore') return; // No power-ups in hardcore
+            if (gameMode === 'hardcore2' && type !== PowerUpTypes.EXPLOSIVE) return; // Only explosive in hardcore 2
             
             activePowerUp = type;
             powerUpTime = 600;
@@ -681,8 +705,29 @@
             if (e.code === "KeyP") {
                 togglePause();
             }
+            
+            // Left+Space exploit to enable hardcore 2 globally
+            if (e.code === "ArrowLeft" && keys["Space"]) {
+                hardcore2Global = true;
+                console.log('🔥 HARDCORE 2 MODE ENABLED FOR ALL GAMES!');
+                alert('🔥 HARDCORE 2 MODE ACTIVATED FOR ALL GAMES!');
+            }
+            
+            // Track Space hold for hardcore 2 activation
+            if (e.code === "Space" && !spaceHeld) {
+                spaceHoldStartTime = Date.now();
+                spaceHeld = true;
+            }
         });
-        document.addEventListener("keyup", e => keys[e.code] = false);
+        document.addEventListener("keyup", e => {
+            keys[e.code] = false;
+            
+            // Reset space hold tracking
+            if (e.code === "Space") {
+                spaceHeld = false;
+                spaceHoldStartTime = 0;
+            }
+        });
 
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
@@ -716,6 +761,26 @@
         }
 
         function update() {
+            // Check for Space hold to activate hardcore 2 (only if not already in hardcore 2)
+            if (spaceHeld && gameMode !== 'hardcore2' && !hardcore2Global) {
+                const holdDuration = Date.now() - spaceHoldStartTime;
+                if (holdDuration >= SPACE_HOLD_TIME) {
+                    gameMode = 'hardcore2';
+                    console.log('🔥 HARDCORE 2 MODE ACTIVATED!');
+                    alert('🔥 HARDCORE 2 MODE ACTIVATED!');
+                    // Reset game for hardcore 2
+                    initLevel();
+                    spaceHeld = false; // Reset to prevent multiple activations
+                }
+            }
+            
+            // Use global hardcore 2 if enabled
+            if (hardcore2Global && gameMode !== 'hardcore2') {
+                gameMode = 'hardcore2';
+                console.log('🔥 HARDCORE 2 MODE ACTIVATED (GLOBAL)!');
+                initLevel();
+            }
+            
             if (isPaused || isGameOver) {
                 requestAnimationFrame(update);
                 return;
@@ -983,6 +1048,52 @@
                     let dy = b.y - a.y;
                     let dist = Math.sqrt(dx*dx + dy*dy);
                     if (dist < a.radius) {
+                        // Hardcore 2: Double damage - asteroids need 2 hits
+                        if (gameMode === 'hardcore2' && !a.isBoss) {
+                            a.health--;
+                            createParticles(a.x, a.y, '#ffc107', 15, 4, 3);
+                            playSound(300, 0.1, 'square', 0.15);
+                            ship.bullets.splice(j, 1);
+                            
+                            // Check if asteroid is destroyed
+                            if (a.health <= 0) {
+                                updateCombo();
+                                const baseScore = Math.floor(100 / a.radius);
+                                const comboMultiplier = comboCount;
+                                const streakBonus = killStreak >= 10 ? 2 : killStreak >= 5 ? 1.5 : 1;
+                                const points = Math.floor(baseScore * comboMultiplier * streakBonus);
+                                score += points;
+                                asteroidsDestroyed++;
+                                
+                                // Check first blood achievement
+                                if (asteroidsDestroyed === 1) {
+                                    unlockAchievement('first_blood');
+                                }
+                                
+                                if (score > highScore) {
+                                    highScore = score;
+                                    localStorage.setItem('asteroidsHighScore', highScore.toString());
+                                }
+                                updateScore();
+                                checkAchievements();
+                                
+                                addScreenShake(8);
+                                createParticles(a.x, a.y, '#ffc107', 20, 5, 4);
+                                asteroids.splice(i, 1);
+                                createPowerUp(a.x, a.y);
+                                
+                                // Split asteroid
+                                if (a.radius > 30 && asteroids.length < 20) {
+                                    const newRadius = a.radius / 2;
+                                    const offset1 = (Math.random() - 0.5) * 30;
+                                    const offset2 = (Math.random() - 0.5) * 30;
+                                    createAsteroid(a.x + offset1, a.y + offset2, newRadius, false);
+                                    createAsteroid(a.x - offset1, a.y - offset2, newRadius, false);
+                                }
+                            }
+                            return; // Don't process further for hardcore 2
+                        }
+                        
                         updateCombo();
                         const baseScore = Math.floor(100 / a.radius);
                         const comboMultiplier = comboCount;
@@ -1011,6 +1122,17 @@
                         // Explosive bullets
                         if (b.explosive) {
                             createParticles(a.x, a.y, '#ff4d4d', 30, 8, 6);
+                            
+                            // Hardcore 2: Explosions can one-shot you
+                            if (gameMode === 'hardcore2') {
+                                const shipDist = Math.sqrt((ship.x - a.x) ** 2 + (ship.y - a.y) ** 2);
+                                if (shipDist < 150 && !ship.invulnerable && !ship.shield) {
+                                    lives = 0;
+                                    gameOver();
+                                    return;
+                                }
+                            }
+                            
                             // Damage nearby asteroids (but limit to prevent too many)
                             const nearbyAsteroids = [];
                             asteroids.forEach((otherA, oi) => {
@@ -1097,7 +1219,8 @@
                     let dy = b.y - bossAsteroid.y;
                     let dist = Math.sqrt(dx*dx + dy*dy);
                     if (dist < bossAsteroid.radius) {
-                        bossAsteroid.health--;
+                        // Hardcore 2: Double damage to boss
+                        bossAsteroid.health -= (gameMode === 'hardcore2' ? 2 : 1);
                         addScreenShake(10);
                         playSound(200, 0.15, 'square', 0.2);
                         createParticles(bossAsteroid.x, bossAsteroid.y, '#ff4d4d', 25, 6, 5);
@@ -1429,8 +1552,14 @@
         }
 
         function updateLivesDisplay() {
-            const hearts = '❤️'.repeat(lives);
-            document.getElementById("lives").innerText = `Lives: ${hearts}`;
+            if (gameMode === 'hardcore2') {
+                // Hardcore 2: Use ❤️‍🩹 instead of ❤️
+                const hearts = '❤️‍🩹'.repeat(lives);
+                document.getElementById("lives").innerText = `Lives: ${hearts}`;
+            } else {
+                const hearts = '❤️'.repeat(lives);
+                document.getElementById("lives").innerText = `Lives: ${hearts}`;
+            }
         }
 
         function gameOver() {
@@ -1494,7 +1623,7 @@
             lastSurvivalSpawn = 0;
             score = 0;
             level = 1;
-            lives = gameMode === 'hardcore' ? 1 : 3;
+            lives = (gameMode === 'hardcore' || gameMode === 'hardcore2') ? 1 : 3;
             asteroidsDestroyed = 0;
             powerUpsCollected = 0;
             comboCount = 0;
