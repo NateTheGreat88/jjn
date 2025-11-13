@@ -448,7 +448,10 @@
                     loadUserName();
                     
                     // Load and sync bans from Firestore
-                    loadBansFromFirestore();
+                    loadBansFromFirestore().then(() => {
+                        // Set up real-time listener for bans after username is loaded
+                        setupBanListener();
+                    });
                     
                     // Load messages
                     if (db) {
@@ -1222,8 +1225,11 @@
             
             // Check if user is banned (after getting username)
             if (isUserBanned(messageUsername)) {
+                console.log('BLOCKED: User', messageUsername, 'is banned and cannot send messages');
                 // Disable chat and show ban message
                 disableChatBanned();
+                // Clear the input
+                messageInput.value = '';
                 return;
             }
             
@@ -1849,21 +1855,29 @@
                 const durationMinutes = parseInt(banDurationSelect.value);
                 const banUntil = Date.now() + (durationMinutes * 60 * 1000);
                 
+                // Normalize username (trim whitespace)
+                const normalizedBannedUser = selectedUserForBan.trim();
+                
                 // Save ban to localStorage and Firestore
                 const bans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
-                bans[selectedUserForBan] = {
+                bans[normalizedBannedUser] = {
                     bannedUntil: banUntil,
                     bannedBy: currentUserName,
                     bannedAt: Date.now()
                 };
                 localStorage.setItem('jnjChatBans', JSON.stringify(bans));
                 
+                console.log('Ban saved for user:', normalizedBannedUser, 'until', new Date(banUntil));
+                console.log('Current bans:', bans);
+                
                 // Also save to Firestore if available
                 if (db) {
-                    db.collection('bans').doc(selectedUserForBan).set({
+                    db.collection('bans').doc(normalizedBannedUser).set({
                         bannedUntil: banUntil,
                         bannedBy: currentUserName,
                         bannedAt: Date.now()
+                    }).then(() => {
+                        console.log('Ban saved to Firestore for:', normalizedBannedUser);
                     }).catch(error => {
                         console.error('Error saving ban to Firestore:', error);
                     });
@@ -1872,8 +1886,8 @@
                     const roomCode = currentRoomCode || null;
                     const collection = roomCode ? 'roomMessages' : 'messages';
                     
-                    // Delete from the current room/collection
-                    db.collection(collection).where('user', '==', selectedUserForBan).get()
+                    // Delete from the current room/collection (use normalized username)
+                    db.collection(collection).where('user', '==', normalizedBannedUser).get()
                         .then(querySnapshot => {
                             const batch = db.batch();
                             let deleteCount = 0;
@@ -1896,7 +1910,7 @@
                             });
                             if (deleteCount > 0) {
                                 return batch.commit().then(() => {
-                                    console.log(`Deleted ${deleteCount} messages from banned user ${selectedUserForBan}`);
+                                    console.log(`Deleted ${deleteCount} messages from banned user ${normalizedBannedUser}`);
                                 });
                             }
                         })
@@ -1911,8 +1925,12 @@
                 const userMessages = chatMessages.querySelectorAll('.message:not(.welcome-message)');
                 userMessages.forEach(msg => {
                     const userSpan = msg.querySelector('.message-user');
-                    if (userSpan && userSpan.textContent.trim() === selectedUserForBan) {
-                        msg.remove();
+                    if (userSpan) {
+                        const msgUsername = userSpan.textContent.trim();
+                        // Case-insensitive comparison
+                        if (msgUsername.toLowerCase() === normalizedBannedUser.toLowerCase()) {
+                            msg.remove();
+                        }
                     }
                 });
             });
@@ -1936,23 +1954,28 @@
         
         // Load bans from Firestore and sync with localStorage
         function loadBansFromFirestore() {
-            if (!db) return;
+            if (!db) {
+                console.log('Firestore not available, using localStorage bans only');
+                return Promise.resolve();
+            }
             
-            db.collection('bans').get()
+            return db.collection('bans').get()
                 .then(querySnapshot => {
                     const bans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
                     const now = Date.now();
                     
                     querySnapshot.forEach(doc => {
                         const banData = doc.data();
-                        const username = doc.id;
+                        const username = doc.id.trim(); // Normalize
                         
                         // Only keep active bans
                         if (banData.bannedUntil > now) {
                             bans[username] = banData;
+                            console.log('Loaded active ban for:', username, 'until', new Date(banData.bannedUntil));
                         } else {
                             // Remove expired bans
                             delete bans[username];
+                            console.log('Removed expired ban for:', username);
                         }
                     });
                     
@@ -1960,11 +1983,13 @@
                     Object.keys(bans).forEach(username => {
                         if (bans[username].bannedUntil <= now) {
                             delete bans[username];
+                            console.log('Removed expired ban from localStorage:', username);
                         }
                     });
                     
                     localStorage.setItem('jnjChatBans', JSON.stringify(bans));
-                    console.log('Bans synced from Firestore');
+                    console.log('Bans synced from Firestore. Total active bans:', Object.keys(bans).length);
+                    console.log('Active bans:', Object.keys(bans));
                     
                     // Update UI if current user is banned
                     if (currentUserName) {
@@ -1980,24 +2005,32 @@
         function isUserBanned(username) {
             if (!username) return false;
             
+            // Normalize username (trim and lowercase for comparison)
+            const normalizedUsername = username.trim().toLowerCase();
+            
             try {
                 // Check localStorage (fast, synchronous)
                 const bans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
-                const ban = bans[username];
-                if (ban) {
-                    // Check if ban is still active
-                    if (ban.bannedUntil > Date.now()) {
-                        console.log('User is banned:', username, 'until', new Date(ban.bannedUntil));
-                        return true;
-                    } else {
-                        // Ban expired, remove it
-                        delete bans[username];
-                        localStorage.setItem('jnjChatBans', JSON.stringify(bans));
-                        // Also remove from Firestore if available
-                        if (db) {
-                            db.collection('bans').doc(username).delete().catch(err => {
-                                console.error('Error removing expired ban from Firestore:', err);
-                            });
+                
+                // Check all bans (case-insensitive comparison)
+                for (const bannedUsername in bans) {
+                    const normalizedBanned = bannedUsername.trim().toLowerCase();
+                    if (normalizedBanned === normalizedUsername) {
+                        const ban = bans[bannedUsername];
+                        // Check if ban is still active
+                        if (ban.bannedUntil > Date.now()) {
+                            console.log('User is banned:', username, '(matched:', bannedUsername, ') until', new Date(ban.bannedUntil));
+                            return true;
+                        } else {
+                            // Ban expired, remove it
+                            delete bans[bannedUsername];
+                            localStorage.setItem('jnjChatBans', JSON.stringify(bans));
+                            // Also remove from Firestore if available
+                            if (db) {
+                                db.collection('bans').doc(bannedUsername).delete().catch(err => {
+                                    console.error('Error removing expired ban from Firestore:', err);
+                                });
+                            }
                         }
                     }
                 }
@@ -2023,6 +2056,56 @@
         
         // Check ban status every 30 seconds
         setInterval(checkBanStatusPeriodically, 30000);
+        
+        // Set up real-time listener for bans
+        function setupBanListener() {
+            if (!db || !currentUserName) return;
+            
+            // Listen for changes to the current user's ban document
+            db.collection('bans').doc(currentUserName.trim()).onSnapshot((doc) => {
+                if (doc.exists()) {
+                    const banData = doc.data();
+                    const now = Date.now();
+                    
+                    if (banData.bannedUntil > now) {
+                        // User was just banned or ban was updated
+                        console.log('Real-time ban detected for:', currentUserName, 'until', new Date(banData.bannedUntil));
+                        
+                        // Update localStorage
+                        const bans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
+                        bans[currentUserName.trim()] = banData;
+                        localStorage.setItem('jnjChatBans', JSON.stringify(bans));
+                        
+                        // Immediately disable chat
+                        disableChatBanned();
+                    } else {
+                        // Ban expired
+                        console.log('Ban expired for:', currentUserName);
+                        const bans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
+                        delete bans[currentUserName.trim()];
+                        localStorage.setItem('jnjChatBans', JSON.stringify(bans));
+                        
+                        // Re-enable chat if user has a profile
+                        if (currentUserName) {
+                            enableChat();
+                        }
+                    }
+                } else {
+                    // Ban document was deleted (ban lifted)
+                    console.log('Ban removed for:', currentUserName);
+                    const bans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
+                    delete bans[currentUserName.trim()];
+                    localStorage.setItem('jnjChatBans', JSON.stringify(bans));
+                    
+                    // Re-enable chat if user has a profile
+                    if (currentUserName) {
+                        enableChat();
+                    }
+                }
+            }, (error) => {
+                console.error('Error in ban listener:', error);
+            });
+        }
         
         // Leave private room and return to public chat
         function leaveRoom() {
