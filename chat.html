@@ -276,12 +276,22 @@
                     if (profile.username && profile.username.trim() !== '') {
                         currentUserName = profile.username.trim();
                         showNameDisplay();
-                        enableChat();
+                        // Check ban status before enabling
+                        if (isUserBanned(currentUserName)) {
+                            disableChatBanned();
+                        } else {
+                            enableChat();
+                        }
                         return;
                     } else if (profile.displayName && profile.displayName.trim() !== '') {
                         currentUserName = profile.displayName.trim();
                         showNameDisplay();
-                        enableChat();
+                        // Check ban status before enabling
+                        if (isUserBanned(currentUserName)) {
+                            disableChatBanned();
+                        } else {
+                            enableChat();
+                        }
                         return;
                     }
                 } catch (e) {
@@ -322,12 +332,53 @@
 
         // Enable chat input
         function enableChat() {
+            // Check if user is banned before enabling
+            if (currentUserName && isUserBanned(currentUserName)) {
+                disableChatBanned();
+                return;
+            }
+            
             messageInput.disabled = false;
+            messageInput.readOnly = false;
             sendButton.disabled = false;
             document.getElementById('imageInput').disabled = false;
             emojiButton.disabled = false;
             gifButton.disabled = false;
             messageInput.placeholder = 'Type a message...';
+        }
+        
+        // Disable chat input because user is banned
+        function disableChatBanned() {
+            messageInput.disabled = true;
+            messageInput.readOnly = true;
+            sendButton.disabled = true;
+            document.getElementById('imageInput').disabled = true;
+            emojiButton.disabled = true;
+            gifButton.disabled = true;
+            
+            // Clear any existing text
+            messageInput.value = '';
+            
+            // Get ban info for message
+            try {
+                const bans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
+                const ban = bans[currentUserName];
+                if (ban) {
+                    const banUntil = new Date(ban.bannedUntil);
+                    const timeLeft = Math.ceil((ban.bannedUntil - Date.now()) / (1000 * 60)); // minutes
+                    if (timeLeft > 60) {
+                        const hours = Math.floor(timeLeft / 60);
+                        const mins = timeLeft % 60;
+                        messageInput.placeholder = `You are banned. Time remaining: ${hours}h ${mins}m`;
+                    } else {
+                        messageInput.placeholder = `You are banned. Time remaining: ${timeLeft} minutes`;
+                    }
+                } else {
+                    messageInput.placeholder = 'You are banned from chatting.';
+                }
+            } catch (e) {
+                messageInput.placeholder = 'You are banned from chatting.';
+            }
         }
 
         // Disable chat input
@@ -1171,7 +1222,8 @@
             
             // Check if user is banned (after getting username)
             if (isUserBanned(messageUsername)) {
-                alert('You are banned from chatting. Please wait until the ban expires.');
+                // Disable chat and show ban message
+                disableChatBanned();
                 return;
             }
             
@@ -1913,6 +1965,11 @@
                     
                     localStorage.setItem('jnjChatBans', JSON.stringify(bans));
                     console.log('Bans synced from Firestore');
+                    
+                    // Update UI if current user is banned
+                    if (currentUserName) {
+                        checkBanStatusPeriodically();
+                    }
                 })
                 .catch(error => {
                     console.error('Error loading bans from Firestore:', error);
@@ -1927,15 +1984,45 @@
                 // Check localStorage (fast, synchronous)
                 const bans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
                 const ban = bans[username];
-                if (ban && ban.bannedUntil > Date.now()) {
-                    console.log('User is banned:', username, 'until', new Date(ban.bannedUntil));
-                    return true;
+                if (ban) {
+                    // Check if ban is still active
+                    if (ban.bannedUntil > Date.now()) {
+                        console.log('User is banned:', username, 'until', new Date(ban.bannedUntil));
+                        return true;
+                    } else {
+                        // Ban expired, remove it
+                        delete bans[username];
+                        localStorage.setItem('jnjChatBans', JSON.stringify(bans));
+                        // Also remove from Firestore if available
+                        if (db) {
+                            db.collection('bans').doc(username).delete().catch(err => {
+                                console.error('Error removing expired ban from Firestore:', err);
+                            });
+                        }
+                    }
                 }
             } catch (e) {
                 console.error('Error checking ban status:', e);
             }
             return false;
         }
+        
+        // Check ban status periodically and update UI
+        function checkBanStatusPeriodically() {
+            if (currentUserName) {
+                if (isUserBanned(currentUserName)) {
+                    disableChatBanned();
+                } else {
+                    // Make sure chat is enabled if not banned
+                    if (messageInput.disabled && currentUserName) {
+                        enableChat();
+                    }
+                }
+            }
+        }
+        
+        // Check ban status every 30 seconds
+        setInterval(checkBanStatusPeriodically, 30000);
         
         // Leave private room and return to public chat
         function leaveRoom() {
