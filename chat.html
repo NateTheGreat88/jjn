@@ -273,6 +273,18 @@
             if (profileData) {
                 try {
                     const profile = JSON.parse(profileData);
+                    
+                    // Generate userId for old profiles that don't have one
+                    if (!profile.userId) {
+                        // Generate a unique user ID (same function as in profile.html)
+                        function generateUserId() {
+                            return 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
+                        }
+                        profile.userId = generateUserId();
+                        localStorage.setItem('jnjUserProfile', JSON.stringify(profile));
+                        console.log('Generated userId for old profile in chat:', profile.userId);
+                    }
+                    
                     // Get userId for ban checking
                     const userId = profile.userId || null;
                     // Use username if available, otherwise fallback to displayName
@@ -1238,6 +1250,18 @@
                 const profileData = localStorage.getItem('jnjUserProfile');
                 if (profileData) {
                     const profile = JSON.parse(profileData);
+                    
+                    // Generate userId for old profiles that don't have one
+                    if (!profile.userId) {
+                        // Generate a unique user ID
+                        function generateUserId() {
+                            return 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
+                        }
+                        profile.userId = generateUserId();
+                        localStorage.setItem('jnjUserProfile', JSON.stringify(profile));
+                        console.log('Generated userId for old profile when sending message:', profile.userId);
+                    }
+                    
                     // Get userId (required for banning)
                     messageUserId = profile.userId || null;
                     // Use username if available, otherwise use displayName
@@ -1260,17 +1284,18 @@
                 // Ignore errors, use currentUserName
             }
             
-            // Check if user is banned (using userId if available, otherwise fallback to username)
+            // Check if user is banned (check both userId and username to catch all ban types)
+            let isBanned = false;
             if (messageUserId && isUserBannedById(messageUserId)) {
-                console.log('BLOCKED: User', messageUsername, '(ID:', messageUserId, ') is banned and cannot send messages');
-                // Disable chat and show ban message
-                disableChatBanned();
-                // Clear the input
-                messageInput.value = '';
-                return;
-            } else if (!messageUserId && isUserBanned(messageUsername)) {
-                // Fallback check for old messages without userId
-                console.log('BLOCKED: User', messageUsername, 'is banned and cannot send messages');
+                console.log('BLOCKED: User', messageUsername, '(ID:', messageUserId, ') is banned by userId and cannot send messages');
+                isBanned = true;
+            } else if (isUserBanned(messageUsername)) {
+                // Also check by username (in case ban was saved by username or user doesn't have userId)
+                console.log('BLOCKED: User', messageUsername, messageUserId ? '(ID: ' + messageUserId + ')' : '', 'is banned by username and cannot send messages');
+                isBanned = true;
+            }
+            
+            if (isBanned) {
                 // Disable chat and show ban message
                 disableChatBanned();
                 // Clear the input
@@ -1816,8 +1841,26 @@
             const messageId = messageDiv.getAttribute('data-message-id');
             const userSpan = messageDiv.querySelector('.message-user');
             const username = userSpan ? userSpan.textContent.trim() : 'Unknown';
-            // Get userId from message element (preferred) or try to get from Firestore
-            const userId = messageDiv.getAttribute('data-user-id');
+            // Get userId from message element (preferred)
+            let userId = messageDiv.getAttribute('data-user-id');
+            
+            // If userId not in DOM, try to get it from Firestore
+            if (!userId && messageId && db && !messageId.startsWith('temp-')) {
+                const roomCode = currentRoomCode || null;
+                const collection = roomCode ? 'roomMessages' : 'messages';
+                db.collection(collection).doc(messageId).get().then(doc => {
+                    if (doc.exists()) {
+                        const data = doc.data();
+                        if (data.userId) {
+                            selectedUserIdForBan = data.userId;
+                            // Also update the DOM element for future reference
+                            messageDiv.setAttribute('data-user-id', data.userId);
+                        }
+                    }
+                }).catch(err => {
+                    console.error('Error fetching userId from Firestore:', err);
+                });
+            }
             
             selectedMessageForAction = messageDiv;
             selectedUserForBan = username;
@@ -1900,16 +1943,31 @@
             confirmBanBtn.addEventListener('click', () => {
                 if (!selectedUserForBan || !isDev()) return;
                 
-                // Use userId if available, otherwise fallback to username (for backwards compatibility)
-                if (!selectedUserIdForBan) {
-                    console.warn('No userId found for user:', selectedUserForBan, '- using username-based ban (less secure)');
+                // Try to get userId from the message element if we don't have it yet
+                let userIdToBan = selectedUserIdForBan;
+                if (!userIdToBan && selectedMessageForAction) {
+                    userIdToBan = selectedMessageForAction.getAttribute('data-user-id');
+                }
+                
+                // If still no userId, try to get it from Firestore message document
+                if (!userIdToBan && selectedMessageForAction && db) {
+                    const messageId = selectedMessageForAction.getAttribute('data-message-id');
+                    if (messageId && !messageId.startsWith('temp-')) {
+                        const roomCode = currentRoomCode || null;
+                        const collection = roomCode ? 'roomMessages' : 'messages';
+                        // Try to get userId synchronously by checking if we can find it in recent messages
+                        // For now, we'll proceed with username-based ban if userId not available
+                        console.warn('No userId found for user:', selectedUserForBan, '- using username-based ban (less secure)');
+                    }
                 }
                 
                 const durationMinutes = parseInt(banDurationSelect.value);
                 const banUntil = Date.now() + (durationMinutes * 60 * 1000);
                 
                 // Use userId as the ban key (preferred), or username as fallback
-                const banKey = selectedUserIdForBan || selectedUserForBan.trim();
+                const banKey = userIdToBan || selectedUserForBan.trim();
+                // Update selectedUserIdForBan for use in message removal
+                selectedUserIdForBan = userIdToBan;
                 
                 // Save ban to localStorage and Firestore
                 const bans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
@@ -1918,12 +1976,36 @@
                     bannedBy: currentUserName,
                     bannedAt: Date.now(),
                     bannedUsername: selectedUserForBan.trim(), // Store username for display purposes
-                    bannedUserId: selectedUserIdForBan // Store userId if available
+                    bannedUserId: userIdToBan // Store userId if available
                 };
                 localStorage.setItem('jnjChatBans', JSON.stringify(bans));
                 
-                console.log('Ban saved for user:', selectedUserForBan, '(ID:', selectedUserIdForBan || 'none', ') until', new Date(banUntil));
+                console.log('Ban saved for user:', selectedUserForBan, '(ID:', userIdToBan || 'none', ') until', new Date(banUntil));
                 console.log('Current bans:', bans);
+                
+                // Immediately check if the banned user is the current user and disable their chat
+                try {
+                    const profileData = localStorage.getItem('jnjUserProfile');
+                    if (profileData) {
+                        const profile = JSON.parse(profileData);
+                        const currentUserId = profile.userId || null;
+                        // Check if we just banned the current user
+                        if (currentUserId && userIdToBan && currentUserId === userIdToBan) {
+                            console.log('Current user was banned - disabling chat immediately');
+                            disableChatBanned();
+                        } else if (!currentUserId && currentUserName && currentUserName.trim().toLowerCase() === selectedUserForBan.trim().toLowerCase()) {
+                            // Fallback username check
+                            console.log('Current user was banned (by username) - disabling chat immediately');
+                            disableChatBanned();
+                        } else if (currentUserId && !userIdToBan && currentUserName && currentUserName.trim().toLowerCase() === selectedUserForBan.trim().toLowerCase()) {
+                            // User has userId but ban was by username - still disable
+                            console.log('Current user was banned (by username match) - disabling chat immediately');
+                            disableChatBanned();
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error checking if current user was banned:', e);
+                }
                 
                 // Also save to Firestore if available
                 if (db) {
@@ -1932,7 +2014,7 @@
                         bannedBy: currentUserName,
                         bannedAt: Date.now(),
                         bannedUsername: selectedUserForBan.trim(),
-                        bannedUserId: selectedUserIdForBan
+                        bannedUserId: userIdToBan
                     }).then(() => {
                         console.log('Ban saved to Firestore for:', banKey);
                     }).catch(error => {
@@ -1945,8 +2027,8 @@
                     
                     // Delete messages by userId if available, otherwise by username
                     let query;
-                    if (selectedUserIdForBan) {
-                        query = db.collection(collection).where('userId', '==', selectedUserIdForBan);
+                    if (userIdToBan) {
+                        query = db.collection(collection).where('userId', '==', userIdToBan);
                     } else {
                         // Fallback to username-based deletion
                         query = db.collection(collection).where('user', '==', selectedUserForBan.trim());
@@ -1975,7 +2057,7 @@
                             });
                             if (deleteCount > 0) {
                                 return batch.commit().then(() => {
-                                    console.log(`Deleted ${deleteCount} messages from banned user ${selectedUserForBan} (ID: ${selectedUserIdForBan || 'none'})`);
+                                    console.log(`Deleted ${deleteCount} messages from banned user ${selectedUserForBan} (ID: ${userIdToBan || 'none'})`);
                                 });
                             }
                         })
@@ -1986,25 +2068,44 @@
                 
                 banDurationModal.style.display = 'none';
                 
-                // Remove all messages from banned user from DOM (they're already deleted from Firestore above)
+                // Remove all messages from banned user from DOM immediately
                 const userMessages = chatMessages.querySelectorAll('.message:not(.welcome-message)');
+                let removedCount = 0;
                 userMessages.forEach(msg => {
-                    // Check by userId first (preferred), then by username
-                    const msgUserId = msg.getAttribute('data-user-id');
-                    if (selectedUserIdForBan && msgUserId === selectedUserIdForBan) {
-                        msg.remove();
-                    } else {
-                        // Fallback to username comparison
+                    let shouldRemove = false;
+                    
+                    // Check by userId first (preferred)
+                    if (userIdToBan) {
+                        const msgUserId = msg.getAttribute('data-user-id');
+                        if (msgUserId === userIdToBan) {
+                            shouldRemove = true;
+                        }
+                    }
+                    
+                    // Also check by username (for messages without userId or as fallback)
+                    if (!shouldRemove) {
                         const userSpan = msg.querySelector('.message-user');
                         if (userSpan) {
                             const msgUsername = userSpan.textContent.trim();
                             // Case-insensitive comparison
                             if (msgUsername.toLowerCase() === selectedUserForBan.trim().toLowerCase()) {
-                                msg.remove();
+                                shouldRemove = true;
                             }
                         }
                     }
+                    
+                    if (shouldRemove) {
+                        msg.remove();
+                        removedCount++;
+                    }
                 });
+                
+                console.log(`Removed ${removedCount} messages from DOM for banned user ${selectedUserForBan}`);
+                
+                // Clear selection
+                selectedUserForBan = null;
+                selectedUserIdForBan = null;
+                selectedMessageForAction = null;
             });
         }
         

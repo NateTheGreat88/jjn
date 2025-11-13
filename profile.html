@@ -344,6 +344,14 @@
             if (saved) {
                 try {
                     const profile = JSON.parse(saved);
+                    
+                    // Generate userId for old profiles that don't have one
+                    if (!profile.userId) {
+                        profile.userId = generateUserId();
+                        localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+                        console.log('Generated userId for old profile:', profile.userId);
+                    }
+                    
                     document.getElementById('displayName').value = profile.displayName || '';
                     document.getElementById('username').value = profile.username || '';
                     document.getElementById('bio').value = profile.bio || '';
