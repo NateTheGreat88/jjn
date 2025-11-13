@@ -765,8 +765,11 @@
                 console.log('No GIF data to display for message:', { user: user, timestamp: timestamp });
             }
             
+            // Censor the message before displaying (in case it wasn't censored when saved)
+            let censoredMessage = censorMessage(message);
+            
             // Convert emoji codes in message to actual emojis (basic support)
-            let messageHtml = message ? escapeHtml(message) : '';
+            let messageHtml = censoredMessage ? escapeHtml(censoredMessage) : '';
             // Emojis are already Unicode, so they should display fine
             
             // Use avatar from message data (saved with message), or fallback to profile if it's the current user
@@ -988,9 +991,59 @@
         window.updateChatMessagesUsername = updateChatMessagesUsername;
         window.updateFirestoreMessagesUsername = updateFirestoreMessagesUsername;
 
+        // Profanity filter - list of bad words (case-insensitive)
+        const badWords = [
+            'damn', 'hell', 'crap', 'stupid', 'idiot', 'dumb', 'shut up', 'shutup',
+            'hate', 'kill', 'die', 'moron', 'loser', 'ugly', 'fat',
+            // Profanity
+            'fuck', 'fucking', 'fucked', 'fucker', 'fuckers',
+            'shit', 'shitting', 'shitted',
+            'ass', 'asses', 'asshole', 'assholes',
+            'bitch', 'bitches', 'bitching',
+            'bastard', 'bastards',
+            'piss', 'pissing', 'pissed',
+            'damn', 'damned', 'damnit', 'dammit',
+            'crap', 'crappy',
+            'dick', 'dicks',
+            'cock', 'cocks',
+            'pussy', 'pussies',
+            'whore', 'whores',
+            'slut', 'sluts',
+            'nigger', 'niggers', 'nigga', 'niggas',
+            'retard', 'retarded', 'retards',
+            'gay', 'fag', 'fags', 'faggot', 'faggots',
+            'cunt', 'cunts',
+            'douche', 'douchebag', 'douchebags',
+            'screw', 'screwed', 'screwing',
+            'suck', 'sucks', 'sucking', 'sucked',
+            'bullshit', 'bullshitting',
+            'motherfucker', 'motherfuckers',
+            'son of a bitch', 'sonofabitch',
+            // Add more words as needed
+        ];
+
+        // Function to censor bad words in a message
+        function censorMessage(message) {
+            if (!message || typeof message !== 'string') return message;
+            
+            let censoredMessage = message;
+            const replacement = 'kind word';
+            
+            // Create regex patterns for each bad word (case-insensitive, word boundaries)
+            badWords.forEach(badWord => {
+                // Escape special regex characters
+                const escapedWord = badWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                // Match whole words only (case-insensitive)
+                const regex = new RegExp(`\\b${escapedWord}\\b`, 'gi');
+                censoredMessage = censoredMessage.replace(regex, replacement);
+            });
+            
+            return censoredMessage;
+        }
+
         // Send message
         function sendMessage() {
-            const message = messageInput.value.trim();
+            let message = messageInput.value.trim();
             if ((message === '' && !selectedImage && !selectedGif) || !currentUserName) return;
 
             // Check for chat code secret: "JNJ2025"
@@ -1003,6 +1056,9 @@
                 messageInput.value = '';
                 return;
             }
+
+            // Censor the message before sending
+            message = censorMessage(message);
 
             const timestamp = Date.now();
             const imageData = selectedImage;
