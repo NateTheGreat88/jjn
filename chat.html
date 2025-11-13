@@ -351,24 +351,46 @@
 
         // Enable chat input
         function enableChat() {
-            // Check if user is banned before enabling (use userId if available)
+            // COMPREHENSIVE BAN CHECK - check everything before enabling
             try {
                 const profileData = localStorage.getItem('jnjUserProfile');
                 if (profileData) {
                     const profile = JSON.parse(profileData);
-                    const userId = profile.userId || null;
-                    if (userId && isUserBannedById(userId)) {
-                        disableChatBanned();
-                        return;
+                    const checkUserId = profile.userId || null;
+                    const checkUsername = profile.username || profile.displayName || currentUserName || '';
+                    const allBans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
+                    const now = Date.now();
+                    
+                    // Check every ban
+                    for (const banKey in allBans) {
+                        const ban = allBans[banKey];
+                        if (ban.bannedUntil <= now) continue;
+                        
+                        // Check userId match
+                        if (checkUserId && (banKey === checkUserId || ban.bannedUserId === checkUserId)) {
+                            console.log('🚫 enableChat: User banned by userId - disabling');
+                            disableChatBanned();
+                            return;
+                        }
+                        
+                        // Check username match
+                        const bannedUsername = ban.bannedUsername || banKey;
+                        if (checkUsername && checkUsername.trim().toLowerCase() === bannedUsername.trim().toLowerCase()) {
+                            console.log('🚫 enableChat: User banned by username - disabling');
+                            disableChatBanned();
+                            return;
+                        }
+                        
+                        // Check banKey match
+                        if (checkUsername && banKey.trim().toLowerCase() === checkUsername.trim().toLowerCase()) {
+                            console.log('🚫 enableChat: User banned by banKey - disabling');
+                            disableChatBanned();
+                            return;
+                        }
                     }
                 }
             } catch (e) {
-                // Ignore errors
-            }
-            // Fallback to username check
-            if (currentUserName && isUserBanned(currentUserName)) {
-                disableChatBanned();
-                return;
+                console.error('Error in enableChat ban check:', e);
             }
             
             messageInput.disabled = false;
@@ -1245,6 +1267,54 @@
 
         // Send message
         function sendMessage() {
+            // IMMEDIATE BAN CHECK - DO THIS FIRST BEFORE ANYTHING ELSE
+            try {
+                const profileData = localStorage.getItem('jnjUserProfile');
+                if (profileData) {
+                    const profile = JSON.parse(profileData);
+                    const checkUserId = profile.userId || null;
+                    const checkUsername = profile.username || profile.displayName || currentUserName || '';
+                    const allBans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
+                    const now = Date.now();
+                    
+                    // Check every ban
+                    for (const banKey in allBans) {
+                        const ban = allBans[banKey];
+                        if (ban.bannedUntil <= now) continue;
+                        
+                        // Check userId match
+                        if (checkUserId && (banKey === checkUserId || ban.bannedUserId === checkUserId)) {
+                            console.log('🚫 IMMEDIATE BLOCK: User banned by userId');
+                            disableChatBanned();
+                            messageInput.value = '';
+                            alert('You are banned and cannot send messages.');
+                            return;
+                        }
+                        
+                        // Check username match
+                        const bannedUsername = ban.bannedUsername || banKey;
+                        if (checkUsername && checkUsername.trim().toLowerCase() === bannedUsername.trim().toLowerCase()) {
+                            console.log('🚫 IMMEDIATE BLOCK: User banned by username');
+                            disableChatBanned();
+                            messageInput.value = '';
+                            alert('You are banned and cannot send messages.');
+                            return;
+                        }
+                        
+                        // Check banKey match
+                        if (checkUsername && banKey.trim().toLowerCase() === checkUsername.trim().toLowerCase()) {
+                            console.log('🚫 IMMEDIATE BLOCK: User banned by banKey');
+                            disableChatBanned();
+                            messageInput.value = '';
+                            alert('You are banned and cannot send messages.');
+                            return;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Error in immediate ban check:', e);
+            }
+            
             let message = messageInput.value.trim();
             if ((message === '' && !selectedImage && !selectedGif) || !currentUserName) return;
 
@@ -2491,9 +2561,22 @@
         }
         
         // Event listeners
-        sendButton.addEventListener('click', sendMessage);
+        sendButton.addEventListener('click', () => {
+            // Double-check ban before allowing send
+            if (messageInput.disabled) {
+                console.log('🚫 Send button clicked but input is disabled - user is banned');
+                return;
+            }
+            sendMessage();
+        });
         messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
+                // Double-check ban before allowing send
+                if (messageInput.disabled) {
+                    console.log('🚫 Enter key pressed but input is disabled - user is banned');
+                    e.preventDefault();
+                    return;
+                }
                 sendMessage();
             }
         });
