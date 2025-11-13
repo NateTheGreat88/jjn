@@ -152,7 +152,7 @@
             <h2>Message Actions</h2>
             <p id="messageActionsUser" style="margin-bottom: 20px; opacity: 0.8;"></p>
             <button id="deleteMessageBtn" class="send-button" style="width: 100%; margin-bottom: 10px; background: #dc2626;">Delete Message</button>
-            <button id="banUserBtn" class="send-button" style="width: 100%; margin-bottom: 10px; background: #f59e0b;">Ban User</button>
+            <button id="banUserBtn" class="send-button" style="width: 100%; margin-bottom: 10px; background: #f59e0b; display: none; opacity: 0.5; cursor: not-allowed;" disabled>Temporarily Unavailable</button>
             <button id="cancelMessageActions" class="room-button" style="width: 100%;">Cancel</button>
         </div>
     </div>
@@ -2058,8 +2058,16 @@
             });
         }
         
-        // Ban user
+        // Ban user - TEMPORARILY DISABLED
         if (banUserBtn) {
+            banUserBtn.disabled = true;
+            banUserBtn.style.display = 'none';
+            banUserBtn.style.opacity = '0.5';
+            banUserBtn.style.cursor = 'not-allowed';
+            banUserBtn.textContent = 'Temporarily Unavailable';
+            
+            // Commented out the event listener to prevent any ban actions
+            /*
             banUserBtn.addEventListener('click', () => {
                 if (!selectedUserForBan || !isDev()) return;
                 
@@ -2067,6 +2075,7 @@
                 messageActionsModal.style.display = 'none';
                 banDurationModal.style.display = 'flex';
             });
+            */
         }
         
         // Confirm ban
