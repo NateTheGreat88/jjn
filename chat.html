@@ -1138,35 +1138,7 @@
                 return;
             }
 
-            // Check if user is banned
-            if (isUserBanned(messageUsername)) {
-                alert('You are banned from chatting. Please wait until the ban expires.');
-                return;
-            }
-            
-            // Censor the message before sending
-            message = censorMessage(message);
-
-            const timestamp = Date.now();
-            const imageData = selectedImage;
-            const gifData = selectedGif;
-            
-            // Clear image preview
-            if (selectedImage) {
-                selectedImage = null;
-                document.getElementById('imagePreview').style.display = 'none';
-                document.getElementById('previewImage').src = '';
-                document.getElementById('imageInput').value = '';
-            }
-            
-            // Clear GIF preview
-            if (selectedGif) {
-                selectedGif = null;
-                document.getElementById('gifPreview').style.display = 'none';
-                document.getElementById('previewGif').src = '';
-            }
-            
-            // Always get the latest username and avatar from profile
+            // Always get the latest username and avatar from profile FIRST
             let messageUsername = currentUserName;
             let messageAvatar = '👤';
             let messageAvatarImage = null;
@@ -1192,6 +1164,34 @@
                 }
             } catch (e) {
                 // Ignore errors, use currentUserName
+            }
+            
+            // Check if user is banned (after getting username)
+            if (isUserBanned(messageUsername)) {
+                alert('You are banned from chatting. Please wait until the ban expires.');
+                return;
+            }
+            
+            // Censor the message before sending
+            message = censorMessage(message);
+
+            const timestamp = Date.now();
+            const imageData = selectedImage;
+            const gifData = selectedGif;
+            
+            // Clear image preview
+            if (selectedImage) {
+                selectedImage = null;
+                document.getElementById('imagePreview').style.display = 'none';
+                document.getElementById('previewImage').src = '';
+                document.getElementById('imageInput').value = '';
+            }
+            
+            // Clear GIF preview
+            if (selectedGif) {
+                selectedGif = null;
+                document.getElementById('gifPreview').style.display = 'none';
+                document.getElementById('previewGif').src = '';
             }
             
             console.log('Sending message:', { user: messageUsername, message: message, hasImage: !!imageData, hasGif: !!gifData, gifUrl: gifData, avatar: messageAvatar, avatarImage: !!messageAvatarImage });
