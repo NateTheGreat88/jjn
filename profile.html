@@ -332,6 +332,12 @@
         let selectedImage = null; // Base64 image data
         let avatarSelectorVisible = false;
 
+        // Generate a unique user ID
+        function generateUserId() {
+            // Generate a unique ID using timestamp and random string
+            return 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
+        }
+
         // Load profile on page load
         function loadProfile() {
             const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
@@ -358,8 +364,11 @@
                     console.error('Error loading profile:', e);
                 }
             } else {
-                // Set default join date
-                const profile = { joinDate: new Date().toISOString() };
+                // Set default join date and userId
+                const profile = { 
+                    joinDate: new Date().toISOString(),
+                    userId: generateUserId()
+                };
                 localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
             }
         }
@@ -376,7 +385,7 @@
                 lastUpdated: new Date().toISOString()
             };
 
-            // Load existing profile to preserve join date and check for username change
+            // Load existing profile to preserve join date, userId, and check for username change
             let oldUsername = null;
             let oldDisplayName = null;
             const existing = localStorage.getItem(PROFILE_STORAGE_KEY);
@@ -384,14 +393,18 @@
                 try {
                     const existingProfile = JSON.parse(existing);
                     profile.joinDate = existingProfile.joinDate || new Date().toISOString();
+                    // Preserve userId if it exists, otherwise generate a new one
+                    profile.userId = existingProfile.userId || generateUserId();
                     oldUsername = existingProfile.username || null;
                     oldDisplayName = existingProfile.displayName || null;
                 } catch (e) {
                     // If error, use defaults
                     profile.joinDate = new Date().toISOString();
+                    profile.userId = generateUserId();
                 }
             } else {
                 profile.joinDate = new Date().toISOString();
+                profile.userId = generateUserId();
             }
 
             localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));

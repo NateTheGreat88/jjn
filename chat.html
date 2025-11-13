@@ -227,6 +227,7 @@
         
         let selectedMessageForAction = null;
         let selectedUserForBan = null;
+        let selectedUserIdForBan = null;
         const DEV_PASSWORD = 'testtypetexthereSACbzn1234567890=-09090909009mt9-9=0DevBlockPasswordistohardtoguesswhywhywhy???><><2323tteessttlongpassword75shdsdhidshueew8iugjhlkghdffposdiavkhjxdbfkjs;go;sdpbtspodgp;dsg(-_-)';
         
         // Room UI elements
@@ -272,12 +273,16 @@
             if (profileData) {
                 try {
                     const profile = JSON.parse(profileData);
+                    // Get userId for ban checking
+                    const userId = profile.userId || null;
                     // Use username if available, otherwise fallback to displayName
                     if (profile.username && profile.username.trim() !== '') {
                         currentUserName = profile.username.trim();
                         showNameDisplay();
-                        // Check ban status before enabling
-                        if (isUserBanned(currentUserName)) {
+                        // Check ban status before enabling (use userId if available)
+                        if (userId && isUserBannedById(userId)) {
+                            disableChatBanned();
+                        } else if (isUserBanned(currentUserName)) {
                             disableChatBanned();
                         } else {
                             enableChat();
@@ -286,8 +291,10 @@
                     } else if (profile.displayName && profile.displayName.trim() !== '') {
                         currentUserName = profile.displayName.trim();
                         showNameDisplay();
-                        // Check ban status before enabling
-                        if (isUserBanned(currentUserName)) {
+                        // Check ban status before enabling (use userId if available)
+                        if (userId && isUserBannedById(userId)) {
+                            disableChatBanned();
+                        } else if (isUserBanned(currentUserName)) {
                             disableChatBanned();
                         } else {
                             enableChat();
@@ -332,7 +339,21 @@
 
         // Enable chat input
         function enableChat() {
-            // Check if user is banned before enabling
+            // Check if user is banned before enabling (use userId if available)
+            try {
+                const profileData = localStorage.getItem('jnjUserProfile');
+                if (profileData) {
+                    const profile = JSON.parse(profileData);
+                    const userId = profile.userId || null;
+                    if (userId && isUserBannedById(userId)) {
+                        disableChatBanned();
+                        return;
+                    }
+                }
+            } catch (e) {
+                // Ignore errors
+            }
+            // Fallback to username check
             if (currentUserName && isUserBanned(currentUserName)) {
                 disableChatBanned();
                 return;
@@ -470,7 +491,7 @@
                         // Only show the most recent messages
                         const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                         recentMessages.forEach(msg => {
-                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id);
+                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id, msg.userId);
                         });
                         scrollToBottom();
                     }
@@ -493,7 +514,7 @@
                         const filteredMessages = messages.filter(msg => !msg.roomCode);
                         const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                         recentMessages.forEach(msg => {
-                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id);
+                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id, msg.userId);
                         });
                         scrollToBottom();
                     }
@@ -515,7 +536,7 @@
                     const filteredMessages = messages.filter(msg => !msg.roomCode);
                     const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                     recentMessages.forEach(msg => {
-                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, null, null, msg.id);
+                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, null, null, msg.id, msg.userId);
                     });
                     scrollToBottom();
                 }
@@ -595,7 +616,7 @@
                         recentMessages.reverse().forEach(msg => {
                             if (!loadedMessageIds.has(msg.id)) {
                                 console.log('Loading message from initial load:', { user: msg.user, hasGif: !!msg.gif, gifUrl: msg.gif });
-                                addMessageToChat(msg.user, msg.message || '', msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id);
+                                addMessageToChat(msg.user, msg.message || '', msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id, msg.userId);
                                 loadedMessageIds.add(msg.id);
                             }
                         });
@@ -620,13 +641,13 @@
                                 // Double-check room code match
                                 if (roomCode) {
                                     if (data.roomCode === roomCode) {
-                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, change.doc.id);
+                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, change.doc.id, data.userId);
                                         loadedMessageIds.add(change.doc.id);
                                     }
                                 } else {
                                     // Only show messages without roomCode in public chat
                                     if (!data.roomCode) {
-                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, change.doc.id);
+                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, change.doc.id, data.userId);
                                         loadedMessageIds.add(change.doc.id);
                                     }
                                 }
@@ -668,7 +689,7 @@
                                 recentMessages.reverse();
                                 recentMessages.forEach(msg => {
                                     if (!loadedMessageIds.has(msg.id)) {
-                                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id);
+                                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id, msg.userId);
                                         loadedMessageIds.add(msg.id);
                                     }
                                 });
@@ -683,7 +704,7 @@
                                                 const data = change.doc.data();
                                                 console.log('Fallback listener - New message:', { user: data.user, hasGif: !!data.gif, gifUrl: data.gif, fullData: data });
                                                 if (data.roomCode === roomCode) {
-                                                    addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, change.doc.id);
+                                                    addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, change.doc.id, data.userId);
                                                     loadedMessageIds.add(change.doc.id);
                                                 }
                                             }
@@ -724,12 +745,17 @@
         }
 
         // Save message to Firestore or localStorage fallback
-        function saveMessage(user, message, timestamp, imageData = null, gifData = null, avatar = null, avatarImage = null) {
+        function saveMessage(user, message, timestamp, imageData = null, gifData = null, avatar = null, avatarImage = null, userId = null) {
             const messageData = {
                 user: user,
                 message: message,
                 timestamp: timestamp
             };
+            
+            // Add userId if provided
+            if (userId) {
+                messageData.userId = userId;
+            }
             
             if (imageData) {
                 messageData.image = imageData;
@@ -799,16 +825,16 @@
                     console.error('Error details:', error.code, error.message);
                     console.error('Message data that failed:', messageData);
                     // Fallback to localStorage
-                    saveMessageToLocalStorage(user, message, timestamp, imageData, gifData, avatar, avatarImage);
+                    saveMessageToLocalStorage(user, message, timestamp, imageData, gifData, avatar, avatarImage, userId);
                 });
             } else {
                 // Fallback to localStorage
-                saveMessageToLocalStorage(user, message, timestamp, imageData, gifData, avatar, avatarImage);
+                saveMessageToLocalStorage(user, message, timestamp, imageData, gifData, avatar, avatarImage, userId);
             }
         }
 
         // Fallback: Save messages to localStorage
-        function saveMessageToLocalStorage(user, message, timestamp, imageData = null, gifData = null, avatar = null, avatarImage = null) {
+        function saveMessageToLocalStorage(user, message, timestamp, imageData = null, gifData = null, avatar = null, avatarImage = null, userId = null) {
             const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
             const messageObj = { user, message, timestamp };
             if (imageData) {
@@ -823,6 +849,10 @@
             } else if (avatar) {
                 messageObj.avatar = avatar;
             }
+            // Save userId if provided
+            if (userId) {
+                messageObj.userId = userId;
+            }
             // Add room code if in a private room
             if (currentRoomCode) {
                 messageObj.roomCode = currentRoomCode;
@@ -836,7 +866,7 @@
         }
 
         // Add message to chat display
-        function addMessageToChat(user, message, timestamp, shouldSave = true, imageData = null, gifData = null, avatar = null, avatarImage = null, messageId = null) {
+        function addMessageToChat(user, message, timestamp, shouldSave = true, imageData = null, gifData = null, avatar = null, avatarImage = null, messageId = null, userId = null) {
             // Remove welcome message if it exists
             const welcomeMsg = chatMessages.querySelector('.welcome-message');
             if (welcomeMsg) {
@@ -869,6 +899,10 @@
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message';
             messageDiv.setAttribute('data-timestamp', timestamp);
+            // Add userId as data attribute for banning
+            if (userId) {
+                messageDiv.setAttribute('data-user-id', userId);
+            }
             // Add message ID for tracking
             if (messageId) {
                 // Use provided message ID (from Firestore)
@@ -1195,14 +1229,17 @@
                 return;
             }
 
-            // Always get the latest username and avatar from profile FIRST
+            // Always get the latest username, userId, and avatar from profile FIRST
             let messageUsername = currentUserName;
+            let messageUserId = null;
             let messageAvatar = '👤';
             let messageAvatarImage = null;
             try {
                 const profileData = localStorage.getItem('jnjUserProfile');
                 if (profileData) {
                     const profile = JSON.parse(profileData);
+                    // Get userId (required for banning)
+                    messageUserId = profile.userId || null;
                     // Use username if available, otherwise use displayName
                     if (profile.username && profile.username.trim() !== '') {
                         messageUsername = profile.username.trim();
@@ -1223,8 +1260,16 @@
                 // Ignore errors, use currentUserName
             }
             
-            // Check if user is banned (after getting username)
-            if (isUserBanned(messageUsername)) {
+            // Check if user is banned (using userId if available, otherwise fallback to username)
+            if (messageUserId && isUserBannedById(messageUserId)) {
+                console.log('BLOCKED: User', messageUsername, '(ID:', messageUserId, ') is banned and cannot send messages');
+                // Disable chat and show ban message
+                disableChatBanned();
+                // Clear the input
+                messageInput.value = '';
+                return;
+            } else if (!messageUserId && isUserBanned(messageUsername)) {
+                // Fallback check for old messages without userId
                 console.log('BLOCKED: User', messageUsername, 'is banned and cannot send messages');
                 // Disable chat and show ban message
                 disableChatBanned();
@@ -1259,12 +1304,12 @@
             
             if (db) {
                 // Save to Firestore first
-                saveMessage(messageUsername, message || '', timestamp, imageData, gifData, messageAvatar, messageAvatarImage);
+                saveMessage(messageUsername, message || '', timestamp, imageData, gifData, messageAvatar, messageAvatarImage, messageUserId);
                 
                 // Add to display immediately for better UX
-                addMessageToChat(messageUsername, message || '', timestamp, false, imageData, gifData, messageAvatar, messageAvatarImage);
+                addMessageToChat(messageUsername, message || '', timestamp, false, imageData, gifData, messageAvatar, messageAvatarImage, null, messageUserId);
             } else {
-                addMessageToChat(messageUsername, message || '', timestamp, true, imageData, gifData, messageAvatar, messageAvatarImage);
+                addMessageToChat(messageUsername, message || '', timestamp, true, imageData, gifData, messageAvatar, messageAvatarImage, null, messageUserId);
             }
             messageInput.value = '';
             messageInput.focus();
@@ -1771,9 +1816,12 @@
             const messageId = messageDiv.getAttribute('data-message-id');
             const userSpan = messageDiv.querySelector('.message-user');
             const username = userSpan ? userSpan.textContent.trim() : 'Unknown';
+            // Get userId from message element (preferred) or try to get from Firestore
+            const userId = messageDiv.getAttribute('data-user-id');
             
             selectedMessageForAction = messageDiv;
             selectedUserForBan = username;
+            selectedUserIdForBan = userId; // Store userId for banning
             
             messageActionsUser.textContent = `User: ${username}`;
             messageActionsModal.style.display = 'flex';
@@ -1852,32 +1900,41 @@
             confirmBanBtn.addEventListener('click', () => {
                 if (!selectedUserForBan || !isDev()) return;
                 
+                // Use userId if available, otherwise fallback to username (for backwards compatibility)
+                if (!selectedUserIdForBan) {
+                    console.warn('No userId found for user:', selectedUserForBan, '- using username-based ban (less secure)');
+                }
+                
                 const durationMinutes = parseInt(banDurationSelect.value);
                 const banUntil = Date.now() + (durationMinutes * 60 * 1000);
                 
-                // Normalize username (trim whitespace)
-                const normalizedBannedUser = selectedUserForBan.trim();
+                // Use userId as the ban key (preferred), or username as fallback
+                const banKey = selectedUserIdForBan || selectedUserForBan.trim();
                 
                 // Save ban to localStorage and Firestore
                 const bans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
-                bans[normalizedBannedUser] = {
+                bans[banKey] = {
                     bannedUntil: banUntil,
                     bannedBy: currentUserName,
-                    bannedAt: Date.now()
+                    bannedAt: Date.now(),
+                    bannedUsername: selectedUserForBan.trim(), // Store username for display purposes
+                    bannedUserId: selectedUserIdForBan // Store userId if available
                 };
                 localStorage.setItem('jnjChatBans', JSON.stringify(bans));
                 
-                console.log('Ban saved for user:', normalizedBannedUser, 'until', new Date(banUntil));
+                console.log('Ban saved for user:', selectedUserForBan, '(ID:', selectedUserIdForBan || 'none', ') until', new Date(banUntil));
                 console.log('Current bans:', bans);
                 
                 // Also save to Firestore if available
                 if (db) {
-                    db.collection('bans').doc(normalizedBannedUser).set({
+                    db.collection('bans').doc(banKey).set({
                         bannedUntil: banUntil,
                         bannedBy: currentUserName,
-                        bannedAt: Date.now()
+                        bannedAt: Date.now(),
+                        bannedUsername: selectedUserForBan.trim(),
+                        bannedUserId: selectedUserIdForBan
                     }).then(() => {
-                        console.log('Ban saved to Firestore for:', normalizedBannedUser);
+                        console.log('Ban saved to Firestore for:', banKey);
                     }).catch(error => {
                         console.error('Error saving ban to Firestore:', error);
                     });
@@ -1886,8 +1943,16 @@
                     const roomCode = currentRoomCode || null;
                     const collection = roomCode ? 'roomMessages' : 'messages';
                     
-                    // Delete from the current room/collection (use normalized username)
-                    db.collection(collection).where('user', '==', normalizedBannedUser).get()
+                    // Delete messages by userId if available, otherwise by username
+                    let query;
+                    if (selectedUserIdForBan) {
+                        query = db.collection(collection).where('userId', '==', selectedUserIdForBan);
+                    } else {
+                        // Fallback to username-based deletion
+                        query = db.collection(collection).where('user', '==', selectedUserForBan.trim());
+                    }
+                    
+                    query.get()
                         .then(querySnapshot => {
                             const batch = db.batch();
                             let deleteCount = 0;
@@ -1910,7 +1975,7 @@
                             });
                             if (deleteCount > 0) {
                                 return batch.commit().then(() => {
-                                    console.log(`Deleted ${deleteCount} messages from banned user ${normalizedBannedUser}`);
+                                    console.log(`Deleted ${deleteCount} messages from banned user ${selectedUserForBan} (ID: ${selectedUserIdForBan || 'none'})`);
                                 });
                             }
                         })
@@ -1924,24 +1989,32 @@
                 // Remove all messages from banned user from DOM (they're already deleted from Firestore above)
                 const userMessages = chatMessages.querySelectorAll('.message:not(.welcome-message)');
                 userMessages.forEach(msg => {
-                    const userSpan = msg.querySelector('.message-user');
-                    if (userSpan) {
-                        const msgUsername = userSpan.textContent.trim();
-                        // Case-insensitive comparison
-                        if (msgUsername.toLowerCase() === normalizedBannedUser.toLowerCase()) {
-                            msg.remove();
+                    // Check by userId first (preferred), then by username
+                    const msgUserId = msg.getAttribute('data-user-id');
+                    if (selectedUserIdForBan && msgUserId === selectedUserIdForBan) {
+                        msg.remove();
+                    } else {
+                        // Fallback to username comparison
+                        const userSpan = msg.querySelector('.message-user');
+                        if (userSpan) {
+                            const msgUsername = userSpan.textContent.trim();
+                            // Case-insensitive comparison
+                            if (msgUsername.toLowerCase() === selectedUserForBan.trim().toLowerCase()) {
+                                msg.remove();
+                            }
                         }
                     }
                 });
             });
         }
         
-        // Cancel message actions
+            // Cancel message actions
         if (cancelMessageActions) {
             cancelMessageActions.addEventListener('click', () => {
                 messageActionsModal.style.display = 'none';
                 selectedMessageForAction = null;
                 selectedUserForBan = null;
+                selectedUserIdForBan = null;
             });
         }
         
@@ -2001,7 +2074,43 @@
                 });
         }
         
-        // Check if user is banned before sending message (synchronous check)
+        // Check if user is banned by userId (preferred method)
+        function isUserBannedById(userId) {
+            if (!userId) return false;
+            
+            try {
+                // Check localStorage (fast, synchronous)
+                const bans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
+                
+                // Check all bans by userId
+                for (const banKey in bans) {
+                    const ban = bans[banKey];
+                    // Check if this ban is for the userId (either the key is the userId, or ban.bannedUserId matches)
+                    if (banKey === userId || ban.bannedUserId === userId) {
+                        // Check if ban is still active
+                        if (ban.bannedUntil > Date.now()) {
+                            console.log('User is banned by ID:', userId, 'until', new Date(ban.bannedUntil));
+                            return true;
+                        } else {
+                            // Ban expired, remove it
+                            delete bans[banKey];
+                            localStorage.setItem('jnjChatBans', JSON.stringify(bans));
+                            // Also remove from Firestore if available
+                            if (db) {
+                                db.collection('bans').doc(banKey).delete().catch(err => {
+                                    console.error('Error removing expired ban from Firestore:', err);
+                                });
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Error checking ban status by ID:', e);
+            }
+            return false;
+        }
+        
+        // Check if user is banned before sending message (synchronous check) - username-based (for backwards compatibility)
         function isUserBanned(username) {
             if (!username) return false;
             
@@ -2013,21 +2122,23 @@
                 const bans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
                 
                 // Check all bans (case-insensitive comparison)
-                for (const bannedUsername in bans) {
+                for (const banKey in bans) {
+                    const ban = bans[banKey];
+                    // Check if ban is for this username (either key matches username, or bannedUsername matches)
+                    const bannedUsername = ban.bannedUsername || banKey;
                     const normalizedBanned = bannedUsername.trim().toLowerCase();
                     if (normalizedBanned === normalizedUsername) {
-                        const ban = bans[bannedUsername];
                         // Check if ban is still active
                         if (ban.bannedUntil > Date.now()) {
                             console.log('User is banned:', username, '(matched:', bannedUsername, ') until', new Date(ban.bannedUntil));
                             return true;
                         } else {
                             // Ban expired, remove it
-                            delete bans[bannedUsername];
+                            delete bans[banKey];
                             localStorage.setItem('jnjChatBans', JSON.stringify(bans));
                             // Also remove from Firestore if available
                             if (db) {
-                                db.collection('bans').doc(bannedUsername).delete().catch(err => {
+                                db.collection('bans').doc(banKey).delete().catch(err => {
                                     console.error('Error removing expired ban from Firestore:', err);
                                 });
                             }
@@ -2043,6 +2154,21 @@
         // Check ban status periodically and update UI
         function checkBanStatusPeriodically() {
             if (currentUserName) {
+                try {
+                    const profileData = localStorage.getItem('jnjUserProfile');
+                    if (profileData) {
+                        const profile = JSON.parse(profileData);
+                        const userId = profile.userId || null;
+                        // Check by userId first (preferred)
+                        if (userId && isUserBannedById(userId)) {
+                            disableChatBanned();
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    // Ignore errors
+                }
+                // Fallback to username check
                 if (isUserBanned(currentUserName)) {
                     disableChatBanned();
                 } else {
@@ -2059,52 +2185,67 @@
         
         // Set up real-time listener for bans
         function setupBanListener() {
-            if (!db || !currentUserName) return;
+            if (!db) return;
             
-            // Listen for changes to the current user's ban document
-            db.collection('bans').doc(currentUserName.trim()).onSnapshot((doc) => {
-                if (doc.exists()) {
-                    const banData = doc.data();
-                    const now = Date.now();
+            // Get userId from profile
+            try {
+                const profileData = localStorage.getItem('jnjUserProfile');
+                if (!profileData) return;
+                
+                const profile = JSON.parse(profileData);
+                const userId = profile.userId || null;
+                
+                if (!userId) {
+                    // Fallback to username-based listener for backwards compatibility
+                    if (!currentUserName) return;
+                    db.collection('bans').doc(currentUserName.trim()).onSnapshot(setupBanListenerCallback);
+                    return;
+                }
+                
+                // Listen for changes to the current user's ban document by userId
+                db.collection('bans').doc(userId).onSnapshot(setupBanListenerCallback);
+            } catch (e) {
+                console.error('Error setting up ban listener:', e);
+            }
+        }
+        
+        function setupBanListenerCallback(doc) {
+            if (doc.exists()) {
+                const banData = doc.data();
+                const now = Date.now();
+                
+                if (banData.bannedUntil > now) {
+                    // User was just banned or ban was updated
+                    console.log('Real-time ban detected until', new Date(banData.bannedUntil));
                     
-                    if (banData.bannedUntil > now) {
-                        // User was just banned or ban was updated
-                        console.log('Real-time ban detected for:', currentUserName, 'until', new Date(banData.bannedUntil));
-                        
-                        // Update localStorage
-                        const bans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
-                        bans[currentUserName.trim()] = banData;
-                        localStorage.setItem('jnjChatBans', JSON.stringify(bans));
-                        
-                        // Immediately disable chat
-                        disableChatBanned();
-                    } else {
-                        // Ban expired
-                        console.log('Ban expired for:', currentUserName);
-                        const bans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
-                        delete bans[currentUserName.trim()];
-                        localStorage.setItem('jnjChatBans', JSON.stringify(bans));
-                        
-                        // Re-enable chat if user has a profile
-                        if (currentUserName) {
-                            enableChat();
-                        }
-                    }
-                } else {
-                    // Ban document was deleted (ban lifted)
-                    console.log('Ban removed for:', currentUserName);
+                    // Update localStorage using userId as key
                     const bans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
-                    delete bans[currentUserName.trim()];
+                    const banKey = doc.id;
+                    bans[banKey] = banData;
+                    localStorage.setItem('jnjChatBans', JSON.stringify(bans));
+                    
+                    // Immediately disable chat
+                    disableChatBanned();
+                } else {
+                    // Ban expired
+                    console.log('Ban expired');
+                    const bans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
+                    delete bans[doc.id];
                     localStorage.setItem('jnjChatBans', JSON.stringify(bans));
                     
                     // Re-enable chat if user has a profile
-                    if (currentUserName) {
-                        enableChat();
-                    }
+                    enableChat();
                 }
-            }, (error) => {
-                console.error('Error in ban listener:', error);
-            });
+            } else {
+                // Ban document was deleted (ban lifted)
+                console.log('Ban removed');
+                const bans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
+                delete bans[doc.id];
+                localStorage.setItem('jnjChatBans', JSON.stringify(bans));
+                
+                // Re-enable chat if user has a profile
+                enableChat();
+            }
         }
         
         // Leave private room and return to public chat
