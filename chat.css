@@ -91,6 +91,7 @@ body.page-exit {
 .chat-header {
     text-align: center;
     margin-bottom: 30px;
+    position: relative;
 }
 
 .room-controls {

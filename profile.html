@@ -264,7 +264,7 @@
     
     <div class="profile-container">
         <header class="profile-header">
-            <h1>👤 Your Profile</h1>
+            <h1>👤 Your Profile <span id="devStarBadge" style="display: none; font-size: 32px; margin-left: 10px; vertical-align: middle;" title="Dev">⭐</span></h1>
             <p class="subtitle">Customize your identity</p>
         </header>
 
@@ -348,6 +348,12 @@
                     updateAvatarPreview();
                     updateColorPreview();
                     updateBioCount();
+                    
+                    // Show dev star if user is a dev
+                    const devStarBadge = document.getElementById('devStarBadge');
+                    if (devStarBadge && profile.isDev === true) {
+                        devStarBadge.style.display = 'inline-block';
+                    }
                 } catch (e) {
                     console.error('Error loading profile:', e);
                 }

@@ -24,6 +24,7 @@
         <header class="chat-header" id="chatHeader">
             <h1 id="chatTitle">JNJ Chat</h1>
             <p class="chat-subtitle">Junhu Choi • Jaxon Croskey • Nathan DeLuca</p>
+            <button id="devStarButton" class="dev-star-button" style="display: none; position: absolute; top: 10px; right: 10px; background: rgba(255, 215, 0, 0.2); border: 2px solid #ffd700; border-radius: 50%; width: 50px; height: 50px; font-size: 28px; cursor: pointer; z-index: 1000; transition: all 0.2s; color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.8); box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);" title="Become a Dev">⭐</button>
             <div class="room-controls">
                 <button id="createRoomButton" class="room-button" style="display: none;">Create Private Room</button>
                 <button id="joinRoomButton" class="room-button" style="display: none;">Join Room</button>
@@ -132,6 +133,52 @@
         </div>
     </div>
 
+    <!-- Dev Password Modal -->
+    <div id="devPasswordModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <h2>⭐ Dev Access</h2>
+            <p style="margin-bottom: 20px; opacity: 0.8;">Enter the dev password to unlock moderation tools:</p>
+            <input type="password" id="devPasswordInput" class="message-input" placeholder="Enter password..." style="width: 100%; margin-bottom: 15px; padding: 12px;">
+            <div style="display: flex; gap: 10px;">
+                <button id="submitDevPassword" class="send-button" style="flex: 1;">Submit</button>
+                <button id="cancelDevPassword" class="room-button" style="flex: 1;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Actions Modal (for dev users) -->
+    <div id="messageActionsModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px;">
+            <h2>Message Actions</h2>
+            <p id="messageActionsUser" style="margin-bottom: 20px; opacity: 0.8;"></p>
+            <button id="deleteMessageBtn" class="send-button" style="width: 100%; margin-bottom: 10px; background: #dc2626;">Delete Message</button>
+            <button id="banUserBtn" class="send-button" style="width: 100%; margin-bottom: 10px; background: #f59e0b;">Ban User</button>
+            <button id="cancelMessageActions" class="room-button" style="width: 100%;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Ban Duration Modal -->
+    <div id="banDurationModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px;">
+            <h2>Ban User</h2>
+            <p id="banUserInfo" style="margin-bottom: 20px; opacity: 0.8;"></p>
+            <label style="display: block; margin-bottom: 10px;">Ban Duration:</label>
+            <select id="banDurationSelect" class="message-input" style="width: 100%; margin-bottom: 15px; padding: 12px;">
+                <option value="5">5 minutes</option>
+                <option value="15">15 minutes</option>
+                <option value="30">30 minutes</option>
+                <option value="60">1 hour</option>
+                <option value="1440">1 day</option>
+                <option value="10080">1 week</option>
+                <option value="43200">1 month</option>
+            </select>
+            <div style="display: flex; gap: 10px;">
+                <button id="confirmBanBtn" class="send-button" style="flex: 1; background: #dc2626;">Confirm Ban</button>
+                <button id="cancelBanBtn" class="room-button" style="flex: 1;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Initialize Firebase
         let db = null;
@@ -160,6 +207,27 @@
         const currentNameDisplay = document.getElementById('currentNameDisplay');
         const currentNameText = document.getElementById('currentNameText');
         const userNameContainer = document.getElementById('userNameContainer');
+        
+        // Dev star and modals
+        const devStarButton = document.getElementById('devStarButton');
+        const devPasswordModal = document.getElementById('devPasswordModal');
+        const devPasswordInput = document.getElementById('devPasswordInput');
+        const submitDevPassword = document.getElementById('submitDevPassword');
+        const cancelDevPassword = document.getElementById('cancelDevPassword');
+        const messageActionsModal = document.getElementById('messageActionsModal');
+        const deleteMessageBtn = document.getElementById('deleteMessageBtn');
+        const banUserBtn = document.getElementById('banUserBtn');
+        const cancelMessageActions = document.getElementById('cancelMessageActions');
+        const banDurationModal = document.getElementById('banDurationModal');
+        const banDurationSelect = document.getElementById('banDurationSelect');
+        const confirmBanBtn = document.getElementById('confirmBanBtn');
+        const cancelBanBtn = document.getElementById('cancelBanBtn');
+        const banUserInfo = document.getElementById('banUserInfo');
+        const messageActionsUser = document.getElementById('messageActionsUser');
+        
+        let selectedMessageForAction = null;
+        let selectedUserForBan = null;
+        const DEV_PASSWORD = 'testtypetexthereSACbzn1234567890=-09090909009mt9-9=0DevBlockPasswordistohardtoguesswhywhywhy???><><2323tteessttlongpassword75shdsdhidshueew8iugjhlkghdffposdiavkhjxdbfkjs;go;sdpbtspodgp;dsg(-_-)';
         
         // Room UI elements
         const createRoomButton = document.getElementById('createRoomButton');
@@ -345,7 +413,7 @@
                         // Only show the most recent messages
                         const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                         recentMessages.forEach(msg => {
-                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage);
+                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id);
                         });
                         scrollToBottom();
                     }
@@ -368,7 +436,7 @@
                         const filteredMessages = messages.filter(msg => !msg.roomCode);
                         const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                         recentMessages.forEach(msg => {
-                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage);
+                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id);
                         });
                         scrollToBottom();
                     }
@@ -390,7 +458,7 @@
                     const filteredMessages = messages.filter(msg => !msg.roomCode);
                     const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                     recentMessages.forEach(msg => {
-                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif);
+                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, null, null, msg.id);
                     });
                     scrollToBottom();
                 }
@@ -470,12 +538,15 @@
                         recentMessages.reverse().forEach(msg => {
                             if (!loadedMessageIds.has(msg.id)) {
                                 console.log('Loading message from initial load:', { user: msg.user, hasGif: !!msg.gif, gifUrl: msg.gif });
-                                addMessageToChat(msg.user, msg.message || '', msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage);
+                                addMessageToChat(msg.user, msg.message || '', msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id);
                                 loadedMessageIds.add(msg.id);
                             }
                         });
                         scrollToBottom();
                         isInitialLoad = false;
+                        
+                        // Setup message click handlers for dev users
+                        setupMessageClickHandlers();
                     } else {
                         // After initial load, only process new changes
                         querySnapshot.docChanges().forEach((change) => {
@@ -492,13 +563,13 @@
                                 // Double-check room code match
                                 if (roomCode) {
                                     if (data.roomCode === roomCode) {
-                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage);
+                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, change.doc.id);
                                         loadedMessageIds.add(change.doc.id);
                                     }
                                 } else {
                                     // Only show messages without roomCode in public chat
                                     if (!data.roomCode) {
-                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage);
+                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, change.doc.id);
                                         loadedMessageIds.add(change.doc.id);
                                     }
                                 }
@@ -540,7 +611,7 @@
                                 recentMessages.reverse();
                                 recentMessages.forEach(msg => {
                                     if (!loadedMessageIds.has(msg.id)) {
-                                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage);
+                                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id);
                                         loadedMessageIds.add(msg.id);
                                     }
                                 });
@@ -555,7 +626,7 @@
                                                 const data = change.doc.data();
                                                 console.log('Fallback listener - New message:', { user: data.user, hasGif: !!data.gif, gifUrl: data.gif, fullData: data });
                                                 if (data.roomCode === roomCode) {
-                                                    addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage);
+                                                    addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, change.doc.id);
                                                     loadedMessageIds.add(change.doc.id);
                                                 }
                                             }
@@ -570,7 +641,7 @@
                                 let filteredMessages = messages.filter(msg => msg.roomCode === roomCode);
                                 const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                                 recentMessages.forEach(msg => {
-                                    addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image || null, msg.gif || null, msg.avatar, msg.avatarImage);
+                                    addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image || null, msg.gif || null, msg.avatar, msg.avatarImage, msg.id);
                                 });
                                 scrollToBottom();
                             });
@@ -589,7 +660,7 @@
                     // Only show the most recent messages
                     const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                     recentMessages.forEach(msg => {
-                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image || null, msg.gif || null, msg.avatar, msg.avatarImage);
+                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image || null, msg.gif || null, msg.avatar, msg.avatarImage, msg.id);
                     });
                     scrollToBottom();
                 });
@@ -708,7 +779,7 @@
         }
 
         // Add message to chat display
-        function addMessageToChat(user, message, timestamp, shouldSave = true, imageData = null, gifData = null, avatar = null, avatarImage = null) {
+        function addMessageToChat(user, message, timestamp, shouldSave = true, imageData = null, gifData = null, avatar = null, avatarImage = null, messageId = null) {
             // Remove welcome message if it exists
             const welcomeMsg = chatMessages.querySelector('.welcome-message');
             if (welcomeMsg) {
@@ -742,7 +813,10 @@
             messageDiv.className = 'message';
             messageDiv.setAttribute('data-timestamp', timestamp);
             // Add message ID for tracking
-            if (shouldSave && db) {
+            if (messageId) {
+                // Use provided message ID (from Firestore)
+                messageDiv.setAttribute('data-message-id', messageId);
+            } else if (shouldSave && db) {
                 // We'll set this after saving, but for now use timestamp as ID
                 messageDiv.setAttribute('data-message-id', 'temp-' + timestamp);
             }
@@ -860,6 +934,13 @@
             }
             if (!inserted) {
                 chatMessages.appendChild(messageDiv);
+            }
+            
+            // Setup click handlers for dev users
+            if (isDev()) {
+                messageDiv.addEventListener('click', handleMessageClick);
+                messageDiv.style.cursor = 'pointer';
+                messageDiv.title = 'Click to moderate (Dev only)';
             }
             
             // Remove old messages if we exceed the limit
@@ -1057,6 +1138,12 @@
                 return;
             }
 
+            // Check if user is banned
+            if (isUserBanned(messageUsername)) {
+                alert('You are banned from chatting. Please wait until the ban expires.');
+                return;
+            }
+            
             // Censor the message before sending
             message = censorMessage(message);
 
@@ -1306,6 +1393,9 @@
                 // Update UI
                 updateRoomUI();
                 
+                // Show dev star button
+                showDevStarIfNeeded();
+                
                 // Clear chat and show welcome message for dev room
                 chatMessages.innerHTML = '<div class="message welcome-message dev-welcome"><div class="message-content"><p>🔧 Welcome to Dev Chat Room!</p><p style="margin-top: 10px; font-size: 14px; opacity: 0.8;">This is a secret developer chat room.</p></div></div>';
                 loadedMessageIds.clear();
@@ -1475,6 +1565,20 @@
             }
         }
         
+        // Check if user is a dev
+        function isDev() {
+            try {
+                const profileData = localStorage.getItem('jnjUserProfile');
+                if (profileData) {
+                    const profile = JSON.parse(profileData);
+                    return profile.isDev === true;
+                }
+            } catch (e) {
+                console.error('Error checking dev status:', e);
+            }
+            return false;
+        }
+
         // Check if dev chat is active on page load
         function checkDevChatOnLoad() {
             if (currentRoomCode === 'devchat') {
@@ -1485,7 +1589,284 @@
                 if (chatContainer) chatContainer.classList.add('dev-chat');
                 if (chatHeader) chatHeader.classList.add('dev-chat-header');
                 if (chatTitle) chatTitle.textContent = '🔧 Dev Chat';
+                
+                // Show dev star button if user is not already a dev
+                if (devStarButton) {
+                    if (!isDev()) {
+                        devStarButton.style.display = 'block';
+                        console.log('Showing dev star button - user is not a dev');
+                    } else {
+                        devStarButton.style.display = 'none';
+                        console.log('Hiding dev star button - user is already a dev');
+                    }
+                } else {
+                    console.error('devStarButton element not found!');
+                }
+            } else {
+                if (devStarButton) {
+                    devStarButton.style.display = 'none';
+                }
             }
+        }
+        
+        // Also check when joining dev chat
+        function showDevStarIfNeeded() {
+            console.log('showDevStarIfNeeded called', { currentRoomCode, isDev: isDev(), devStarButton: !!devStarButton });
+            if (currentRoomCode === 'devchat' && devStarButton) {
+                if (!isDev()) {
+                    devStarButton.style.display = 'block';
+                    devStarButton.style.visibility = 'visible';
+                    console.log('Showing dev star button - user is not a dev');
+                } else {
+                    devStarButton.style.display = 'none';
+                    console.log('Hiding dev star button - user is already a dev');
+                }
+            }
+        }
+        
+        // Handle dev star button click
+        if (devStarButton) {
+            devStarButton.addEventListener('click', () => {
+                if (isDev()) {
+                    alert('You are already a dev!');
+                    return;
+                }
+                devPasswordModal.style.display = 'flex';
+                devPasswordInput.focus();
+            });
+        }
+        
+        // Handle dev password submission
+        function submitDevPasswordHandler() {
+            const password = devPasswordInput.value.trim();
+            if (password === DEV_PASSWORD) {
+                // Save dev status to profile
+                try {
+                    const profileData = localStorage.getItem('jnjUserProfile');
+                    let profile = {};
+                    if (profileData) {
+                        profile = JSON.parse(profileData);
+                    }
+                    profile.isDev = true;
+                    localStorage.setItem('jnjUserProfile', JSON.stringify(profile));
+                    
+                    // Hide star button and close modal
+                    devStarButton.style.display = 'none';
+                    devPasswordModal.style.display = 'none';
+                    devPasswordInput.value = '';
+                    alert('⭐ Dev access granted! You now have moderation tools.');
+                    
+                    // Setup message handlers for newly granted dev
+                    setupMessageClickHandlers();
+                } catch (e) {
+                    console.error('Error saving dev status:', e);
+                    alert('Error saving dev status. Please try again.');
+                }
+            } else {
+                alert('Incorrect password!');
+                devPasswordInput.value = '';
+                devPasswordInput.focus();
+            }
+        }
+        
+        if (submitDevPassword) {
+            submitDevPassword.addEventListener('click', submitDevPasswordHandler);
+        }
+        
+        if (devPasswordInput) {
+            devPasswordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    submitDevPasswordHandler();
+                }
+            });
+        }
+        
+        // Cancel dev password modal
+        if (cancelDevPassword) {
+            cancelDevPassword.addEventListener('click', () => {
+                devPasswordModal.style.display = 'none';
+                devPasswordInput.value = '';
+            });
+        }
+        
+        // Handle message click for dev users
+        function setupMessageClickHandlers() {
+            if (!isDev()) return;
+            
+            const messages = chatMessages.querySelectorAll('.message:not(.welcome-message)');
+            messages.forEach(msg => {
+                // Remove existing handler to avoid duplicates
+                msg.removeEventListener('click', handleMessageClick);
+                msg.addEventListener('click', handleMessageClick);
+                msg.style.cursor = 'pointer';
+                msg.title = 'Click to moderate (Dev only)';
+            });
+        }
+        
+        function handleMessageClick(e) {
+            if (!isDev()) return;
+            
+            const messageDiv = e.currentTarget;
+            const messageId = messageDiv.getAttribute('data-message-id');
+            const userSpan = messageDiv.querySelector('.message-user');
+            const username = userSpan ? userSpan.textContent.trim() : 'Unknown';
+            
+            selectedMessageForAction = messageDiv;
+            selectedUserForBan = username;
+            
+            messageActionsUser.textContent = `User: ${username}`;
+            messageActionsModal.style.display = 'flex';
+        }
+        
+        // Delete message
+        if (deleteMessageBtn) {
+            deleteMessageBtn.addEventListener('click', () => {
+                if (!selectedMessageForAction || !isDev()) return;
+                
+                const messageId = selectedMessageForAction.getAttribute('data-message-id');
+                const roomCode = currentRoomCode || null;
+                const collection = roomCode ? 'roomMessages' : 'messages';
+                
+                console.log('Deleting message:', { messageId, roomCode, collection, hasDb: !!db });
+                
+                if (db && messageId && !messageId.startsWith('temp-')) {
+                    // Delete from Firestore
+                    const docRef = db.collection(collection).doc(messageId);
+                    docRef.delete()
+                        .then(() => {
+                            console.log('Message deleted from Firestore successfully:', messageId);
+                            selectedMessageForAction.remove();
+                            messageActionsModal.style.display = 'none';
+                        })
+                        .catch(error => {
+                            console.error('Error deleting message from Firestore:', error);
+                            console.error('Error details:', error.code, error.message);
+                            // Still remove from DOM even if Firestore delete fails
+                            selectedMessageForAction.remove();
+                            messageActionsModal.style.display = 'none';
+                            alert('Message removed from view, but there was an error deleting from database. Error: ' + error.message);
+                        });
+                } else if (db && messageId && messageId.startsWith('temp-')) {
+                    // Temp message - just remove from DOM
+                    console.log('Removing temp message from DOM');
+                    selectedMessageForAction.remove();
+                    messageActionsModal.style.display = 'none';
+                } else if (!db) {
+                    // No Firestore - delete from localStorage
+                    console.log('Deleting from localStorage (no Firestore)');
+                    const timestamp = selectedMessageForAction.getAttribute('data-timestamp');
+                    const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
+                    const filteredMessages = messages.filter(msg => {
+                        if (roomCode) {
+                            return !(msg.timestamp == timestamp && msg.roomCode === roomCode);
+                        } else {
+                            return !(msg.timestamp == timestamp && !msg.roomCode);
+                        }
+                    });
+                    localStorage.setItem('jjnChatMessages', JSON.stringify(filteredMessages));
+                    selectedMessageForAction.remove();
+                    messageActionsModal.style.display = 'none';
+                } else {
+                    // No message ID - just remove from DOM
+                    console.log('No message ID, removing from DOM only');
+                    selectedMessageForAction.remove();
+                    messageActionsModal.style.display = 'none';
+                }
+            });
+        }
+        
+        // Ban user
+        if (banUserBtn) {
+            banUserBtn.addEventListener('click', () => {
+                if (!selectedUserForBan || !isDev()) return;
+                
+                banUserInfo.textContent = `Ban user: ${selectedUserForBan}`;
+                messageActionsModal.style.display = 'none';
+                banDurationModal.style.display = 'flex';
+            });
+        }
+        
+        // Confirm ban
+        if (confirmBanBtn) {
+            confirmBanBtn.addEventListener('click', () => {
+                if (!selectedUserForBan || !isDev()) return;
+                
+                const durationMinutes = parseInt(banDurationSelect.value);
+                const banUntil = Date.now() + (durationMinutes * 60 * 1000);
+                
+                // Save ban to localStorage and Firestore
+                const bans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
+                bans[selectedUserForBan] = {
+                    bannedUntil: banUntil,
+                    bannedBy: currentUserName,
+                    bannedAt: Date.now()
+                };
+                localStorage.setItem('jnjChatBans', JSON.stringify(bans));
+                
+                // Also save to Firestore if available
+                if (db) {
+                    db.collection('bans').doc(selectedUserForBan).set({
+                        bannedUntil: banUntil,
+                        bannedBy: currentUserName,
+                        bannedAt: Date.now()
+                    }).catch(error => {
+                        console.error('Error saving ban to Firestore:', error);
+                    });
+                }
+                
+                banDurationModal.style.display = 'none';
+                alert(`User ${selectedUserForBan} has been banned for ${durationMinutes} minutes.`);
+                
+                // Remove all messages from banned user
+                const userMessages = chatMessages.querySelectorAll('.message:not(.welcome-message)');
+                userMessages.forEach(msg => {
+                    const userSpan = msg.querySelector('.message-user');
+                    if (userSpan && userSpan.textContent.trim() === selectedUserForBan) {
+                        msg.remove();
+                    }
+                });
+            });
+        }
+        
+        // Cancel message actions
+        if (cancelMessageActions) {
+            cancelMessageActions.addEventListener('click', () => {
+                messageActionsModal.style.display = 'none';
+                selectedMessageForAction = null;
+                selectedUserForBan = null;
+            });
+        }
+        
+        // Cancel ban
+        if (cancelBanBtn) {
+            cancelBanBtn.addEventListener('click', () => {
+                banDurationModal.style.display = 'none';
+            });
+        }
+        
+        // Check if user is banned before sending message
+        function isUserBanned(username) {
+            try {
+                const bans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
+                const ban = bans[username];
+                if (ban && ban.bannedUntil > Date.now()) {
+                    return true;
+                }
+                // Also check Firestore
+                if (db) {
+                    db.collection('bans').doc(username).get().then(doc => {
+                        if (doc.exists) {
+                            const banData = doc.data();
+                            if (banData.bannedUntil > Date.now()) {
+                                return true;
+                            }
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error('Error checking ban status:', e);
+            }
+            return false;
         }
         
         // Leave private room and return to public chat
