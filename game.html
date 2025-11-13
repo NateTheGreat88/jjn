@@ -416,7 +416,9 @@
             
             // Calculate speed based on game mode
             let speedMultiplier = 1;
-            if (gameMode === 'hardcore' || gameMode === 'hardcore2') {
+            if (gameMode === 'hardcore2') {
+                speedMultiplier = 3.0; // 3x faster - MUCH harder!
+            } else if (gameMode === 'hardcore') {
                 speedMultiplier = 1.5; // 50% faster
             } else if (gameMode === 'survival') {
                 // Get survival time for speed calculation
@@ -430,14 +432,14 @@
                 x: x || Math.random() * canvas.width,
                 y: y || Math.random() * canvas.height,
                 radius: radius,
-                dx: (Math.random() - 0.5) * (2 + level * 0.3) * speedMultiplier,
-                dy: (Math.random() - 0.5) * (2 + level * 0.3) * speedMultiplier,
+                dx: (Math.random() - 0.5) * (2 + level * (gameMode === 'hardcore2' ? 0.5 : 0.3)) * speedMultiplier,
+                dy: (Math.random() - 0.5) * (2 + level * (gameMode === 'hardcore2' ? 0.5 : 0.3)) * speedMultiplier,
                 rotation: (Math.random() - 0.5) * 0.1,
                 rotationSpeed: (Math.random() - 0.5) * 0.08,
                 vertices: [],
                 isBoss: isBoss,
-                health: isBoss ? 5 : (gameMode === 'hardcore2' ? 2 : 1), // Hardcore 2: asteroids need 2 hits
-                maxHealth: isBoss ? 5 : (gameMode === 'hardcore2' ? 2 : 1)
+                health: isBoss ? (gameMode === 'hardcore2' ? 10 : 5) : (gameMode === 'hardcore2' ? 2 : 1), // Hardcore 2: asteroids need 2 hits, boss needs 10
+                maxHealth: isBoss ? (gameMode === 'hardcore2' ? 10 : 5) : (gameMode === 'hardcore2' ? 2 : 1)
             };
             
             const numVertices = isBoss ? 16 : (8 + Math.floor(Math.random() * 4));
@@ -480,7 +482,8 @@
             
             // Give brief invulnerability at level start
             ship.invulnerable = true;
-            ship.invulnerableTime = 180;
+            // Hardcore 2: Less invulnerability time at level start
+            ship.invulnerableTime = gameMode === 'hardcore2' ? 90 : 180;
             
             // Track starting lives for perfect level achievement
             currentLevelStartLives = lives;
@@ -488,8 +491,8 @@
             // Calculate number of asteroids based on mode
             let numAsteroids;
             if (gameMode === 'hardcore2') {
-                // Hardcore 2: Double asteroid spawn
-                numAsteroids = Math.min((4 + Math.floor(level * 0.7)) * 2, 20);
+                // Hardcore 2: Triple asteroid spawn - MUCH harder!
+                numAsteroids = Math.min((4 + Math.floor(level * 0.7)) * 3, 30);
             } else if (gameMode === 'hardcore') {
                 numAsteroids = Math.min(4 + Math.floor(level * 0.7), 10); // More asteroids
             } else if (gameMode === 'endless') {
@@ -850,12 +853,16 @@
             }
 
             // Ship rotation and thrust
-            if (keys["ArrowLeft"]) ship.rotation = -0.08;
-            else if (keys["ArrowRight"]) ship.rotation = 0.08;
+            // Hardcore 2: Slower rotation for harder control
+            const rotationSpeed = gameMode === 'hardcore2' ? 0.05 : 0.08;
+            if (keys["ArrowLeft"]) ship.rotation = -rotationSpeed;
+            else if (keys["ArrowRight"]) ship.rotation = rotationSpeed;
             else ship.rotation *= 0.9;
 
+                    // Hardcore 2: Less thrust for harder control
+                    const thrustPower = gameMode === 'hardcore2' ? 0.06 : 0.1;
                     if (keys["ArrowUp"]) {
-                        ship.thrust = 0.1;
+                        ship.thrust = thrustPower;
                 // Ship trail
                 ship.trail.push({
                     x: ship.x - Math.cos(ship.angle) * 25,
@@ -881,11 +888,14 @@
 
             ship.angle += ship.rotation;
             ship.speed += ship.thrust;
-            ship.speed = Math.min(ship.speed, ship.maxSpeed);
+            // Hardcore 2: Use reduced max speed
+            const maxSpeed = gameMode === 'hardcore2' ? 3.5 : ship.maxSpeed;
+            ship.speed = Math.min(ship.speed, maxSpeed);
             ship.x += Math.cos(ship.angle) * ship.speed;
             ship.y += Math.sin(ship.angle) * ship.speed;
-
-            ship.speed *= 0.98;
+            
+            // Hardcore 2: Less friction (harder to stop)
+            ship.speed *= gameMode === 'hardcore2' ? 0.99 : 0.98;
 
             // Screen wrap
             if (ship.x < 0) ship.x = canvas.width;
@@ -1028,7 +1038,8 @@
                     if (dist < ship.radius + a.radius) {
                         lives--;
                         ship.invulnerable = true;
-                        ship.invulnerableTime = 120;
+                        // Hardcore 2: Much less invulnerability time
+                        ship.invulnerableTime = gameMode === 'hardcore2' ? 60 : 120;
                         addScreenShake(15);
                         createParticles(ship.x, ship.y, '#ff4d4d', 40, 6, 5);
                         playSound(150, 0.3, 'sawtooth', 0.2);
@@ -1123,10 +1134,11 @@
                         if (b.explosive) {
                             createParticles(a.x, a.y, '#ff4d4d', 30, 8, 6);
                             
-                            // Hardcore 2: Explosions can one-shot you
+                            // Hardcore 2: Explosions can one-shot you with larger radius
                             if (gameMode === 'hardcore2') {
                                 const shipDist = Math.sqrt((ship.x - a.x) ** 2 + (ship.y - a.y) ** 2);
-                                if (shipDist < 150 && !ship.invulnerable && !ship.shield) {
+                                // Larger explosion radius in hardcore 2 (200 instead of 150)
+                                if (shipDist < 200 && !ship.invulnerable && !ship.shield) {
                                     lives = 0;
                                     gameOver();
                                     return;
@@ -1140,7 +1152,9 @@
                                     const odx = otherA.x - a.x;
                                     const ody = otherA.y - a.y;
                                     const odist = Math.sqrt(odx*odx + ody*ody);
-                                    if (odist < 100) {
+                                    // Hardcore 2: Larger explosion radius
+                                    const explosionRadius = gameMode === 'hardcore2' ? 150 : 100;
+                                    if (odist < explosionRadius) {
                                         nearbyAsteroids.push(oi);
                                     }
                                 }
@@ -1200,7 +1214,8 @@
                     if (dist < ship.radius + bossAsteroid.radius) {
                         lives--;
                         ship.invulnerable = true;
-                        ship.invulnerableTime = 120;
+                        // Hardcore 2: Much less invulnerability time from boss
+                        ship.invulnerableTime = gameMode === 'hardcore2' ? 60 : 120;
                         addScreenShake(20);
                         createParticles(ship.x, ship.y, '#ff4d4d', 50, 8, 6);
                         playSound(100, 0.4, 'sawtooth', 0.25);
