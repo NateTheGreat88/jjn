@@ -663,6 +663,15 @@
                                         loadedMessageIds.add(change.doc.id);
                                     }
                                 }
+                            } else if (change.type === 'removed') {
+                                // Message was deleted - remove it from DOM
+                                const messageId = change.doc.id;
+                                const messageElement = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
+                                if (messageElement) {
+                                    console.log('Removing deleted message from DOM:', messageId);
+                                    messageElement.remove();
+                                    loadedMessageIds.delete(messageId);
+                                }
                             }
                         });
                         scrollToBottom();
@@ -718,6 +727,15 @@
                                                 if (data.roomCode === roomCode) {
                                                     addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, change.doc.id, data.userId);
                                                     loadedMessageIds.add(change.doc.id);
+                                                }
+                                            } else if (change.type === 'removed') {
+                                                // Message was deleted - remove it from DOM
+                                                const messageId = change.doc.id;
+                                                const messageElement = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
+                                                if (messageElement) {
+                                                    console.log('Fallback listener - Removing deleted message from DOM:', messageId);
+                                                    messageElement.remove();
+                                                    loadedMessageIds.delete(messageId);
                                                 }
                                             }
                                         });
@@ -1284,22 +1302,65 @@
                 // Ignore errors, use currentUserName
             }
             
-            // Check if user is banned (check both userId and username to catch all ban types)
+            // Check if user is banned - CHECK EVERYTHING POSSIBLE
             let isBanned = false;
-            if (messageUserId && isUserBannedById(messageUserId)) {
-                console.log('BLOCKED: User', messageUsername, '(ID:', messageUserId, ') is banned by userId and cannot send messages');
-                isBanned = true;
-            } else if (isUserBanned(messageUsername)) {
-                // Also check by username (in case ban was saved by username or user doesn't have userId)
-                console.log('BLOCKED: User', messageUsername, messageUserId ? '(ID: ' + messageUserId + ')' : '', 'is banned by username and cannot send messages');
-                isBanned = true;
+            let banReason = '';
+            
+            // Get all bans from localStorage
+            const allBans = JSON.parse(localStorage.getItem('jnjChatBans') || '{}');
+            console.log('=== BAN CHECK DEBUG ===');
+            console.log('Checking ban for user:', messageUsername, 'userId:', messageUserId);
+            console.log('All bans in localStorage:', allBans);
+            
+            // Check EVERY ban entry to see if it matches this user
+            for (const banKey in allBans) {
+                const ban = allBans[banKey];
+                const now = Date.now();
+                
+                // Skip expired bans
+                if (ban.bannedUntil <= now) {
+                    continue;
+                }
+                
+                // Check if this ban matches by userId
+                if (messageUserId) {
+                    if (banKey === messageUserId || ban.bannedUserId === messageUserId) {
+                        console.log('MATCH FOUND: Ban by userId!', banKey, ban);
+                        isBanned = true;
+                        banReason = 'userId match';
+                        break;
+                    }
+                }
+                
+                // Check if this ban matches by username
+                const bannedUsername = ban.bannedUsername || banKey;
+                if (messageUsername && messageUsername.trim().toLowerCase() === bannedUsername.trim().toLowerCase()) {
+                    console.log('MATCH FOUND: Ban by username!', banKey, ban);
+                    isBanned = true;
+                    banReason = 'username match';
+                    break;
+                }
+                
+                // Also check if banKey itself matches username (for old bans)
+                if (messageUsername && banKey.trim().toLowerCase() === messageUsername.trim().toLowerCase()) {
+                    console.log('MATCH FOUND: Ban key matches username!', banKey, ban);
+                    isBanned = true;
+                    banReason = 'banKey match';
+                    break;
+                }
             }
             
+            console.log('Ban check result:', isBanned, banReason);
+            console.log('=== END BAN CHECK ===');
+            
             if (isBanned) {
+                console.log('🚫 BLOCKING MESSAGE - User is banned!');
                 // Disable chat and show ban message
                 disableChatBanned();
                 // Clear the input
                 messageInput.value = '';
+                // Show alert to user
+                alert('You are banned and cannot send messages.');
                 return;
             }
             
@@ -1980,8 +2041,13 @@
                 };
                 localStorage.setItem('jnjChatBans', JSON.stringify(bans));
                 
-                console.log('Ban saved for user:', selectedUserForBan, '(ID:', userIdToBan || 'none', ') until', new Date(banUntil));
-                console.log('Current bans:', bans);
+                console.log('🔨 BAN SAVED:', {
+                    user: selectedUserForBan,
+                    userId: userIdToBan || 'none',
+                    banKey: banKey,
+                    until: new Date(banUntil),
+                    allBans: bans
+                });
                 
                 // Immediately check if the banned user is the current user and disable their chat
                 try {
@@ -1989,18 +2055,33 @@
                     if (profileData) {
                         const profile = JSON.parse(profileData);
                         const currentUserId = profile.userId || null;
-                        // Check if we just banned the current user
+                        const currentUsername = profile.username || profile.displayName || currentUserName || '';
+                        
+                        // Check multiple ways to see if current user was banned
+                        let currentUserBanned = false;
+                        
+                        // Check by userId
                         if (currentUserId && userIdToBan && currentUserId === userIdToBan) {
-                            console.log('Current user was banned - disabling chat immediately');
+                            console.log('Current user was banned by userId - disabling chat immediately');
+                            currentUserBanned = true;
+                        }
+                        
+                        // Check by username (case-insensitive)
+                        if (!currentUserBanned && currentUsername && currentUsername.trim().toLowerCase() === selectedUserForBan.trim().toLowerCase()) {
+                            console.log('Current user was banned by username - disabling chat immediately');
+                            currentUserBanned = true;
+                        }
+                        
+                        // Also check if ban key matches current username (for username-based bans)
+                        if (!currentUserBanned && !userIdToBan && currentUsername && banKey === currentUsername.trim()) {
+                            console.log('Current user was banned (ban key matches username) - disabling chat immediately');
+                            currentUserBanned = true;
+                        }
+                        
+                        if (currentUserBanned) {
                             disableChatBanned();
-                        } else if (!currentUserId && currentUserName && currentUserName.trim().toLowerCase() === selectedUserForBan.trim().toLowerCase()) {
-                            // Fallback username check
-                            console.log('Current user was banned (by username) - disabling chat immediately');
-                            disableChatBanned();
-                        } else if (currentUserId && !userIdToBan && currentUserName && currentUserName.trim().toLowerCase() === selectedUserForBan.trim().toLowerCase()) {
-                            // User has userId but ban was by username - still disable
-                            console.log('Current user was banned (by username match) - disabling chat immediately');
-                            disableChatBanned();
+                            // Force immediate ban check
+                            checkBanStatusPeriodically();
                         }
                     }
                 } catch (e) {
