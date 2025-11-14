@@ -189,8 +189,8 @@ const snakeGame = {
         document.getElementById('snakeScore').textContent = this.score;
         
         if (this.gameLoop) clearInterval(this.gameLoop);
-        // Hardcore 2: Much faster game speed (50ms instead of 100ms)
-        const gameSpeed = isHardcore2() ? 50 : 100;
+        // Hardcore 2: Much faster game speed (30ms instead of 100ms) - EXTREME DIFFICULTY
+        const gameSpeed = isHardcore2() ? 30 : 100;
         this.gameLoop = setInterval(() => this.update(), gameSpeed);
     },
     
@@ -522,8 +522,8 @@ const tetrisGame = {
         this.lines = 0;
         this.level = 1;
         this.dropCounter = 0;
-        // Hardcore 2: Much faster drop speed (300ms instead of 1000ms)
-        this.dropInterval = isHardcore2() ? 300 : 1000;
+        // Hardcore 2: Much faster drop speed (200ms instead of 1000ms) - EXTREME DIFFICULTY
+        this.dropInterval = isHardcore2() ? 200 : 1000;
         this.paused = false;
         this.spawnPiece();
         this.spawnNextPiece();
@@ -930,13 +930,13 @@ const pongGame = {
     restart() {
         this.ball.x = this.canvas.width / 2;
         this.ball.y = this.canvas.height / 2;
-        // Hardcore 2: Much faster ball speed (2x) and smaller paddles (half size)
-        const ballSpeed = isHardcore2() ? 10 : 5;
+        // Hardcore 2: Much faster ball speed (3x) and smaller paddles (third size) - EXTREME DIFFICULTY
+        const ballSpeed = isHardcore2() ? 15 : 5;
         this.ball.vx = (Math.random() > 0.5 ? 1 : -1) * ballSpeed;
         this.ball.vy = (Math.random() - 0.5) * ballSpeed;
         if (isHardcore2()) {
-            this.player.height = 40;
-            this.ai.height = 40;
+            this.player.height = 30;
+            this.ai.height = 30;
         } else {
             this.player.height = 80;
             this.ai.height = 80;
@@ -1904,9 +1904,9 @@ const flappyGame = {
             });
             
             // Generate pipes
-            // Hardcore 2: Faster pipe generation (every 60 frames instead of 100) and smaller gaps
-            const pipeInterval = isHardcore2() ? 60 : 100;
-            const gap = isHardcore2() ? 100 : 150;
+            // Hardcore 2: Faster pipe generation (every 40 frames instead of 100) and smaller gaps - EXTREME DIFFICULTY
+            const pipeInterval = isHardcore2() ? 40 : 100;
+            const gap = isHardcore2() ? 80 : 150;
             if (this.frameCount % pipeInterval === 0) {
                 const pipeHeight = Math.random() * (this.canvas.height - gap - 100) + 50;
                 this.pipes.push({
@@ -1918,8 +1918,8 @@ const flappyGame = {
                 });
             }
             
-            // Update pipes - Hardcore 2: Much faster pipe movement (2x speed)
-            const pipeSpeed = isHardcore2() ? 6 : 3;
+            // Update pipes - Hardcore 2: Much faster pipe movement (3x speed) - EXTREME DIFFICULTY
+            const pipeSpeed = isHardcore2() ? 9 : 3;
             for (let pipe of this.pipes) {
                 pipe.x -= pipeSpeed;
                 
@@ -2741,9 +2741,9 @@ const spaceInvadersGame = {
         const startX = 100;
         const startY = 50;
         
-        // Hardcore 2: More enemy rows and columns
-        const rows = isHardcore2() ? 7 : this.enemyRows;
-        const cols = isHardcore2() ? 12 : this.enemyCols;
+        // Hardcore 2: More enemy rows and columns - EXTREME DIFFICULTY
+        const rows = isHardcore2() ? 8 : this.enemyRows;
+        const cols = isHardcore2() ? 14 : this.enemyCols;
         
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
@@ -2790,9 +2790,9 @@ const spaceInvadersGame = {
                 this.enemyMoveDown = true;
             }
             
-            // Hardcore 2: Much faster enemy movement (2x speed)
-            const baseEnemySpeed = isHardcore2() ? 2 : 1;
-            const enemySpeed = baseEnemySpeed + this.level * (isHardcore2() ? 0.4 : 0.2);
+            // Hardcore 2: Much faster enemy movement (3x speed) - EXTREME DIFFICULTY
+            const baseEnemySpeed = isHardcore2() ? 3 : 1;
+            const enemySpeed = baseEnemySpeed + this.level * (isHardcore2() ? 0.6 : 0.2);
             for (let enemy of this.enemies) {
                 if (!enemy.alive) continue;
                 enemy.x += this.direction * enemySpeed;
@@ -2806,15 +2806,15 @@ const spaceInvadersGame = {
                     return;
                 }
                 
-                // Random enemy shooting - Hardcore 2: Much more frequent and faster bullets
-                const shootChance = isHardcore2() ? 0.003 * this.level : 0.001 * this.level;
+                // Random enemy shooting - Hardcore 2: Much more frequent and faster bullets - EXTREME DIFFICULTY
+                const shootChance = isHardcore2() ? 0.005 * this.level : 0.001 * this.level;
                 if (Math.random() < shootChance) {
                     this.enemyBullets.push({
                         x: enemy.x + enemy.width / 2,
                         y: enemy.y + enemy.height,
                         width: 4,
                         height: 10,
-                        speed: (isHardcore2() ? 6 : 3) + this.level * (isHardcore2() ? 1 : 0.5)
+                        speed: (isHardcore2() ? 9 : 3) + this.level * (isHardcore2() ? 1.5 : 0.5)
                     });
                 }
             }
@@ -3062,8 +3062,8 @@ const wordleGame = {
         this.currentGuess = '';
         this.currentRow = 0;
         this.guesses = 0;
-        // Hardcore 2: Only 3 guesses instead of 6
-        this.maxGuesses = isHardcore2() ? 3 : 6;
+        // Hardcore 2: Only 2 guesses instead of 6 - EXTREME DIFFICULTY
+        this.maxGuesses = isHardcore2() ? 2 : 6;
         this.gameOver = false;
         this.renderBoard();
         this.updateKeyboard();
@@ -3285,8 +3285,8 @@ const whackamoleGame = {
         if (this.gameActive) return;
         this.gameActive = true;
         this.score = 0;
-        // Hardcore 2: Less time (15 seconds instead of 30)
-        this.timeLeft = isHardcore2() ? 15 : 30;
+        // Hardcore 2: Less time (10 seconds instead of 30) - EXTREME DIFFICULTY
+        this.timeLeft = isHardcore2() ? 10 : 30;
         document.getElementById('moleScore').textContent = this.score;
         document.getElementById('moleTime').textContent = this.timeLeft;
         
@@ -3319,9 +3319,9 @@ const whackamoleGame = {
         mole.element.style.display = 'block';
         mole.element.classList.add('mole-up');
         
-        // Hardcore 2: Moles stay for much less time and spawn faster
-        const baseStayTime = isHardcore2() ? 400 : 2000;
-        const stayTime = Math.max(isHardcore2() ? 300 : 800, baseStayTime - this.score * (isHardcore2() ? 20 : 10));
+        // Hardcore 2: Moles stay for much less time and spawn faster - EXTREME DIFFICULTY
+        const baseStayTime = isHardcore2() ? 250 : 2000;
+        const stayTime = Math.max(isHardcore2() ? 200 : 800, baseStayTime - this.score * (isHardcore2() ? 25 : 10));
         mole.timeout = setTimeout(() => {
             if (mole.active) {
                 mole.active = false;
@@ -3330,8 +3330,8 @@ const whackamoleGame = {
             }
         }, stayTime);
         
-        const baseSpawnTime = isHardcore2() ? 150 : 1000;
-        const nextSpawn = Math.max(isHardcore2() ? 150 : 300, baseSpawnTime - this.score * (isHardcore2() ? 10 : 5));
+        const baseSpawnTime = isHardcore2() ? 100 : 1000;
+        const nextSpawn = Math.max(isHardcore2() ? 100 : 300, baseSpawnTime - this.score * (isHardcore2() ? 8 : 5));
         this.moleTimeout = setTimeout(() => this.spawnMole(), nextSpawn);
     },
     
@@ -3526,12 +3526,12 @@ const platformerGame = {
             });
         }
         
-        // Create enemies - Hardcore 2: More enemies (20 instead of 10) and faster
-        const enemyCount = isHardcore2() ? 20 : 10;
-        const enemySpeed = isHardcore2() ? -4 : -2;
+        // Create enemies - Hardcore 2: More enemies (30 instead of 10) and faster - EXTREME DIFFICULTY
+        const enemyCount = isHardcore2() ? 30 : 10;
+        const enemySpeed = isHardcore2() ? -6 : -2;
         for (let i = 0; i < enemyCount; i++) {
             this.enemies.push({
-                x: 400 + i * (isHardcore2() ? 200 : 300),
+                x: 400 + i * (isHardcore2() ? 150 : 300),
                 y: this.canvas.height - 80,
                 width: 30,
                 height: 30,
@@ -3883,8 +3883,8 @@ const racingGame = {
             document.getElementById('racingSpeed').textContent = this.speed;
             document.getElementById('racingDistance').textContent = Math.floor(this.distance / 10);
             
-            // Generate obstacles - Hardcore 2: Much more frequent obstacles
-            const obstacleChance = isHardcore2() ? 0.05 : 0.02;
+            // Generate obstacles - Hardcore 2: Much more frequent obstacles - EXTREME DIFFICULTY
+            const obstacleChance = isHardcore2() ? 0.08 : 0.02;
             if (Math.random() < obstacleChance) {
                 const lane = Math.floor(Math.random() * 3);
                 const laneX = [150, 300, 450][lane];
@@ -3897,8 +3897,8 @@ const racingGame = {
                 });
             }
             
-            // Update obstacles - Hardcore 2: Faster obstacle movement
-            const obstacleSpeed = isHardcore2() ? 5 : 3;
+            // Update obstacles - Hardcore 2: Faster obstacle movement - EXTREME DIFFICULTY
+            const obstacleSpeed = isHardcore2() ? 7 : 3;
             this.obstacles = this.obstacles.filter(obstacle => {
                 obstacle.y += this.player.speed * obstacleSpeed;
                 
