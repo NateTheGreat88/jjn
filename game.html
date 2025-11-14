@@ -152,8 +152,13 @@
         let survivalTime = 0;
         let lastSurvivalSpawn = 0; // Track last asteroid spawn time in survival mode
         
-        // Hardcore 2 mode (global flag for all games)
-        let hardcore2Global = false;
+        // Hardcore 2 mode (global flag for all games) - PERSISTENT FOREVER
+        let hardcore2Global = localStorage.getItem('hardcore2Global') === 'true';
+        
+        // Log on page load if Hardcore 2 is active
+        if (hardcore2Global) {
+            console.log('🔥 HARDCORE 2 MODE PERSISTENT - Active in Asteroids game');
+        }
         let spaceHoldStartTime = 0;
         let spaceHeld = false;
         const SPACE_HOLD_TIME = 2000; // 2 seconds to activate hardcore 2
@@ -709,11 +714,12 @@
                 togglePause();
             }
             
-            // Left+Space exploit to enable hardcore 2 globally
+            // Left+Space exploit to enable hardcore 2 globally - PERMANENTLY
             if (e.code === "ArrowLeft" && keys["Space"]) {
                 hardcore2Global = true;
-                console.log('🔥 HARDCORE 2 MODE ENABLED FOR ALL GAMES!');
-                alert('🔥 HARDCORE 2 MODE ACTIVATED FOR ALL GAMES!');
+                localStorage.setItem('hardcore2Global', 'true');
+                console.log('🔥 HARDCORE 2 MODE ENABLED FOR ALL GAMES - PERMANENTLY SAVED!');
+                alert('🔥 HARDCORE 2 MODE ACTIVATED FOR ALL GAMES!\n\nThis will stay active forever until you clear your browser data.');
             }
             
             // Track Space hold for hardcore 2 activation
@@ -777,11 +783,15 @@
                 }
             }
             
-            // Use global hardcore 2 if enabled
-            if (hardcore2Global && gameMode !== 'hardcore2') {
-                gameMode = 'hardcore2';
-                console.log('🔥 HARDCORE 2 MODE ACTIVATED (GLOBAL)!');
-                initLevel();
+            // Use global hardcore 2 if enabled - Check localStorage every frame to ensure persistence
+            const currentHardcore2State = localStorage.getItem('hardcore2Global') === 'true';
+            if (currentHardcore2State) {
+                hardcore2Global = true; // Sync local variable
+                if (gameMode !== 'hardcore2') {
+                    gameMode = 'hardcore2';
+                    console.log('🔥 HARDCORE 2 MODE ACTIVATED (GLOBAL - PERSISTENT)!');
+                    initLevel();
+                }
             }
             
             if (isPaused || isGameOver) {
@@ -1813,6 +1823,27 @@
                 }
             }
         });
+    </script>
+    
+    <!-- Hardcore 2 Dark Overlay -->
+    <div id="hardcore2Overlay" class="hardcore2-overlay" style="display: none;"></div>
+    
+    <script>
+        // Apply dark overlay if Hardcore 2 is active
+        function updateHardcore2Overlay() {
+            const overlay = document.getElementById('hardcore2Overlay');
+            const isActive = localStorage.getItem('hardcore2Global') === 'true';
+            if (overlay && isActive) {
+                overlay.style.display = 'block';
+            } else if (overlay) {
+                overlay.style.display = 'none';
+            }
+        }
+        
+        // Check on page load
+        updateHardcore2Overlay();
+        // Check periodically in case it gets activated
+        setInterval(updateHardcore2Overlay, 100);
     </script>
 </body>
 </html>

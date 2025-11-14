@@ -4,6 +4,19 @@
     box-sizing: border-box;
 }
 
+/* Hardcore 2 Dark Overlay */
+.hardcore2-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.25);
+    pointer-events: none;
+    z-index: 9998;
+    mix-blend-mode: multiply;
+}
+
 body {
     font-family: 'Courier New', monospace;
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);

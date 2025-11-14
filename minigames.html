@@ -453,7 +453,28 @@
         </div>
     </div>
 
+    <!-- Hardcore 2 Dark Overlay -->
+    <div id="hardcore2Overlay" class="hardcore2-overlay" style="display: none;"></div>
+    
     <script src="minigames.js"></script>
+    <script>
+        // Apply dark overlay if Hardcore 2 is active
+        function updateHardcore2Overlay() {
+            const overlay = document.getElementById('hardcore2Overlay');
+            if (overlay && isHardcore2()) {
+                overlay.style.display = 'block';
+            } else if (overlay) {
+                overlay.style.display = 'none';
+            }
+        }
+        
+        // Check on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            updateHardcore2Overlay();
+            // Check periodically in case it gets activated
+            setInterval(updateHardcore2Overlay, 1000);
+        });
+    </script>
 </body>
 </html>
 
