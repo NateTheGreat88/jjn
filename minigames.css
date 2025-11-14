@@ -932,6 +932,272 @@ body.page-exit {
     }
 }
 
+/* Space Invaders Game */
+#invadersCanvas {
+    display: block;
+    margin: 0 auto;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    background: #000;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Wordle Game */
+.wordle-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    margin: 20px 0;
+}
+
+.wordle-board {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.wordle-row {
+    display: flex;
+    gap: 8px;
+}
+
+.wordle-cell {
+    width: 60px;
+    height: 60px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: bold;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+}
+
+.wordle-cell.typing {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.wordle-cell.correct {
+    background: #4caf50;
+    border-color: #4caf50;
+    animation: flip 0.5s ease;
+}
+
+.wordle-cell.present {
+    background: #ffa500;
+    border-color: #ffa500;
+    animation: flip 0.5s ease;
+}
+
+.wordle-cell.absent {
+    background: #555;
+    border-color: #555;
+    animation: flip 0.5s ease;
+}
+
+@keyframes flip {
+    0% { transform: rotateX(0deg); }
+    50% { transform: rotateX(90deg); }
+    100% { transform: rotateX(0deg); }
+}
+
+.wordle-keyboard {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 600px;
+    width: 100%;
+}
+
+.wordle-keyboard-row {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+}
+
+.wordle-key {
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Courier New', monospace;
+    min-width: 40px;
+}
+
+.wordle-key:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.wordle-key:active {
+    transform: translateY(0);
+}
+
+.wordle-key-special {
+    background: rgba(74, 158, 255, 0.3);
+    border-color: rgba(74, 158, 255, 0.5);
+    min-width: 80px;
+}
+
+.wordle-key.correct {
+    background: #4caf50;
+    border-color: #4caf50;
+}
+
+.wordle-key.present {
+    background: #ffa500;
+    border-color: #ffa500;
+}
+
+.wordle-key.absent {
+    background: #555;
+    border-color: #555;
+    opacity: 0.5;
+}
+
+/* Whack-a-Mole Game */
+.whackamole-container {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.mole-board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    max-width: 500px;
+    width: 100%;
+}
+
+.mole-hole {
+    aspect-ratio: 1;
+    background: rgba(101, 67, 33, 0.8);
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    border: 4px solid rgba(139, 115, 85, 0.8);
+    box-shadow: inset 0 10px 20px rgba(0, 0, 0, 0.5);
+}
+
+.mole {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    height: 80%;
+    background: radial-gradient(circle at 30% 30%, #8b4513, #654321);
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    cursor: pointer;
+    transition: transform 0.2s ease, bottom 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.mole::before {
+    content: '';
+    position: absolute;
+    top: 25%;
+    left: 30%;
+    width: 12px;
+    height: 12px;
+    background: #000;
+    border-radius: 50%;
+    box-shadow: 20px 0 0 #000;
+}
+
+.mole::after {
+    content: '';
+    position: absolute;
+    bottom: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 15px;
+    background: #ff6b6b;
+    border-radius: 0 0 50% 50%;
+}
+
+.mole.mole-up {
+    bottom: 20%;
+    transform: translateX(-50%) scale(1.1);
+}
+
+.mole.mole-hit {
+    transform: translateX(-50%) scale(0.8);
+    opacity: 0.7;
+}
+
+.mole:hover.mole-up {
+    transform: translateX(-50%) scale(1.15);
+}
+
+/* Platformer Game */
+#platformerCanvas {
+    display: block;
+    margin: 0 auto;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    background: #87ceeb;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Racing Game */
+#racingCanvas {
+    display: block;
+    margin: 0 auto;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    background: #333;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Responsive updates for new games */
+@media (max-width: 768px) {
+    #invadersCanvas,
+    #platformerCanvas {
+        width: 100%;
+        height: auto;
+    }
+    
+    #racingCanvas {
+        width: 100%;
+        max-width: 600px;
+        height: auto;
+    }
+    
+    .wordle-cell {
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+    }
+    
+    .wordle-key {
+        padding: 10px 12px;
+        font-size: 12px;
+        min-width: 30px;
+    }
+    
+    .wordle-key-special {
+        min-width: 60px;
+    }
+    
+    .mole-board {
+        gap: 15px;
+    }
+}
+
 /* Fallback if animated background doesn't load */
 body:not(:has(#animatedBackground)) {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);

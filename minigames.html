@@ -77,6 +77,31 @@
                     <h3>Calculator Clicker</h3>
                     <p>Incremental clicker game</p>
                 </div>
+                <div class="game-card" data-game="spaceinvaders">
+                    <div class="game-card-icon">👾</div>
+                    <h3>Space Invaders</h3>
+                    <p>Classic arcade shooter</p>
+                </div>
+                <div class="game-card" data-game="wordle">
+                    <div class="game-card-icon">📝</div>
+                    <h3>Wordle</h3>
+                    <p>Word guessing puzzle</p>
+                </div>
+                <div class="game-card" data-game="whackamole">
+                    <div class="game-card-icon">🔨</div>
+                    <h3>Whack-a-Mole</h3>
+                    <p>Reaction timing game</p>
+                </div>
+                <div class="game-card" data-game="platformer">
+                    <div class="game-card-icon">🏃</div>
+                    <h3>Platformer</h3>
+                    <p>Side-scrolling adventure</p>
+                </div>
+                <div class="game-card" data-game="racing">
+                    <div class="game-card-icon">🏎️</div>
+                    <h3>Racing</h3>
+                    <p>Top-down racing game</p>
+                </div>
             </div>
         </div>
 
@@ -323,6 +348,107 @@
             <div class="game-controls">
                 <button class="game-button" onclick="calculatorGame.reset()">Reset Game</button>
                 <button class="game-button" onclick="calculatorGame.save()">Save Progress</button>
+            </div>
+        </div>
+
+        <!-- Space Invaders Game -->
+        <div id="spaceinvadersGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>👾 Space Invaders</h2>
+                <div class="game-stats">
+                    <div>Score: <span id="invadersScore">0</span></div>
+                    <div>Lives: <span id="invadersLives">3</span></div>
+                    <div>Level: <span id="invadersLevel">1</span></div>
+                    <div>High Score: <span id="invadersHighScore">0</span></div>
+                </div>
+            </div>
+            <canvas id="invadersCanvas" width="800" height="600"></canvas>
+            <div class="game-controls">
+                <p>Use ← → arrow keys or A D to move, SPACE to shoot</p>
+                <button class="game-button" onclick="spaceInvadersGame.restart()">Restart</button>
+                <button class="game-button" onclick="spaceInvadersGame.pause()">Pause</button>
+            </div>
+        </div>
+
+        <!-- Wordle Game -->
+        <div id="wordleGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>📝 Wordle</h2>
+                <div class="game-stats">
+                    <div>Guesses: <span id="wordleGuesses">0</span>/6</div>
+                    <div>Wins: <span id="wordleWins">0</span></div>
+                    <div>Streak: <span id="wordleStreak">0</span></div>
+                </div>
+            </div>
+            <div class="wordle-container">
+                <div id="wordleBoard" class="wordle-board"></div>
+                <div id="wordleKeyboard" class="wordle-keyboard"></div>
+            </div>
+            <div class="game-controls">
+                <p>Guess the 5-letter word! Type your guess and press ENTER</p>
+                <button class="game-button" onclick="wordleGame.restart()">New Game</button>
+            </div>
+        </div>
+
+        <!-- Whack-a-Mole Game -->
+        <div id="whackamoleGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>🔨 Whack-a-Mole</h2>
+                <div class="game-stats">
+                    <div>Score: <span id="moleScore">0</span></div>
+                    <div>Time: <span id="moleTime">30</span>s</div>
+                    <div>High Score: <span id="moleHighScore">0</span></div>
+                </div>
+            </div>
+            <div class="whackamole-container">
+                <div id="moleBoard" class="mole-board"></div>
+            </div>
+            <div class="game-controls">
+                <p>Click the moles as they appear! You have 30 seconds.</p>
+                <button class="game-button" onclick="whackamoleGame.start()">Start Game</button>
+                <button class="game-button" onclick="whackamoleGame.restart()">Restart</button>
+            </div>
+        </div>
+
+        <!-- Platformer Game -->
+        <div id="platformerGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>🏃 Platformer</h2>
+                <div class="game-stats">
+                    <div>Score: <span id="platformerScore">0</span></div>
+                    <div>Distance: <span id="platformerDistance">0</span>m</div>
+                    <div>High Score: <span id="platformerHighScore">0</span></div>
+                </div>
+            </div>
+            <canvas id="platformerCanvas" width="800" height="500"></canvas>
+            <div class="game-controls">
+                <p>Use ← → arrow keys or A D to move, SPACE or ↑ to jump</p>
+                <button class="game-button" onclick="platformerGame.restart()">Restart</button>
+                <button class="game-button" onclick="platformerGame.pause()">Pause</button>
+            </div>
+        </div>
+
+        <!-- Racing Game -->
+        <div id="racingGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>🏎️ Racing</h2>
+                <div class="game-stats">
+                    <div>Score: <span id="racingScore">0</span></div>
+                    <div>Speed: <span id="racingSpeed">0</span> km/h</div>
+                    <div>Distance: <span id="racingDistance">0</span>m</div>
+                    <div>High Score: <span id="racingHighScore">0</span></div>
+                </div>
+            </div>
+            <canvas id="racingCanvas" width="600" height="800"></canvas>
+            <div class="game-controls">
+                <p>Use ← → arrow keys or A D to steer, avoid obstacles!</p>
+                <button class="game-button" onclick="racingGame.restart()">Restart</button>
+                <button class="game-button" onclick="racingGame.pause()">Pause</button>
             </div>
         </div>
     </div>

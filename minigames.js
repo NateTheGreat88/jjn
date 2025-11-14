@@ -6,6 +6,11 @@ function showMenu() {
     if (pongGame) pongGame.stop();
     if (breakoutGame) breakoutGame.stop();
     if (flappyGame) flappyGame.stop();
+    if (spaceInvadersGame) spaceInvadersGame.stop();
+    if (wordleGame) wordleGame.stop();
+    if (whackamoleGame) whackamoleGame.stop();
+    if (platformerGame) platformerGame.stop();
+    if (racingGame) racingGame.stop();
     
     document.getElementById('gameMenu').style.display = 'flex';
     document.getElementById('snakeGame').style.display = 'none';
@@ -19,6 +24,11 @@ function showMenu() {
     document.getElementById('tictactoeGame').style.display = 'none';
     document.getElementById('simonGame').style.display = 'none';
     document.getElementById('calculatorGame').style.display = 'none';
+    document.getElementById('spaceinvadersGame').style.display = 'none';
+    document.getElementById('wordleGame').style.display = 'none';
+    document.getElementById('whackamoleGame').style.display = 'none';
+    document.getElementById('platformerGame').style.display = 'none';
+    document.getElementById('racingGame').style.display = 'none';
 }
 
 function showGame(gameName) {
@@ -34,6 +44,11 @@ function showGame(gameName) {
     document.getElementById('tictactoeGame').style.display = 'none';
     document.getElementById('simonGame').style.display = 'none';
     document.getElementById('calculatorGame').style.display = 'none';
+    document.getElementById('spaceinvadersGame').style.display = 'none';
+    document.getElementById('wordleGame').style.display = 'none';
+    document.getElementById('whackamoleGame').style.display = 'none';
+    document.getElementById('platformerGame').style.display = 'none';
+    document.getElementById('racingGame').style.display = 'none';
     
     document.getElementById(gameName + 'Game').style.display = 'block';
     
@@ -49,6 +64,11 @@ function showGame(gameName) {
     if (gameName === 'tictactoe' && tictactoeGame) tictactoeGame.init();
     if (gameName === 'simon' && simonGame) simonGame.init();
     if (gameName === 'calculator' && calculatorGame) calculatorGame.init();
+    if (gameName === 'spaceinvaders' && spaceInvadersGame) spaceInvadersGame.init();
+    if (gameName === 'wordle' && wordleGame) wordleGame.init();
+    if (gameName === 'whackamole' && whackamoleGame) whackamoleGame.init();
+    if (gameName === 'platformer' && platformerGame) platformerGame.init();
+    if (gameName === 'racing' && racingGame) racingGame.init();
 }
 
 // Game card click handlers
@@ -2553,6 +2573,1402 @@ const calculatorGame = {
             this.updateUpgrades();
             this.updateAutoClickers();
         }
+    }
+};
+
+// ==================== SPACE INVADERS GAME ====================
+const spaceInvadersGame = {
+    canvas: null,
+    ctx: null,
+    player: {x: 400, y: 550, width: 60, height: 30, speed: 5},
+    bullets: [],
+    enemies: [],
+    enemyBullets: [],
+    score: 0,
+    lives: 3,
+    level: 1,
+    highScore: 0,
+    gameLoop: null,
+    paused: false,
+    direction: 1,
+    enemyMoveDown: false,
+    particles: [],
+    enemyRows: 5,
+    enemyCols: 10,
+    
+    init() {
+        this.canvas = document.getElementById('invadersCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.highScore = parseInt(localStorage.getItem('invadersHighScore') || '0');
+        document.getElementById('invadersHighScore').textContent = this.highScore;
+        this.restart();
+        this.setupControls();
+    },
+    
+    setupControls() {
+        if (this.keyHandler) {
+            document.removeEventListener('keydown', this.keyHandler);
+        }
+        
+        const keys = {};
+        this.keyHandler = (e) => {
+            const gameScreen = document.getElementById('spaceinvadersGame');
+            if (!gameScreen || gameScreen.style.display === 'none') return;
+            
+            if (e.key === 'p' || e.key === 'P') {
+                this.pause();
+                return;
+            }
+            
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                keys.left = true;
+            } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                keys.right = true;
+            } else if (e.key === ' ') {
+                e.preventDefault();
+                this.shoot();
+            }
+        };
+        
+        this.keyUpHandler = (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                keys.left = false;
+            } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                keys.right = false;
+            }
+        };
+        
+        document.addEventListener('keydown', this.keyHandler);
+        document.addEventListener('keyup', this.keyUpHandler);
+        
+        const updatePlayer = () => {
+            const gameScreen = document.getElementById('spaceinvadersGame');
+            if (!gameScreen || gameScreen.style.display === 'none') return;
+            
+            if (!this.paused) {
+                if (keys.left && this.player.x > 0) {
+                    this.player.x -= this.player.speed;
+                }
+                if (keys.right && this.player.x < this.canvas.width - this.player.width) {
+                    this.player.x += this.player.speed;
+                }
+            }
+            requestAnimationFrame(updatePlayer);
+        };
+        updatePlayer();
+    },
+    
+    stop() {
+        if (this.gameLoop) {
+            cancelAnimationFrame(this.gameLoop);
+            this.gameLoop = null;
+        }
+        if (this.keyHandler) {
+            document.removeEventListener('keydown', this.keyHandler);
+            document.removeEventListener('keyup', this.keyUpHandler);
+            this.keyHandler = null;
+            this.keyUpHandler = null;
+        }
+        this.paused = true;
+    },
+    
+    restart() {
+        this.score = 0;
+        this.lives = 3;
+        this.level = 1;
+        this.paused = false;
+        this.bullets = [];
+        this.enemyBullets = [];
+        this.particles = [];
+        this.player.x = this.canvas.width / 2 - this.player.width / 2;
+        this.direction = 1;
+        this.enemyMoveDown = false;
+        this.createEnemies();
+        
+        document.getElementById('invadersScore').textContent = this.score;
+        document.getElementById('invadersLives').textContent = this.lives;
+        document.getElementById('invadersLevel').textContent = this.level;
+        
+        if (this.gameLoop) cancelAnimationFrame(this.gameLoop);
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    },
+    
+    pause() {
+        this.paused = !this.paused;
+        if (!this.paused) {
+            this.gameLoop = requestAnimationFrame(() => this.update());
+        }
+    },
+    
+    createEnemies() {
+        this.enemies = [];
+        const enemyWidth = 40;
+        const enemyHeight = 30;
+        const spacing = 60;
+        const startX = 100;
+        const startY = 50;
+        
+        for (let row = 0; row < this.enemyRows; row++) {
+            for (let col = 0; col < this.enemyCols; col++) {
+                this.enemies.push({
+                    x: startX + col * spacing,
+                    y: startY + row * spacing,
+                    width: enemyWidth,
+                    height: enemyHeight,
+                    alive: true,
+                    type: row < 2 ? 'fast' : row < 4 ? 'medium' : 'slow'
+                });
+            }
+        }
+    },
+    
+    shoot() {
+        if (this.paused || this.bullets.length > 0) return;
+        this.bullets.push({
+            x: this.player.x + this.player.width / 2,
+            y: this.player.y,
+            width: 4,
+            height: 10,
+            speed: 8
+        });
+    },
+    
+    update() {
+        const gameScreen = document.getElementById('spaceinvadersGame');
+        if (!gameScreen || gameScreen.style.display === 'none') return;
+        
+        if (!this.paused) {
+            // Move enemies
+            let moveDown = false;
+            for (let enemy of this.enemies) {
+                if (!enemy.alive) continue;
+                if (enemy.x <= 0 || enemy.x >= this.canvas.width - enemy.width) {
+                    moveDown = true;
+                    break;
+                }
+            }
+            
+            if (moveDown) {
+                this.direction *= -1;
+                this.enemyMoveDown = true;
+            }
+            
+            const enemySpeed = 1 + this.level * 0.2;
+            for (let enemy of this.enemies) {
+                if (!enemy.alive) continue;
+                enemy.x += this.direction * enemySpeed;
+                if (this.enemyMoveDown) {
+                    enemy.y += 20;
+                }
+                
+                // Check if enemy reached bottom
+                if (enemy.y + enemy.height >= this.player.y) {
+                    this.gameOver();
+                    return;
+                }
+                
+                // Random enemy shooting
+                if (Math.random() < 0.001 * this.level) {
+                    this.enemyBullets.push({
+                        x: enemy.x + enemy.width / 2,
+                        y: enemy.y + enemy.height,
+                        width: 4,
+                        height: 10,
+                        speed: 3 + this.level * 0.5
+                    });
+                }
+            }
+            this.enemyMoveDown = false;
+            
+            // Update bullets
+            this.bullets = this.bullets.filter(bullet => {
+                bullet.y -= bullet.speed;
+                return bullet.y > 0;
+            });
+            
+            // Update enemy bullets
+            this.enemyBullets = this.enemyBullets.filter(bullet => {
+                bullet.y += bullet.speed;
+                if (bullet.y > this.canvas.height) return false;
+                
+                // Check collision with player
+                if (bullet.x >= this.player.x && bullet.x <= this.player.x + this.player.width &&
+                    bullet.y >= this.player.y && bullet.y <= this.player.y + this.player.height) {
+                    this.lives--;
+                    document.getElementById('invadersLives').textContent = this.lives;
+                    if (this.lives <= 0) {
+                        this.gameOver();
+                    }
+                    return false;
+                }
+                return true;
+            });
+            
+            // Bullet-enemy collision
+            for (let i = this.bullets.length - 1; i >= 0; i--) {
+                const bullet = this.bullets[i];
+                for (let j = this.enemies.length - 1; j >= 0; j--) {
+                    const enemy = this.enemies[j];
+                    if (!enemy.alive) continue;
+                    
+                    if (bullet.x >= enemy.x && bullet.x <= enemy.x + enemy.width &&
+                        bullet.y >= enemy.y && bullet.y <= enemy.y + enemy.height) {
+                        enemy.alive = false;
+                        this.bullets.splice(i, 1);
+                        
+                        // Create particles
+                        for (let k = 0; k < 8; k++) {
+                            this.particles.push({
+                                x: enemy.x + enemy.width / 2,
+                                y: enemy.y + enemy.height / 2,
+                                vx: (Math.random() - 0.5) * 4,
+                                vy: (Math.random() - 0.5) * 4,
+                                life: 20,
+                                color: `hsl(${Math.random() * 60 + 0}, 100%, 50%)`
+                            });
+                        }
+                        
+                        // Score based on enemy type
+                        const points = enemy.type === 'fast' ? 30 : enemy.type === 'medium' ? 20 : 10;
+                        this.score += points;
+                        document.getElementById('invadersScore').textContent = this.score;
+                        
+                        // Check if all enemies destroyed
+                        if (this.enemies.every(e => !e.alive)) {
+                            this.level++;
+                            this.enemyBullets = [];
+                            this.bullets = [];
+                            document.getElementById('invadersLevel').textContent = this.level;
+                            setTimeout(() => this.createEnemies(), 1000);
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            // Update particles
+            this.particles = this.particles.filter(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                return p.life > 0;
+            });
+        }
+        
+        this.draw();
+        if (!this.paused) {
+            this.gameLoop = requestAnimationFrame(() => this.update());
+        }
+    },
+    
+    draw() {
+        // Starfield background
+        const bgGradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+        bgGradient.addColorStop(0, '#000428');
+        bgGradient.addColorStop(1, '#004e92');
+        this.ctx.fillStyle = bgGradient;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Draw stars
+        this.ctx.fillStyle = '#fff';
+        for (let i = 0; i < 50; i++) {
+            const x = (i * 37) % this.canvas.width;
+            const y = (i * 53 + Date.now() * 0.01) % this.canvas.height;
+            this.ctx.fillRect(x, y, 2, 2);
+        }
+        
+        // Draw player ship
+        const playerGradient = this.ctx.createLinearGradient(this.player.x, this.player.y, this.player.x, this.player.y + this.player.height);
+        playerGradient.addColorStop(0, '#4a9eff');
+        playerGradient.addColorStop(1, '#2563eb');
+        this.ctx.fillStyle = playerGradient;
+        this.ctx.shadowColor = 'rgba(74, 158, 255, 0.8)';
+        this.ctx.shadowBlur = 10;
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.player.x + this.player.width / 2, this.player.y);
+        this.ctx.lineTo(this.player.x, this.player.y + this.player.height);
+        this.ctx.lineTo(this.player.x + this.player.width / 4, this.player.y + this.player.height * 0.7);
+        this.ctx.lineTo(this.player.x + this.player.width * 3/4, this.player.y + this.player.height * 0.7);
+        this.ctx.lineTo(this.player.x + this.player.width, this.player.y + this.player.height);
+        this.ctx.closePath();
+        this.ctx.fill();
+        this.ctx.shadowBlur = 0;
+        
+        // Draw enemies
+        this.enemies.forEach(enemy => {
+            if (!enemy.alive) return;
+            
+            const hue = enemy.type === 'fast' ? 0 : enemy.type === 'medium' ? 30 : 60;
+            const enemyGradient = this.ctx.createRadialGradient(
+                enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 0,
+                enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.width / 2
+            );
+            enemyGradient.addColorStop(0, `hsl(${hue}, 100%, 60%)`);
+            enemyGradient.addColorStop(1, `hsl(${hue}, 100%, 40%)`);
+            this.ctx.fillStyle = enemyGradient;
+            this.ctx.shadowColor = `hsla(${hue}, 100%, 50%, 0.6)`;
+            this.ctx.shadowBlur = 8;
+            this.ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+            this.ctx.shadowBlur = 0;
+        });
+        
+        // Draw bullets
+        this.ctx.fillStyle = '#ffeb3b';
+        this.ctx.shadowColor = 'rgba(255, 235, 59, 0.8)';
+        this.ctx.shadowBlur = 5;
+        this.bullets.forEach(bullet => {
+            this.ctx.fillRect(bullet.x - bullet.width / 2, bullet.y, bullet.width, bullet.height);
+        });
+        this.ctx.shadowBlur = 0;
+        
+        // Draw enemy bullets
+        this.ctx.fillStyle = '#ff6b6b';
+        this.ctx.shadowColor = 'rgba(255, 107, 107, 0.8)';
+        this.ctx.shadowBlur = 5;
+        this.enemyBullets.forEach(bullet => {
+            this.ctx.fillRect(bullet.x - bullet.width / 2, bullet.y, bullet.width, bullet.height);
+        });
+        this.ctx.shadowBlur = 0;
+        
+        // Draw particles
+        this.particles.forEach(particle => {
+            this.ctx.globalAlpha = particle.life / 20;
+            this.ctx.fillStyle = particle.color;
+            this.ctx.fillRect(particle.x - 2, particle.y - 2, 4, 4);
+        });
+        this.ctx.globalAlpha = 1;
+        
+        // Pause overlay
+        if (this.paused) {
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = 'bold 36px Courier New';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2);
+        }
+    },
+    
+    gameOver() {
+        cancelAnimationFrame(this.gameLoop);
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('invadersHighScore', this.highScore);
+            document.getElementById('invadersHighScore').textContent = this.highScore;
+        }
+        alert(`Game Over! Score: ${this.score} | Level: ${this.level}`);
+        this.restart();
+    }
+};
+
+// ==================== WORDLE GAME ====================
+const wordleGame = {
+    board: null,
+    keyboard: null,
+    wordList: ['APPLE', 'BEACH', 'CHAIR', 'DANCE', 'EARTH', 'FLAME', 'GRACE', 'HEART', 'IMAGE', 'JOKER', 'KNIFE', 'LIGHT', 'MAGIC', 'NIGHT', 'OCEAN', 'PIANO', 'QUART', 'RIVER', 'STORM', 'TIGER', 'UNITY', 'VALUE', 'WATER', 'YOUTH', 'ZEBRA'],
+    targetWord: '',
+    currentGuess: '',
+    currentRow: 0,
+    guesses: 0,
+    maxGuesses: 6,
+    wins: 0,
+    streak: 0,
+    gameOver: false,
+    
+    init() {
+        this.board = document.getElementById('wordleBoard');
+        this.keyboard = document.getElementById('wordleKeyboard');
+        this.wins = parseInt(localStorage.getItem('wordleWins') || '0');
+        this.streak = parseInt(localStorage.getItem('wordleStreak') || '0');
+        document.getElementById('wordleWins').textContent = this.wins;
+        document.getElementById('wordleStreak').textContent = this.streak;
+        this.restart();
+        this.setupKeyboard();
+        this.setupControls();
+    },
+    
+    setupControls() {
+        if (this.keyHandler) {
+            document.removeEventListener('keydown', this.keyHandler);
+        }
+        
+        this.keyHandler = (e) => {
+            const gameScreen = document.getElementById('wordleGame');
+            if (!gameScreen || gameScreen.style.display === 'none') return;
+            
+            if (this.gameOver) return;
+            
+            if (e.key === 'Enter') {
+                this.submitGuess();
+            } else if (e.key === 'Backspace') {
+                this.deleteLetter();
+            } else if (e.key.length === 1 && /[A-Za-z]/.test(e.key)) {
+                this.addLetter(e.key.toUpperCase());
+            }
+        };
+        
+        document.addEventListener('keydown', this.keyHandler);
+    },
+    
+    stop() {
+        if (this.keyHandler) {
+            document.removeEventListener('keydown', this.keyHandler);
+            this.keyHandler = null;
+        }
+    },
+    
+    restart() {
+        this.targetWord = this.wordList[Math.floor(Math.random() * this.wordList.length)];
+        this.currentGuess = '';
+        this.currentRow = 0;
+        this.guesses = 0;
+        this.gameOver = false;
+        this.renderBoard();
+        this.updateKeyboard();
+    },
+    
+    renderBoard() {
+        this.board.innerHTML = '';
+        for (let row = 0; row < this.maxGuesses; row++) {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'wordle-row';
+            for (let col = 0; col < 5; col++) {
+                const cell = document.createElement('div');
+                cell.className = 'wordle-cell';
+                if (row === this.currentRow && col < this.currentGuess.length) {
+                    cell.textContent = this.currentGuess[col];
+                    cell.classList.add('typing');
+                } else if (row < this.currentRow) {
+                    const guess = this.getGuessForRow(row);
+                    if (guess && col < guess.length) {
+                        cell.textContent = guess[col];
+                        const status = this.getLetterStatus(guess[col], col, row);
+                        cell.classList.add(status);
+                    }
+                }
+                rowDiv.appendChild(cell);
+            }
+            this.board.appendChild(rowDiv);
+        }
+        document.getElementById('wordleGuesses').textContent = this.guesses;
+    },
+    
+    getGuessForRow(row) {
+        const rows = this.board.querySelectorAll('.wordle-row');
+        if (rows[row]) {
+            const cells = rows[row].querySelectorAll('.wordle-cell');
+            return Array.from(cells).map(cell => cell.textContent).join('');
+        }
+        return null;
+    },
+    
+    getLetterStatus(letter, position, row) {
+        if (this.targetWord[position] === letter) {
+            return 'correct';
+        } else if (this.targetWord.includes(letter)) {
+            return 'present';
+        } else {
+            return 'absent';
+        }
+    },
+    
+    addLetter(letter) {
+        if (this.currentGuess.length < 5 && !this.gameOver) {
+            this.currentGuess += letter;
+            this.renderBoard();
+        }
+    },
+    
+    deleteLetter() {
+        if (this.currentGuess.length > 0 && !this.gameOver) {
+            this.currentGuess = this.currentGuess.slice(0, -1);
+            this.renderBoard();
+        }
+    },
+    
+    submitGuess() {
+        if (this.currentGuess.length !== 5 || this.gameOver) return;
+        
+        this.guesses++;
+        const guess = this.currentGuess;
+        this.currentGuess = '';
+        this.currentRow++;
+        this.renderBoard();
+        
+        // Check win
+        if (guess === this.targetWord) {
+            this.gameOver = true;
+            this.wins++;
+            this.streak++;
+            localStorage.setItem('wordleWins', this.wins);
+            localStorage.setItem('wordleStreak', this.streak);
+            document.getElementById('wordleWins').textContent = this.wins;
+            document.getElementById('wordleStreak').textContent = this.streak;
+            setTimeout(() => alert(`Congratulations! You guessed it in ${this.guesses} tries!`), 500);
+            return;
+        }
+        
+        // Check game over
+        if (this.currentRow >= this.maxGuesses) {
+            this.gameOver = true;
+            this.streak = 0;
+            localStorage.setItem('wordleStreak', this.streak);
+            document.getElementById('wordleStreak').textContent = this.streak;
+            setTimeout(() => alert(`Game Over! The word was: ${this.targetWord}`), 500);
+        }
+        
+        this.updateKeyboard();
+    },
+    
+    setupKeyboard() {
+        const rows = [
+            ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+            ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+            ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACK']
+        ];
+        
+        this.keyboard.innerHTML = '';
+        rows.forEach(row => {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'wordle-keyboard-row';
+            row.forEach(key => {
+                const keyBtn = document.createElement('button');
+                keyBtn.className = 'wordle-key';
+                keyBtn.textContent = key;
+                keyBtn.dataset.key = key;
+                if (key === 'ENTER' || key === 'BACK') {
+                    keyBtn.classList.add('wordle-key-special');
+                }
+                keyBtn.addEventListener('click', () => {
+                    if (key === 'ENTER') {
+                        this.submitGuess();
+                    } else if (key === 'BACK') {
+                        this.deleteLetter();
+                    } else {
+                        this.addLetter(key);
+                    }
+                });
+                rowDiv.appendChild(keyBtn);
+            });
+            this.keyboard.appendChild(rowDiv);
+        });
+    },
+    
+    updateKeyboard() {
+        const keys = this.keyboard.querySelectorAll('.wordle-key');
+        keys.forEach(keyBtn => {
+            const key = keyBtn.dataset.key;
+            if (key === 'ENTER' || key === 'BACK') return;
+            
+            keyBtn.classList.remove('correct', 'present', 'absent');
+            
+            // Check if letter is in target word
+            if (this.targetWord.includes(key)) {
+                // Check if it's in correct position in any guess
+                let isCorrect = false;
+                for (let row = 0; row < this.currentRow; row++) {
+                    const guess = this.getGuessForRow(row);
+                    if (guess) {
+                        for (let i = 0; i < 5; i++) {
+                            if (guess[i] === key && this.targetWord[i] === key) {
+                                isCorrect = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (isCorrect) {
+                    keyBtn.classList.add('correct');
+                } else {
+                    keyBtn.classList.add('present');
+                }
+            } else {
+                // Check if letter was used in any guess
+                let wasUsed = false;
+                for (let row = 0; row < this.currentRow; row++) {
+                    const guess = this.getGuessForRow(row);
+                    if (guess && guess.includes(key)) {
+                        wasUsed = true;
+                        break;
+                    }
+                }
+                if (wasUsed) {
+                    keyBtn.classList.add('absent');
+                }
+            }
+        });
+    }
+};
+
+// ==================== WHACK-A-MOLE GAME ====================
+const whackamoleGame = {
+    board: null,
+    moles: [],
+    score: 0,
+    timeLeft: 30,
+    highScore: 0,
+    gameActive: false,
+    gameInterval: null,
+    timerInterval: null,
+    moleTimeout: null,
+    
+    init() {
+        this.board = document.getElementById('moleBoard');
+        this.highScore = parseInt(localStorage.getItem('moleHighScore') || '0');
+        document.getElementById('moleHighScore').textContent = this.highScore;
+        this.createBoard();
+    },
+    
+    createBoard() {
+        this.board.innerHTML = '';
+        this.moles = [];
+        for (let i = 0; i < 9; i++) {
+            const moleHole = document.createElement('div');
+            moleHole.className = 'mole-hole';
+            moleHole.dataset.index = i;
+            
+            const mole = document.createElement('div');
+            mole.className = 'mole';
+            mole.dataset.index = i;
+            mole.style.display = 'none';
+            mole.addEventListener('click', () => this.whackMole(i));
+            
+            moleHole.appendChild(mole);
+            this.board.appendChild(moleHole);
+            this.moles.push({ element: mole, active: false, timeout: null });
+        }
+    },
+    
+    start() {
+        if (this.gameActive) return;
+        this.gameActive = true;
+        this.score = 0;
+        this.timeLeft = 30;
+        document.getElementById('moleScore').textContent = this.score;
+        document.getElementById('moleTime').textContent = this.timeLeft;
+        
+        // Timer
+        this.timerInterval = setInterval(() => {
+            this.timeLeft--;
+            document.getElementById('moleTime').textContent = this.timeLeft;
+            if (this.timeLeft <= 0) {
+                this.endGame();
+            }
+        }, 1000);
+        
+        // Spawn moles
+        this.spawnMole();
+    },
+    
+    spawnMole() {
+        if (!this.gameActive) return;
+        
+        const availableHoles = this.moles.map((mole, index) => !mole.active ? index : null).filter(i => i !== null);
+        if (availableHoles.length === 0) {
+            this.moleTimeout = setTimeout(() => this.spawnMole(), 500);
+            return;
+        }
+        
+        const randomIndex = availableHoles[Math.floor(Math.random() * availableHoles.length)];
+        const mole = this.moles[randomIndex];
+        
+        mole.active = true;
+        mole.element.style.display = 'block';
+        mole.element.classList.add('mole-up');
+        
+        const stayTime = Math.max(800, 2000 - this.score * 10);
+        mole.timeout = setTimeout(() => {
+            if (mole.active) {
+                mole.active = false;
+                mole.element.style.display = 'none';
+                mole.element.classList.remove('mole-up');
+            }
+        }, stayTime);
+        
+        const nextSpawn = Math.max(300, 1000 - this.score * 5);
+        this.moleTimeout = setTimeout(() => this.spawnMole(), nextSpawn);
+    },
+    
+    whackMole(index) {
+        const mole = this.moles[index];
+        if (!mole.active || !this.gameActive) return;
+        
+        mole.active = false;
+        mole.element.style.display = 'none';
+        mole.element.classList.remove('mole-up');
+        if (mole.timeout) clearTimeout(mole.timeout);
+        
+        this.score += 10;
+        document.getElementById('moleScore').textContent = this.score;
+        
+        // Add hit effect
+        mole.element.classList.add('mole-hit');
+        setTimeout(() => mole.element.classList.remove('mole-hit'), 200);
+    },
+    
+    endGame() {
+        this.gameActive = false;
+        if (this.timerInterval) clearInterval(this.timerInterval);
+        if (this.moleTimeout) clearTimeout(this.moleTimeout);
+        this.moles.forEach(mole => {
+            if (mole.timeout) clearTimeout(mole.timeout);
+            mole.active = false;
+            mole.element.style.display = 'none';
+            mole.element.classList.remove('mole-up');
+        });
+        
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('moleHighScore', this.highScore);
+            document.getElementById('moleHighScore').textContent = this.highScore;
+        }
+        
+        alert(`Time's up! Final Score: ${this.score}`);
+    },
+    
+    restart() {
+        this.endGame();
+        this.createBoard();
+    },
+    
+    stop() {
+        this.endGame();
+    }
+};
+
+// ==================== PLATFORMER GAME ====================
+const platformerGame = {
+    canvas: null,
+    ctx: null,
+    player: {x: 100, y: 300, width: 30, height: 40, vx: 0, vy: 0, speed: 5, jumpPower: 12, onGround: false},
+    platforms: [],
+    enemies: [],
+    coins: [],
+    score: 0,
+    distance: 0,
+    highScore: 0,
+    gameLoop: null,
+    paused: false,
+    gravity: 0.6,
+    cameraX: 0,
+    
+    init() {
+        this.canvas = document.getElementById('platformerCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.highScore = parseInt(localStorage.getItem('platformerHighScore') || '0');
+        document.getElementById('platformerHighScore').textContent = this.highScore;
+        this.restart();
+        this.setupControls();
+    },
+    
+    setupControls() {
+        if (this.keyHandler) {
+            document.removeEventListener('keydown', this.keyHandler);
+            document.removeEventListener('keyup', this.keyUpHandler);
+        }
+        
+        const keys = {};
+        this.keyHandler = (e) => {
+            const gameScreen = document.getElementById('platformerGame');
+            if (!gameScreen || gameScreen.style.display === 'none') return;
+            
+            if (e.key === 'p' || e.key === 'P') {
+                this.pause();
+                return;
+            }
+            
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                keys.left = true;
+            } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                keys.right = true;
+            } else if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+                if (this.player.onGround) {
+                    this.player.vy = -this.player.jumpPower;
+                    this.player.onGround = false;
+                }
+            }
+        };
+        
+        this.keyUpHandler = (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                keys.left = false;
+            } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                keys.right = false;
+            }
+        };
+        
+        document.addEventListener('keydown', this.keyHandler);
+        document.addEventListener('keyup', this.keyUpHandler);
+        
+        const updatePlayer = () => {
+            const gameScreen = document.getElementById('platformerGame');
+            if (!gameScreen || gameScreen.style.display === 'none') return;
+            
+            if (!this.paused) {
+                this.player.vx = 0;
+                if (keys.left) this.player.vx = -this.player.speed;
+                if (keys.right) this.player.vx = this.player.speed;
+            }
+            requestAnimationFrame(updatePlayer);
+        };
+        updatePlayer();
+    },
+    
+    stop() {
+        if (this.gameLoop) {
+            cancelAnimationFrame(this.gameLoop);
+            this.gameLoop = null;
+        }
+        if (this.keyHandler) {
+            document.removeEventListener('keydown', this.keyHandler);
+            document.removeEventListener('keyup', this.keyUpHandler);
+            this.keyHandler = null;
+            this.keyUpHandler = null;
+        }
+        this.paused = true;
+    },
+    
+    restart() {
+        this.score = 0;
+        this.distance = 0;
+        this.paused = false;
+        this.player.x = 100;
+        this.player.y = 300;
+        this.player.vx = 0;
+        this.player.vy = 0;
+        this.cameraX = 0;
+        this.platforms = [];
+        this.enemies = [];
+        this.coins = [];
+        this.createLevel();
+        
+        document.getElementById('platformerScore').textContent = this.score;
+        document.getElementById('platformerDistance').textContent = this.distance;
+        
+        if (this.gameLoop) cancelAnimationFrame(this.gameLoop);
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    },
+    
+    createLevel() {
+        // Create ground platforms
+        for (let i = 0; i < 20; i++) {
+            this.platforms.push({
+                x: i * 200,
+                y: this.canvas.height - 50,
+                width: 200,
+                height: 50
+            });
+        }
+        
+        // Create floating platforms
+        for (let i = 0; i < 15; i++) {
+            this.platforms.push({
+                x: 300 + i * 250,
+                y: this.canvas.height - 150 - (i % 3) * 100,
+                width: 150,
+                height: 20
+            });
+        }
+        
+        // Create coins
+        for (let i = 0; i < 30; i++) {
+            this.coins.push({
+                x: 200 + i * 150,
+                y: this.canvas.height - 200 - Math.random() * 200,
+                collected: false,
+                radius: 15
+            });
+        }
+        
+        // Create enemies
+        for (let i = 0; i < 10; i++) {
+            this.enemies.push({
+                x: 400 + i * 300,
+                y: this.canvas.height - 80,
+                width: 30,
+                height: 30,
+                vx: -2,
+                direction: -1
+            });
+        }
+    },
+    
+    pause() {
+        this.paused = !this.paused;
+        if (!this.paused) {
+            this.gameLoop = requestAnimationFrame(() => this.update());
+        }
+    },
+    
+    update() {
+        const gameScreen = document.getElementById('platformerGame');
+        if (!gameScreen || gameScreen.style.display === 'none') return;
+        
+        if (!this.paused) {
+            // Apply gravity
+            this.player.vy += this.gravity;
+            
+            // Update player position
+            this.player.x += this.player.vx;
+            this.player.y += this.player.vy;
+            
+            // Check platform collisions
+            this.player.onGround = false;
+            for (let platform of this.platforms) {
+                if (this.player.x < platform.x + platform.width &&
+                    this.player.x + this.player.width > platform.x &&
+                    this.player.y < platform.y + platform.height &&
+                    this.player.y + this.player.height > platform.y) {
+                    
+                    // Landing on top
+                    if (this.player.vy > 0 && this.player.y < platform.y) {
+                        this.player.y = platform.y - this.player.height;
+                        this.player.vy = 0;
+                        this.player.onGround = true;
+                    }
+                    // Hitting from below
+                    else if (this.player.vy < 0) {
+                        this.player.y = platform.y + platform.height;
+                        this.player.vy = 0;
+                    }
+                    // Side collision
+                    else if (this.player.vx > 0) {
+                        this.player.x = platform.x - this.player.width;
+                    } else if (this.player.vx < 0) {
+                        this.player.x = platform.x + platform.width;
+                    }
+                }
+            }
+            
+            // Update camera
+            if (this.player.x > this.canvas.width / 2) {
+                this.cameraX = this.player.x - this.canvas.width / 2;
+                this.distance = Math.floor(this.cameraX / 10);
+                document.getElementById('platformerDistance').textContent = this.distance;
+            }
+            
+            // Update enemies
+            this.enemies.forEach(enemy => {
+                enemy.x += enemy.vx;
+                // Simple AI - turn around at edges
+                if (enemy.x < this.cameraX || enemy.x > this.cameraX + this.canvas.width) {
+                    enemy.vx *= -1;
+                }
+                
+                // Check collision with player
+                if (this.player.x < enemy.x + enemy.width &&
+                    this.player.x + this.player.width > enemy.x &&
+                    this.player.y < enemy.y + enemy.height &&
+                    this.player.y + this.player.height > enemy.y) {
+                    this.gameOver();
+                    return;
+                }
+            });
+            
+            // Check coin collection
+            this.coins.forEach(coin => {
+                if (!coin.collected) {
+                    const dx = (this.player.x + this.player.width / 2) - coin.x;
+                    const dy = (this.player.y + this.player.height / 2) - coin.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < coin.radius + 20) {
+                        coin.collected = true;
+                        this.score += 50;
+                        document.getElementById('platformerScore').textContent = this.score;
+                    }
+                }
+            });
+            
+            // Check boundaries
+            if (this.player.y > this.canvas.height) {
+                this.gameOver();
+                return;
+            }
+        }
+        
+        this.draw();
+        if (!this.paused) {
+            this.gameLoop = requestAnimationFrame(() => this.update());
+        }
+    },
+    
+    draw() {
+        // Sky gradient
+        const skyGradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+        skyGradient.addColorStop(0, '#87ceeb');
+        skyGradient.addColorStop(1, '#98d8f0');
+        this.ctx.fillStyle = skyGradient;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Draw clouds
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        for (let i = 0; i < 5; i++) {
+            const cloudX = (this.cameraX * 0.3 + i * 200) % (this.canvas.width + 200) - 100;
+            const cloudY = 50 + i * 30;
+            this.ctx.beginPath();
+            this.ctx.arc(cloudX, cloudY, 30, 0, Math.PI * 2);
+            this.ctx.arc(cloudX + 25, cloudY, 35, 0, Math.PI * 2);
+            this.ctx.arc(cloudX - 25, cloudY, 35, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+        
+        // Draw platforms (with camera offset)
+        this.ctx.fillStyle = '#8b7355';
+        this.platforms.forEach(platform => {
+            const screenX = platform.x - this.cameraX;
+            if (screenX > -platform.width && screenX < this.canvas.width) {
+                this.ctx.fillRect(screenX, platform.y, platform.width, platform.height);
+                // Platform highlight
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                this.ctx.fillRect(screenX, platform.y, platform.width, 5);
+                this.ctx.fillStyle = '#8b7355';
+            }
+        });
+        
+        // Draw coins
+        this.coins.forEach(coin => {
+            if (!coin.collected) {
+                const screenX = coin.x - this.cameraX;
+                if (screenX > -coin.radius && screenX < this.canvas.width + coin.radius) {
+                    const coinGradient = this.ctx.createRadialGradient(
+                        screenX, coin.y, 0,
+                        screenX, coin.y, coin.radius
+                    );
+                    coinGradient.addColorStop(0, '#ffd700');
+                    coinGradient.addColorStop(1, '#ffa500');
+                    this.ctx.fillStyle = coinGradient;
+                    this.ctx.shadowColor = 'rgba(255, 215, 0, 0.6)';
+                    this.ctx.shadowBlur = 10;
+                    this.ctx.beginPath();
+                    this.ctx.arc(screenX, coin.y, coin.radius, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    this.ctx.shadowBlur = 0;
+                }
+            }
+        });
+        
+        // Draw enemies
+        this.enemies.forEach(enemy => {
+            const screenX = enemy.x - this.cameraX;
+            if (screenX > -enemy.width && screenX < this.canvas.width + enemy.width) {
+                this.ctx.fillStyle = '#ff4444';
+                this.ctx.shadowColor = 'rgba(255, 68, 68, 0.6)';
+                this.ctx.shadowBlur = 8;
+                this.ctx.fillRect(screenX, enemy.y, enemy.width, enemy.height);
+                this.ctx.shadowBlur = 0;
+            }
+        });
+        
+        // Draw player
+        const playerScreenX = this.player.x - this.cameraX;
+        const playerGradient = this.ctx.createLinearGradient(
+            playerScreenX, this.player.y,
+            playerScreenX, this.player.y + this.player.height
+        );
+        playerGradient.addColorStop(0, '#4a9eff');
+        playerGradient.addColorStop(1, '#2563eb');
+        this.ctx.fillStyle = playerGradient;
+        this.ctx.shadowColor = 'rgba(74, 158, 255, 0.8)';
+        this.ctx.shadowBlur = 10;
+        this.ctx.fillRect(playerScreenX, this.player.y, this.player.width, this.player.height);
+        this.ctx.shadowBlur = 0;
+        
+        // Pause overlay
+        if (this.paused) {
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = 'bold 36px Courier New';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2);
+        }
+    },
+    
+    gameOver() {
+        cancelAnimationFrame(this.gameLoop);
+        const finalScore = this.score + this.distance;
+        if (finalScore > this.highScore) {
+            this.highScore = finalScore;
+            localStorage.setItem('platformerHighScore', this.highScore);
+            document.getElementById('platformerHighScore').textContent = this.highScore;
+        }
+        alert(`Game Over! Score: ${finalScore} | Distance: ${this.distance}m`);
+        this.restart();
+    }
+};
+
+// ==================== RACING GAME ====================
+const racingGame = {
+    canvas: null,
+    ctx: null,
+    player: {x: 300, y: 700, width: 40, height: 60, speed: 0, maxSpeed: 8, acceleration: 0.2, friction: 0.05},
+    obstacles: [],
+    roadLines: [],
+    score: 0,
+    distance: 0,
+    speed: 0,
+    highScore: 0,
+    gameLoop: null,
+    paused: false,
+    roadOffset: 0,
+    
+    init() {
+        this.canvas = document.getElementById('racingCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.highScore = parseInt(localStorage.getItem('racingHighScore') || '0');
+        document.getElementById('racingHighScore').textContent = this.highScore;
+        this.restart();
+        this.setupControls();
+    },
+    
+    setupControls() {
+        if (this.keyHandler) {
+            document.removeEventListener('keydown', this.keyHandler);
+            document.removeEventListener('keyup', this.keyUpHandler);
+        }
+        
+        const keys = {};
+        this.keyHandler = (e) => {
+            const gameScreen = document.getElementById('racingGame');
+            if (!gameScreen || gameScreen.style.display === 'none') return;
+            
+            if (e.key === 'p' || e.key === 'P') {
+                this.pause();
+                return;
+            }
+            
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                keys.left = true;
+            } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                keys.right = true;
+            }
+        };
+        
+        this.keyUpHandler = (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                keys.left = false;
+            } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                keys.right = false;
+            }
+        };
+        
+        document.addEventListener('keydown', this.keyHandler);
+        document.addEventListener('keyup', this.keyUpHandler);
+        
+        const updatePlayer = () => {
+            const gameScreen = document.getElementById('racingGame');
+            if (!gameScreen || gameScreen.style.display === 'none') return;
+            
+            if (!this.paused) {
+                // Auto-accelerate
+                if (this.player.speed < this.player.maxSpeed) {
+                    this.player.speed += this.player.acceleration;
+                }
+                
+                // Steering
+                if (keys.left && this.player.x > 50) {
+                    this.player.x -= 5;
+                }
+                if (keys.right && this.player.x < this.canvas.width - 50 - this.player.width) {
+                    this.player.x += 5;
+                }
+            }
+            requestAnimationFrame(updatePlayer);
+        };
+        updatePlayer();
+    },
+    
+    stop() {
+        if (this.gameLoop) {
+            cancelAnimationFrame(this.gameLoop);
+            this.gameLoop = null;
+        }
+        if (this.keyHandler) {
+            document.removeEventListener('keydown', this.keyHandler);
+            document.removeEventListener('keyup', this.keyUpHandler);
+            this.keyHandler = null;
+            this.keyUpHandler = null;
+        }
+        this.paused = true;
+    },
+    
+    restart() {
+        this.score = 0;
+        this.distance = 0;
+        this.speed = 0;
+        this.paused = false;
+        this.player.x = this.canvas.width / 2 - this.player.width / 2;
+        this.player.y = this.canvas.height - 100;
+        this.player.speed = 0;
+        this.obstacles = [];
+        this.roadLines = [];
+        this.roadOffset = 0;
+        
+        document.getElementById('racingScore').textContent = this.score;
+        document.getElementById('racingDistance').textContent = this.distance;
+        document.getElementById('racingSpeed').textContent = this.speed;
+        
+        if (this.gameLoop) cancelAnimationFrame(this.gameLoop);
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    },
+    
+    pause() {
+        this.paused = !this.paused;
+        if (!this.paused) {
+            this.gameLoop = requestAnimationFrame(() => this.update());
+        }
+    },
+    
+    update() {
+        const gameScreen = document.getElementById('racingGame');
+        if (!gameScreen || gameScreen.style.display === 'none') return;
+        
+        if (!this.paused) {
+            // Update speed and distance
+            if (this.player.speed < this.player.maxSpeed) {
+                this.player.speed += this.player.acceleration;
+            }
+            this.speed = Math.floor(this.player.speed * 20);
+            this.distance += this.player.speed;
+            this.roadOffset += this.player.speed * 2;
+            
+            document.getElementById('racingSpeed').textContent = this.speed;
+            document.getElementById('racingDistance').textContent = Math.floor(this.distance / 10);
+            
+            // Generate obstacles
+            if (Math.random() < 0.02) {
+                const lane = Math.floor(Math.random() * 3);
+                const laneX = [150, 300, 450][lane];
+                this.obstacles.push({
+                    x: laneX,
+                    y: -60,
+                    width: 40,
+                    height: 60,
+                    type: Math.random() > 0.7 ? 'car' : 'barrier'
+                });
+            }
+            
+            // Update obstacles
+            this.obstacles = this.obstacles.filter(obstacle => {
+                obstacle.y += this.player.speed * 3;
+                
+                // Check collision
+                if (this.player.x < obstacle.x + obstacle.width &&
+                    this.player.x + this.player.width > obstacle.x &&
+                    this.player.y < obstacle.y + obstacle.height &&
+                    this.player.y + this.player.height > obstacle.y) {
+                    this.gameOver();
+                    return false;
+                }
+                
+                return obstacle.y < this.canvas.height + 100;
+            });
+            
+            // Update road lines
+            if (this.roadLines.length < 20) {
+                for (let i = 0; i < 5; i++) {
+                    this.roadLines.push({
+                        x: this.canvas.width / 2 - 5,
+                        y: -50 - i * 100
+                    });
+                }
+            }
+            
+            this.roadLines = this.roadLines.filter(line => {
+                line.y += this.player.speed * 2;
+                return line.y < this.canvas.height + 50;
+            });
+            
+            // Score increases with distance
+            this.score = Math.floor(this.distance / 10);
+            document.getElementById('racingScore').textContent = this.score;
+        }
+        
+        this.draw();
+        if (!this.paused) {
+            this.gameLoop = requestAnimationFrame(() => this.update());
+        }
+    },
+    
+    draw() {
+        // Road background
+        this.ctx.fillStyle = '#333';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Road
+        this.ctx.fillStyle = '#555';
+        this.ctx.fillRect(100, 0, 400, this.canvas.height);
+        
+        // Road lines
+        this.ctx.fillStyle = '#ffff00';
+        this.ctx.shadowColor = 'rgba(255, 255, 0, 0.8)';
+        this.ctx.shadowBlur = 5;
+        this.roadLines.forEach(line => {
+            this.ctx.fillRect(line.x, line.y, 10, 50);
+        });
+        this.ctx.shadowBlur = 0;
+        
+        // Road edges
+        this.ctx.strokeStyle = '#fff';
+        this.ctx.lineWidth = 4;
+        this.ctx.beginPath();
+        this.ctx.moveTo(100, 0);
+        this.ctx.lineTo(100, this.canvas.height);
+        this.ctx.moveTo(500, 0);
+        this.ctx.lineTo(500, this.canvas.height);
+        this.ctx.stroke();
+        
+        // Draw obstacles
+        this.obstacles.forEach(obstacle => {
+            if (obstacle.type === 'car') {
+                const carGradient = this.ctx.createLinearGradient(obstacle.x, obstacle.y, obstacle.x, obstacle.y + obstacle.height);
+                carGradient.addColorStop(0, '#ff4444');
+                carGradient.addColorStop(1, '#cc0000');
+                this.ctx.fillStyle = carGradient;
+            } else {
+                this.ctx.fillStyle = '#ffa500';
+            }
+            this.ctx.shadowColor = obstacle.type === 'car' ? 'rgba(255, 68, 68, 0.6)' : 'rgba(255, 165, 0, 0.6)';
+            this.ctx.shadowBlur = 8;
+            this.ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            this.ctx.shadowBlur = 0;
+        });
+        
+        // Draw player car
+        const playerGradient = this.ctx.createLinearGradient(this.player.x, this.player.y, this.player.x, this.player.y + this.player.height);
+        playerGradient.addColorStop(0, '#4a9eff');
+        playerGradient.addColorStop(1, '#2563eb');
+        this.ctx.fillStyle = playerGradient;
+        this.ctx.shadowColor = 'rgba(74, 158, 255, 0.8)';
+        this.ctx.shadowBlur = 15;
+        this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
+        
+        // Car details
+        this.ctx.fillStyle = '#fff';
+        this.ctx.fillRect(this.player.x + 5, this.player.y + 10, 30, 15);
+        this.ctx.fillRect(this.player.x + 5, this.player.y + 35, 30, 15);
+        this.ctx.shadowBlur = 0;
+        
+        // Pause overlay
+        if (this.paused) {
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = 'bold 36px Courier New';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2);
+        }
+    },
+    
+    gameOver() {
+        cancelAnimationFrame(this.gameLoop);
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('racingHighScore', this.highScore);
+            document.getElementById('racingHighScore').textContent = this.highScore;
+        }
+        alert(`Game Over! Score: ${this.score} | Distance: ${Math.floor(this.distance / 10)}m`);
+        this.restart();
     }
 };
 
