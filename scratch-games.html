@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scratch Games - JNJ Website</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="animated-background.css">
+    <script src="page-transitions.js" defer></script>
+    <script src="animated-background.js" defer></script>
+    <style>
+        .games-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 100px 20px 40px;
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .games-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .games-header h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+            color: #fff;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .games-subtitle {
+            font-size: 18px;
+            opacity: 0.8;
+            color: #e0e0e0;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .game-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            padding: 40px 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-align: center;
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .game-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .game-title {
+            font-size: 28px;
+            margin-bottom: 15px;
+            color: #fff;
+            text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
+        }
+
+        .game-description {
+            color: #e0e0e0;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+
+        .play-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .play-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .play-button:active {
+            transform: translateY(0);
+        }
+
+        @media (max-width: 768px) {
+            .games-header h1 {
+                font-size: 32px;
+            }
+
+            .games-grid {
+                grid-template-columns: 1fr;
+                gap: 25px;
+            }
+
+            .game-card {
+                padding: 30px 20px;
+            }
+
+            .game-icon {
+                font-size: 48px;
+            }
+
+            .game-title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-button" style="position: absolute; top: 20px; left: 20px; padding: 10px 20px; background: rgba(255, 255, 255, 0.1); color: #e0e0e0; text-decoration: none; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); transition: all 0.3s ease; font-size: 14px; z-index: 100; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);">← Back to Home</a>
+    
+    <div class="games-container">
+        <div class="games-header">
+            <h1>🎮 Scratch Games</h1>
+            <p class="games-subtitle">Play our Scratch game collection</p>
+        </div>
+
+        <div class="games-grid">
+            <!-- Lost Spamton Fight -->
+            <div class="game-card">
+                <div class="game-icon">⚔️</div>
+                <h2 class="game-title">Lost Spamton Fight</h2>
+                <p class="game-description">A challenging battle game featuring Spamton. Fight your way through!</p>
+                <a href="lost-scampton-fight.html" class="play-button">Play Game</a>
+            </div>
+
+            <!-- Dino Game -->
+            <div class="game-card">
+                <div class="game-icon">🦕</div>
+                <h2 class="game-title">Dino Game</h2>
+                <p class="game-description">Jump and dodge obstacles in this classic-style dino game!</p>
+                <a href="dino-game.html" class="play-button">Play Game</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
