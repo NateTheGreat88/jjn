@@ -205,57 +205,59 @@ body.page-exit {
     min-width: 200px;
 }
 
-/* Varied button sizes - Less crowded */
+/* Varied button sizes - Much Bigger */
 .about-button {
     background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 14px;
-    padding: 10px 18px;
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    border-radius: 18px;
+    padding: 16px 28px;
     color: #e0e0e0;
     text-decoration: none;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 16px;
+    font-weight: 700;
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(25px) saturate(200%);
     box-shadow: 
-        0 4px 16px rgba(0, 0, 0, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        0 6px 24px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
     white-space: nowrap;
     position: relative;
     overflow: hidden;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     letter-spacing: 0.3px;
+    line-height: 1.3;
 }
 
-/* Profile button - Slightly larger but not too big */
+/* Profile button - Much Bigger */
 .about-button:first-of-type {
-    padding: 11px 20px;
-    font-size: 13px;
-    border-radius: 16px;
+    padding: 18px 32px;
+    font-size: 17px;
+    border-radius: 20px;
     background: linear-gradient(135deg, 
-        rgba(99, 102, 241, 0.15) 0%, 
-        rgba(236, 72, 153, 0.15) 100%);
-    border: 1px solid rgba(99, 102, 241, 0.3);
+        rgba(99, 102, 241, 0.2) 0%, 
+        rgba(236, 72, 153, 0.2) 100%);
+    border: 2px solid rgba(99, 102, 241, 0.4);
     box-shadow: 
-        0 5px 20px rgba(99, 102, 241, 0.3),
+        0 8px 32px rgba(99, 102, 241, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        0 0 30px rgba(99, 102, 241, 0.25);
+    font-weight: 800;
+}
+
+/* About button - Much Bigger */
+.about-button:last-of-type {
+    padding: 16px 28px;
+    font-size: 16px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(236, 72, 153, 0.3);
+    box-shadow: 
+        0 6px 24px rgba(236, 72, 153, 0.3),
         inset 0 1px 0 rgba(255, 255, 255, 0.15);
     font-weight: 700;
-}
-
-/* About button - Medium */
-.about-button:last-of-type {
-    padding: 10px 18px;
-    font-size: 13px;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(236, 72, 153, 0.25);
-    box-shadow: 
-        0 4px 18px rgba(236, 72, 153, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    font-weight: 600;
 }
 
 .about-button::before {
@@ -278,39 +280,40 @@ body.page-exit {
 }
 
 .about-button:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(99, 102, 241, 0.4);
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(99, 102, 241, 0.5);
     color: #fff;
-    transform: translateY(-2px) scale(1.05);
+    transform: translateY(-3px) scale(1.05);
     box-shadow: 
-        0 8px 28px rgba(99, 102, 241, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2),
-        0 0 20px rgba(99, 102, 241, 0.25);
+        0 12px 40px rgba(99, 102, 241, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25),
+        0 0 30px rgba(99, 102, 241, 0.3);
 }
 
 .about-button:first-of-type:hover {
     background: linear-gradient(135deg, 
-        rgba(99, 102, 241, 0.25) 0%, 
-        rgba(236, 72, 153, 0.25) 100%);
+        rgba(99, 102, 241, 0.35) 0%, 
+        rgba(236, 72, 153, 0.35) 100%);
     box-shadow: 
-        0 10px 32px rgba(99, 102, 241, 0.4),
-        0 0 25px rgba(236, 72, 153, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.25);
-    transform: translateY(-2px) scale(1.06);
+        0 14px 48px rgba(99, 102, 241, 0.5),
+        0 0 40px rgba(236, 72, 153, 0.4),
+        0 0 60px rgba(168, 85, 247, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    transform: translateY(-4px) scale(1.06);
 }
 
 .about-button:last-of-type:hover {
     background: linear-gradient(135deg, 
-        rgba(236, 72, 153, 0.15) 0%, 
-        rgba(251, 146, 60, 0.15) 100%);
-    border-color: rgba(236, 72, 153, 0.4);
+        rgba(236, 72, 153, 0.2) 0%, 
+        rgba(251, 146, 60, 0.2) 100%);
+    border-color: rgba(236, 72, 153, 0.5);
     box-shadow: 
-        0 8px 28px rgba(236, 72, 153, 0.35),
-        0 0 20px rgba(251, 146, 60, 0.25);
+        0 12px 40px rgba(236, 72, 153, 0.4),
+        0 0 30px rgba(251, 146, 60, 0.3);
 }
 
 .about-button:active {
-    transform: translateY(-1px) scale(1.02);
+    transform: translateY(-2px) scale(1.03);
 }
 
 .search-input {
@@ -438,7 +441,7 @@ html.force-dark body::after {
 
 /* Header - ULTRA Creative */
 header {
-    margin-bottom: 30px;
+    margin-bottom: 0;
     animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
     position: relative;
 }
@@ -446,7 +449,7 @@ header {
 h1 {
     font-size: 80px;
     color: #fff;
-    margin-bottom: 30px;
+    margin-bottom: 0;
     text-shadow: 
         0 0 40px rgba(99, 102, 241, 0.7),
         0 0 80px rgba(236, 72, 153, 0.5),
@@ -552,7 +555,7 @@ h1::before {
 
 /* Subtitle - ULTRA Creative with Special Effects - Below Header */
 .subtitle {
-    font-size: 20px;
+    font-size: 18px;
     color: #b8b8b8;
     font-style: italic;
     letter-spacing: 1.5px;
@@ -561,10 +564,13 @@ h1::before {
         0 0 20px rgba(99, 102, 241, 0.3);
     font-weight: 400;
     position: relative;
-    display: inline-block;
-    padding: 12px 25px;
-    margin-top: 20px;
+    display: block;
+    padding: 10px 22px;
+    margin-top: 25px;
     margin-bottom: 50px;
+    margin-left: auto;
+    margin-right: auto;
+    width: fit-content;
     background: rgba(255, 255, 255, 0.03);
     border-radius: 18px;
     backdrop-filter: blur(20px) saturate(180%);
@@ -914,76 +920,76 @@ h1::before {
     font-weight: 400;
 }
 
-/* Song Cards - ULTRA Creative with Maximum Variety */
+/* Song Cards - Smaller Size */
 .song-card {
     background: rgba(255, 255, 255, 0.06);
-    border-radius: 36px;
-    padding: 50px;
+    border-radius: 24px;
+    padding: 25px;
     backdrop-filter: blur(40px) saturate(220%);
     box-shadow: 
-        0 20px 64px rgba(0, 0, 0, 0.5),
-        inset 0 1px 0 rgba(255, 255, 255, 0.15),
-        0 0 0 2px rgba(255, 255, 255, 0.1);
-    border: 2.5px solid rgba(255, 255, 255, 0.12);
-    transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-    margin-bottom: 40px;
+        0 12px 40px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        0 0 0 1.5px rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    margin-bottom: 25px;
     position: relative;
     overflow: hidden;
     animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* Maximum variety in card sizes */
+/* Smaller card sizes */
 .song-card:nth-child(1) { 
     animation-delay: 0.5s;
-    padding: 58px;
-    transform: scale(1.04);
-    border: 3px solid rgba(99, 102, 241, 0.3);
-    background: rgba(99, 102, 241, 0.08);
+    padding: 28px;
+    transform: scale(1.0);
+    border: 2px solid rgba(99, 102, 241, 0.25);
+    background: rgba(99, 102, 241, 0.06);
 }
 .song-card:nth-child(2) { 
     animation-delay: 0.6s;
-    padding: 46px;
-    transform: scale(0.97);
-    border: 2px solid rgba(236, 72, 153, 0.3);
-    background: rgba(236, 72, 153, 0.06);
+    padding: 24px;
+    transform: scale(0.98);
+    border: 2px solid rgba(236, 72, 153, 0.25);
+    background: rgba(236, 72, 153, 0.05);
 }
 .song-card:nth-child(3) { 
     animation-delay: 0.7s;
-    padding: 52px;
-    transform: scale(1.02);
-    border: 2.5px solid rgba(168, 85, 247, 0.3);
-    background: rgba(168, 85, 247, 0.07);
+    padding: 26px;
+    transform: scale(1.0);
+    border: 2px solid rgba(168, 85, 247, 0.25);
+    background: rgba(168, 85, 247, 0.06);
 }
 .song-card:nth-child(4) { 
     animation-delay: 0.8s;
-    padding: 48px;
-    transform: scale(1.0);
-    border: 2px solid rgba(251, 146, 60, 0.3);
-    background: rgba(251, 146, 60, 0.06);
+    padding: 25px;
+    transform: scale(0.99);
+    border: 2px solid rgba(251, 146, 60, 0.25);
+    background: rgba(251, 146, 60, 0.05);
 }
 .song-card:nth-child(5) { 
     animation-delay: 0.9s;
-    padding: 50px;
-    transform: scale(1.01);
-    border: 2.5px solid rgba(99, 102, 241, 0.25);
+    padding: 26px;
+    transform: scale(1.0);
+    border: 2px solid rgba(99, 102, 241, 0.2);
 }
 .song-card:nth-child(6) { 
     animation-delay: 1.0s;
-    padding: 47px;
+    padding: 24px;
     transform: scale(0.98);
-    border: 2px solid rgba(236, 72, 153, 0.25);
+    border: 2px solid rgba(236, 72, 153, 0.2);
 }
 .song-card:nth-child(7) { 
     animation-delay: 1.1s;
-    padding: 51px;
-    transform: scale(1.0);
-    border: 2.5px solid rgba(168, 85, 247, 0.25);
+    padding: 25px;
+    transform: scale(0.99);
+    border: 2px solid rgba(168, 85, 247, 0.2);
 }
 .song-card:nth-child(8) { 
     animation-delay: 1.2s;
-    padding: 45px;
-    transform: scale(0.96);
-    border: 2px solid rgba(251, 146, 60, 0.25);
+    padding: 23px;
+    transform: scale(0.97);
+    border: 2px solid rgba(251, 146, 60, 0.2);
 }
 
 .song-card::before {
@@ -1046,28 +1052,28 @@ h1::before {
 }
 
 .song-card:hover {
-    transform: translateY(-14px) scale(1.03);
+    transform: translateY(-6px) scale(1.01);
     box-shadow: 
-        0 28px 88px rgba(99, 102, 241, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3),
-        0 0 0 3px rgba(99, 102, 241, 0.4),
-        0 0 60px rgba(99, 102, 241, 0.3);
-    border-color: rgba(99, 102, 241, 0.5);
-    background: rgba(255, 255, 255, 0.1);
+        0 16px 48px rgba(99, 102, 241, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        0 0 0 2px rgba(99, 102, 241, 0.3),
+        0 0 30px rgba(99, 102, 241, 0.2);
+    border-color: rgba(99, 102, 241, 0.4);
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .song-card:nth-child(1):hover {
-    transform: translateY(-16px) scale(1.05);
+    transform: translateY(-7px) scale(1.02);
     box-shadow: 
-        0 32px 96px rgba(99, 102, 241, 0.5),
-        0 0 80px rgba(99, 102, 241, 0.4);
+        0 18px 52px rgba(99, 102, 241, 0.4),
+        0 0 40px rgba(99, 102, 241, 0.3);
 }
 
 .song-card:nth-child(2):hover {
-    transform: translateY(-12px) scale(1.02);
+    transform: translateY(-5px) scale(1.01);
     box-shadow: 
-        0 24px 80px rgba(236, 72, 153, 0.4),
-        0 0 60px rgba(236, 72, 153, 0.3);
+        0 14px 44px rgba(236, 72, 153, 0.35),
+        0 0 30px rgba(236, 72, 153, 0.25);
 }
 
 .song-link {
@@ -1079,39 +1085,39 @@ h1::before {
 .song-button {
     display: flex;
     align-items: center;
-    gap: 50px;
+    gap: 25px;
     cursor: pointer;
     position: relative;
     z-index: 1;
 }
 
 .song-image {
-    width: 160px;
-    height: 160px;
-    border-radius: 28px;
+    width: 90px;
+    height: 90px;
+    border-radius: 18px;
     object-fit: cover;
     box-shadow: 
-        0 20px 48px rgba(0, 0, 0, 0.7),
-        0 0 0 1.5px rgba(255, 255, 255, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        0 8px 24px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     flex-shrink: 0;
     position: relative;
 }
 
 .song-card:nth-child(1) .song-image {
-    width: 175px;
-    height: 175px;
+    width: 95px;
+    height: 95px;
 }
 
 .song-card:nth-child(2) .song-image {
-    width: 150px;
-    height: 150px;
+    width: 85px;
+    height: 85px;
 }
 
 .song-card:nth-child(3) .song-image {
-    width: 165px;
-    height: 165px;
+    width: 92px;
+    height: 92px;
 }
 
 .song-image::after {
@@ -1132,12 +1138,12 @@ h1::before {
 }
 
 .song-button:hover .song-image {
-    transform: scale(1.22) rotate(8deg);
+    transform: scale(1.15) rotate(5deg);
     box-shadow: 
-        0 24px 64px rgba(99, 102, 241, 0.6),
-        0 0 0 2.5px rgba(255, 255, 255, 0.25),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3),
-        0 0 40px rgba(99, 102, 241, 0.4);
+        0 12px 32px rgba(99, 102, 241, 0.5),
+        0 0 0 2px rgba(255, 255, 255, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25),
+        0 0 25px rgba(99, 102, 241, 0.3);
 }
 
 .song-info {
@@ -1146,13 +1152,13 @@ h1::before {
 }
 
 .song-info h2 {
-    font-size: 44px;
+    font-size: 26px;
     color: #fff;
-    margin-bottom: 18px;
-    font-weight: 900;
-    letter-spacing: -1.5px;
-    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
-    transition: all 0.5s ease;
+    margin-bottom: 10px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+    transition: all 0.4s ease;
     background: linear-gradient(135deg, #fff 0%, #e0e0e0 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -1160,11 +1166,11 @@ h1::before {
 }
 
 .song-card:nth-child(1) .song-info h2 {
-    font-size: 48px;
+    font-size: 28px;
 }
 
 .song-card:nth-child(2) .song-info h2 {
-    font-size: 42px;
+    font-size: 24px;
 }
 
 .song-card:hover .song-info h2 {
@@ -1181,11 +1187,11 @@ h1::before {
 }
 
 .song-info p {
-    font-size: 20px;
+    font-size: 14px;
     color: #b8b8b8;
     font-style: italic;
-    line-height: 1.8;
-    transition: color 0.5s ease;
+    line-height: 1.5;
+    transition: color 0.4s ease;
     font-weight: 400;
 }
 
@@ -1438,13 +1444,13 @@ h1::before {
             
     .about-button {
         align-self: flex-end;
-        padding: 9px 16px;
-        font-size: 12px;
+        padding: 4px 10px;
+        font-size: 9px;
     }
     
     .about-button:first-of-type {
-        padding: 10px 18px;
-        font-size: 12px;
+        padding: 5px 11px;
+        font-size: 9px;
     }
 
     h1 {
@@ -1464,14 +1470,14 @@ h1::before {
     }
 
     .song-card {
-        padding: 38px 30px;
-        margin-bottom: 32px;
+        padding: 20px;
+        margin-bottom: 20px;
     }
 
     .song-button {
         flex-direction: column;
         text-align: center;
-        gap: 30px;
+        gap: 15px;
     }
 
     .song-info {
@@ -1479,17 +1485,17 @@ h1::before {
     }
 
     .song-image {
-        width: 140px;
-        height: 140px;
+        width: 80px;
+        height: 80px;
         margin: 0 auto;
     }
 
     .song-info h2 {
-        font-size: 36px;
+        font-size: 22px;
     }
 
     .song-info p {
-        font-size: 18px;
+        font-size: 13px;
     }
 
     .intro-section {
