@@ -29,6 +29,20 @@ function showMenu() {
     if (whackamoleGame) whackamoleGame.stop();
     if (platformerGame) platformerGame.stop();
     if (racingGame) racingGame.stop();
+    if (pacmanGame) pacmanGame.stop();
+    if (froggerGame) froggerGame.stop();
+    if (minesweeperGame) minesweeperGame.stop();
+    if (sudokuGame) sudokuGame.stop();
+    if (towerdefenseGame) towerdefenseGame.stop();
+    if (match3Game) match3Game.stop();
+    if (doodlejumpGame) doodlejumpGame.stop();
+    if (typingGame) typingGame.stop();
+    if (chessGame) chessGame.stop();
+    if (hangmanGame) hangmanGame.stop();
+    if (connect4Game) connect4Game.stop();
+    if (solitaireGame) solitaireGame.stop();
+    if (bubbleshooterGame) bubbleshooterGame.stop();
+    if (fruitslicerGame) fruitslicerGame.stop();
     
     document.getElementById('gameMenu').style.display = 'flex';
     document.getElementById('snakeGame').style.display = 'none';
@@ -47,6 +61,17 @@ function showMenu() {
     document.getElementById('whackamoleGame').style.display = 'none';
     document.getElementById('platformerGame').style.display = 'none';
     document.getElementById('racingGame').style.display = 'none';
+    document.getElementById('pacmanGame').style.display = 'none';
+    document.getElementById('froggerGame').style.display = 'none';
+    document.getElementById('minesweeperGame').style.display = 'none';
+    document.getElementById('sudokuGame').style.display = 'none';
+    document.getElementById('towerdefenseGame').style.display = 'none';
+    document.getElementById('match3Game').style.display = 'none';
+    document.getElementById('doodlejumpGame').style.display = 'none';
+    document.getElementById('typingGame').style.display = 'none';
+    document.getElementById('chessGame').style.display = 'none';
+    document.getElementById('hangmanGame').style.display = 'none';
+    document.getElementById('asteroidsGame').style.display = 'none';
 }
 
 function showGame(gameName) {
@@ -67,6 +92,20 @@ function showGame(gameName) {
     document.getElementById('whackamoleGame').style.display = 'none';
     document.getElementById('platformerGame').style.display = 'none';
     document.getElementById('racingGame').style.display = 'none';
+    document.getElementById('pacmanGame').style.display = 'none';
+    document.getElementById('froggerGame').style.display = 'none';
+    document.getElementById('minesweeperGame').style.display = 'none';
+    document.getElementById('sudokuGame').style.display = 'none';
+    document.getElementById('towerdefenseGame').style.display = 'none';
+    document.getElementById('match3Game').style.display = 'none';
+    document.getElementById('doodlejumpGame').style.display = 'none';
+    document.getElementById('typingGame').style.display = 'none';
+    document.getElementById('chessGame').style.display = 'none';
+    document.getElementById('hangmanGame').style.display = 'none';
+    document.getElementById('connect4Game').style.display = 'none';
+    document.getElementById('solitaireGame').style.display = 'none';
+    document.getElementById('bubbleshooterGame').style.display = 'none';
+    document.getElementById('fruitslicerGame').style.display = 'none';
     
     document.getElementById(gameName + 'Game').style.display = 'block';
     
@@ -87,6 +126,20 @@ function showGame(gameName) {
     if (gameName === 'whackamole' && whackamoleGame) whackamoleGame.init();
     if (gameName === 'platformer' && platformerGame) platformerGame.init();
     if (gameName === 'racing' && racingGame) racingGame.init();
+    if (gameName === 'pacman' && pacmanGame) pacmanGame.init();
+    if (gameName === 'frogger' && froggerGame) froggerGame.init();
+    if (gameName === 'minesweeper' && minesweeperGame) minesweeperGame.init();
+    if (gameName === 'sudoku' && sudokuGame) sudokuGame.init();
+    if (gameName === 'towerdefense' && towerdefenseGame) towerdefenseGame.init();
+    if (gameName === 'match3' && match3Game) match3Game.init();
+    if (gameName === 'doodlejump' && doodlejumpGame) doodlejumpGame.init();
+    if (gameName === 'typing' && typingGame) typingGame.init();
+    if (gameName === 'chess' && chessGame) chessGame.init();
+    if (gameName === 'hangman' && hangmanGame) hangmanGame.init();
+    if (gameName === 'connect4' && connect4Game) connect4Game.init();
+    if (gameName === 'solitaire' && solitaireGame) solitaireGame.init();
+    if (gameName === 'bubbleshooter' && bubbleshooterGame) bubbleshooterGame.init();
+    if (gameName === 'fruitslicer' && fruitslicerGame) fruitslicerGame.init();
 }
 
 // Game card click handlers
@@ -4021,6 +4074,1915 @@ const racingGame = {
         this.restart();
     }
 };
+
+// ==================== NEW HIGH-QUALITY MINIGAMES ====================
+
+// ==================== PAC-MAN GAME ====================
+const pacmanGame = {
+    canvas: null,
+    ctx: null,
+    gridSize: 20,
+    pacman: {x: 10, y: 15, dir: 0, nextDir: 0, mouth: 0, speed: 0.15},
+    ghosts: [],
+    dots: [],
+    score: 0,
+    lives: 3,
+    level: 1,
+    highScore: 0,
+    gameLoop: null,
+    paused: false,
+    maze: [],
+    
+    init() {
+        this.canvas = document.getElementById('pacmanCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.highScore = parseInt(localStorage.getItem('pacmanHighScore') || '0');
+        document.getElementById('pacmanHighScore').textContent = this.highScore;
+        this.createMaze();
+        this.restart();
+        this.setupControls();
+    },
+    
+    createMaze() {
+        // Simple maze layout
+        this.maze = [
+            '####################',
+            '#..........#........#',
+            '#.##.###.#.##.###.##.#',
+            '#....................#',
+            '#.##.#.########.#.##.#',
+            '#....#....##....#....#',
+            '####.####.##.####.####',
+            '   #.#........#.#',
+            '####.#.######.#.####',
+            '#......#....#......#',
+            '#.##.####..####.##.#',
+            '#....#..........#....#',
+            '####.#.########.#.####',
+            '   #.#........#.#',
+            '####.#.######.#.####',
+            '#....................#',
+            '#.##.###.#.##.###.##.#',
+            '#....#....##....#....#',
+            '####################'
+        ];
+        
+        this.dots = [];
+        for (let y = 0; y < this.maze.length; y++) {
+            for (let x = 0; x < this.maze[y].length; x++) {
+                if (this.maze[y][x] === '.') {
+                    this.dots.push({x: x, y: y, eaten: false});
+                }
+            }
+        }
+    },
+    
+    setupControls() {
+        if (this.keyHandler) document.removeEventListener('keydown', this.keyHandler);
+        this.keyHandler = (e) => {
+            const gameScreen = document.getElementById('pacmanGame');
+            if (!gameScreen || gameScreen.style.display === 'none') return;
+            if (this.paused && e.key !== 'p' && e.key !== 'P') return;
+            if (e.key === 'p' || e.key === 'P') { this.pause(); return; }
+            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') this.pacman.nextDir = 0;
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.pacman.nextDir = 1;
+            if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') this.pacman.nextDir = 2;
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') this.pacman.nextDir = 3;
+        };
+        document.addEventListener('keydown', this.keyHandler);
+    },
+    
+    restart() {
+        cancelAnimationFrame(this.gameLoop);
+        this.pacman = {x: 10, y: 15, dir: 0, nextDir: 0, mouth: 0, speed: isHardcore2() ? 0.25 : 0.15};
+        this.score = 0;
+        this.lives = 3;
+        this.level = 1;
+        this.paused = false;
+        this.dots.forEach(dot => dot.eaten = false);
+        this.createGhosts();
+        this.updateStats();
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    },
+    
+    createGhosts() {
+        this.ghosts = [
+            {x: 10, y: 9, dir: 0, color: '#ff0000'},
+            {x: 9, y: 9, dir: 1, color: '#ffb8ff'},
+            {x: 11, y: 9, dir: 2, color: '#00ffff'},
+            {x: 10, y: 8, dir: 3, color: '#ffb851'}
+        ];
+    },
+    
+    update() {
+        if (this.paused) {
+            this.draw();
+            return;
+        }
+        
+        // Update pacman
+        const speed = isHardcore2() ? 0.25 : 0.15;
+        this.pacman.mouth = (this.pacman.mouth + 0.2) % (Math.PI * 2);
+        
+        // Try to change direction
+        if (this.canMove(this.pacman.x, this.pacman.y, this.pacman.nextDir)) {
+            this.pacman.dir = this.pacman.nextDir;
+        }
+        
+        if (this.canMove(this.pacman.x, this.pacman.y, this.pacman.dir)) {
+            const dirs = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+            this.pacman.x += dirs[this.pacman.dir][0] * speed;
+            this.pacman.y += dirs[this.pacman.dir][1] * speed;
+        }
+        
+        // Wrap around
+        if (this.pacman.x < 0) this.pacman.x = 19;
+        if (this.pacman.x >= 20) this.pacman.x = 0;
+        
+        // Check dots
+        this.dots.forEach(dot => {
+            if (!dot.eaten && Math.floor(this.pacman.x) === dot.x && Math.floor(this.pacman.y) === dot.y) {
+                dot.eaten = true;
+                this.score += 10;
+                this.updateStats();
+            }
+        });
+        
+        // Check win
+        if (this.dots.every(dot => dot.eaten)) {
+            this.level++;
+            this.createMaze();
+            this.createGhosts();
+        }
+        
+        // Update ghosts
+        this.ghosts.forEach(ghost => {
+            const dirs = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+            if (Math.random() < 0.1) {
+                ghost.dir = Math.floor(Math.random() * 4);
+            }
+            if (this.canMove(ghost.x, ghost.y, ghost.dir)) {
+                ghost.x += dirs[ghost.dir][0] * (isHardcore2() ? 0.2 : 0.12);
+                ghost.y += dirs[ghost.dir][1] * (isHardcore2() ? 0.2 : 0.12);
+            }
+            
+            // Check collision
+            if (Math.abs(this.pacman.x - ghost.x) < 0.5 && Math.abs(this.pacman.y - ghost.y) < 0.5) {
+                this.lives--;
+                if (this.lives <= 0) {
+                    this.gameOver();
+                } else {
+                    this.pacman = {x: 10, y: 15, dir: 0, nextDir: 0, mouth: 0, speed: speed};
+                    this.createGhosts();
+                }
+                this.updateStats();
+            }
+        });
+        
+        this.draw();
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    },
+    
+    canMove(x, y, dir) {
+        const dirs = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+        const newX = Math.floor(x + dirs[dir][0]);
+        const newY = Math.floor(y + dirs[dir][1]);
+        if (newY < 0 || newY >= this.maze.length) return true;
+        if (newX < 0 || newX >= this.maze[newY].length) return true;
+        return this.maze[newY][newX] !== '#';
+    },
+    
+    draw() {
+        this.ctx.fillStyle = '#000';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        const cellSize = this.canvas.width / 20;
+        
+        // Draw maze
+        this.ctx.fillStyle = '#0000ff';
+        for (let y = 0; y < this.maze.length; y++) {
+            for (let x = 0; x < this.maze[y].length; x++) {
+                if (this.maze[y][x] === '#') {
+                    this.ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                }
+            }
+        }
+        
+        // Draw dots
+        this.ctx.fillStyle = '#ffff00';
+        this.dots.forEach(dot => {
+            if (!dot.eaten) {
+                this.ctx.beginPath();
+                this.ctx.arc((dot.x + 0.5) * cellSize, (dot.y + 0.5) * cellSize, 3, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+        });
+        
+        // Draw pacman
+        this.ctx.fillStyle = '#ffff00';
+        this.ctx.beginPath();
+        const px = (this.pacman.x + 0.5) * cellSize;
+        const py = (this.pacman.y + 0.5) * cellSize;
+        const dirs = [Math.PI * 1.5, 0, Math.PI * 0.5, Math.PI];
+        this.ctx.arc(px, py, cellSize * 0.4, dirs[this.pacman.dir] + this.pacman.mouth, dirs[this.pacman.dir] + Math.PI * 2 - this.pacman.mouth);
+        this.ctx.lineTo(px, py);
+        this.ctx.fill();
+        
+        // Draw ghosts
+        this.ghosts.forEach(ghost => {
+            this.ctx.fillStyle = ghost.color;
+            this.ctx.beginPath();
+            this.ctx.arc((ghost.x + 0.5) * cellSize, (ghost.y + 0.5) * cellSize, cellSize * 0.4, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+        
+        if (this.paused) {
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = 'bold 36px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2);
+        }
+    },
+    
+    updateStats() {
+        document.getElementById('pacmanScore').textContent = this.score;
+        document.getElementById('pacmanLives').textContent = this.lives;
+        document.getElementById('pacmanLevel').textContent = this.level;
+    },
+    
+    pause() {
+        this.paused = !this.paused;
+    },
+    
+    stop() {
+        cancelAnimationFrame(this.gameLoop);
+    },
+    
+    gameOver() {
+        cancelAnimationFrame(this.gameLoop);
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('pacmanHighScore', this.highScore);
+            document.getElementById('pacmanHighScore').textContent = this.highScore;
+        }
+        alert(`Game Over! Score: ${this.score} | Level: ${this.level}`);
+        this.restart();
+    }
+};
+
+// ==================== FROGGER GAME ====================
+const froggerGame = {
+    canvas: null,
+    ctx: null,
+    frog: {x: 300, y: 650, width: 30, height: 30},
+    cars: [],
+    logs: [],
+    score: 0,
+    lives: 3,
+    level: 1,
+    highScore: 0,
+    gameLoop: null,
+    paused: false,
+    
+    init() {
+        this.canvas = document.getElementById('froggerCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.highScore = parseInt(localStorage.getItem('froggerHighScore') || '0');
+        document.getElementById('froggerHighScore').textContent = this.highScore;
+        this.restart();
+        this.setupControls();
+    },
+    
+    setupControls() {
+        if (this.keyHandler) document.removeEventListener('keydown', this.keyHandler);
+        this.keyHandler = (e) => {
+            const gameScreen = document.getElementById('froggerGame');
+            if (!gameScreen || gameScreen.style.display === 'none') return;
+            if (this.paused && e.key !== 'p' && e.key !== 'P') return;
+            if (e.key === 'p' || e.key === 'P') { this.pause(); return; }
+            const move = isHardcore2() ? 40 : 50;
+            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+                this.frog.y -= move;
+                if (this.frog.y < 0) { this.score += 100; this.frog.y = 650; this.level++; }
+            }
+            if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') this.frog.y = Math.min(this.frog.y + move, 650);
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') this.frog.x = Math.max(this.frog.x - move, 0);
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.frog.x = Math.min(this.frog.x + move, this.canvas.width - this.frog.width);
+        };
+        document.addEventListener('keydown', this.keyHandler);
+    },
+    
+    restart() {
+        cancelAnimationFrame(this.gameLoop);
+        this.frog = {x: 300, y: 650, width: 30, height: 30};
+        this.score = 0;
+        this.lives = 3;
+        this.level = 1;
+        this.paused = false;
+        this.createCars();
+        this.createLogs();
+        this.updateStats();
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    },
+    
+    createCars() {
+        this.cars = [];
+        const speeds = isHardcore2() ? [4, -5, 6, -4, 5] : [2, -3, 3, -2, 2.5];
+        for (let i = 0; i < 5; i++) {
+            for (let j = 0; j < 3; j++) {
+                this.cars.push({
+                    x: j * 250,
+                    y: 550 - i * 80,
+                    width: 60,
+                    height: 30,
+                    speed: speeds[i],
+                    color: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff'][i]
+                });
+            }
+        }
+    },
+    
+    createLogs() {
+        this.logs = [];
+        const speeds = isHardcore2() ? [2, -2.5, 2.2, -2, 2.3] : [1, -1.5, 1.2, -1, 1.3];
+        for (let i = 0; i < 5; i++) {
+            for (let j = 0; j < 2; j++) {
+                this.logs.push({
+                    x: j * 350,
+                    y: 200 - i * 60,
+                    width: 120,
+                    height: 30,
+                    speed: speeds[i]
+                });
+            }
+        }
+    },
+    
+    update() {
+        if (this.paused) {
+            this.draw();
+            return;
+        }
+        
+        // Update cars
+        this.cars.forEach(car => {
+            car.x += car.speed;
+            if (car.speed > 0 && car.x > this.canvas.width) car.x = -car.width;
+            if (car.speed < 0 && car.x < -car.width) car.x = this.canvas.width;
+            
+            // Check collision
+            if (this.frog.y > 400 && this.frog.y < 600) {
+                if (this.frog.x < car.x + car.width && this.frog.x + this.frog.width > car.x &&
+                    this.frog.y < car.y + car.height && this.frog.y + this.frog.height > car.y) {
+                    this.lives--;
+                    if (this.lives <= 0) this.gameOver();
+                    else this.frog = {x: 300, y: 650, width: 30, height: 30};
+                    this.updateStats();
+                }
+            }
+        });
+        
+        // Update logs and check if on log
+        let onLog = false;
+        if (this.frog.y < 500 && this.frog.y > 100) {
+            this.logs.forEach(log => {
+                log.x += log.speed;
+                if (log.speed > 0 && log.x > this.canvas.width) log.x = -log.width;
+                if (log.speed < 0 && log.x < -log.width) log.x = this.canvas.width;
+                
+                if (this.frog.x < log.x + log.width && this.frog.x + this.frog.width > log.x &&
+                    this.frog.y < log.y + log.height && this.frog.y + this.frog.height > log.y) {
+                    onLog = true;
+                    this.frog.x += log.speed;
+                }
+            });
+            
+            if (!onLog) {
+                this.lives--;
+                if (this.lives <= 0) this.gameOver();
+                else this.frog = {x: 300, y: 650, width: 30, height: 30};
+                this.updateStats();
+            }
+        }
+        
+        this.draw();
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    },
+    
+    draw() {
+        // Background
+        this.ctx.fillStyle = '#87CEEB';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Road
+        this.ctx.fillStyle = '#333';
+        this.ctx.fillRect(0, 400, this.canvas.width, 200);
+        for (let i = 0; i < 10; i++) {
+            this.ctx.fillStyle = '#ffff00';
+            this.ctx.fillRect(i * 60, 495, 30, 10);
+        }
+        
+        // Water
+        this.ctx.fillStyle = '#1e90ff';
+        this.ctx.fillRect(0, 100, this.canvas.width, 300);
+        
+        // Safe zone
+        this.ctx.fillStyle = '#90EE90';
+        this.ctx.fillRect(0, 0, this.canvas.width, 100);
+        this.ctx.fillRect(0, 600, this.canvas.width, 100);
+        
+        // Draw logs
+        this.logs.forEach(log => {
+            this.ctx.fillStyle = '#8B4513';
+            this.ctx.fillRect(log.x, log.y, log.width, log.height);
+        });
+        
+        // Draw cars
+        this.cars.forEach(car => {
+            this.ctx.fillStyle = car.color;
+            this.ctx.fillRect(car.x, car.y, car.width, car.height);
+        });
+        
+        // Draw frog
+        this.ctx.fillStyle = '#00ff00';
+        this.ctx.fillRect(this.frog.x, this.frog.y, this.frog.width, this.frog.height);
+        this.ctx.fillStyle = '#000';
+        this.ctx.fillRect(this.frog.x + 5, this.frog.y + 5, 8, 8);
+        this.ctx.fillRect(this.frog.x + 17, this.frog.y + 5, 8, 8);
+        
+        if (this.paused) {
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = 'bold 36px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2);
+        }
+    },
+    
+    updateStats() {
+        document.getElementById('froggerScore').textContent = this.score;
+        document.getElementById('froggerLives').textContent = this.lives;
+        document.getElementById('froggerLevel').textContent = this.level;
+    },
+    
+    pause() {
+        this.paused = !this.paused;
+    },
+    
+    stop() {
+        cancelAnimationFrame(this.gameLoop);
+    },
+    
+    gameOver() {
+        cancelAnimationFrame(this.gameLoop);
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('froggerHighScore', this.highScore);
+            document.getElementById('froggerHighScore').textContent = this.highScore;
+        }
+        alert(`Game Over! Score: ${this.score} | Level: ${this.level}`);
+        this.restart();
+    }
+};
+
+// ==================== MINESWEEPER GAME ====================
+const minesweeperGame = {
+    board: null,
+    grid: [],
+    rows: 9,
+    cols: 9,
+    mines: 10,
+    revealed: 0,
+    flagged: 0,
+    gameOver: false,
+    gameWon: false,
+    timer: 0,
+    timerInterval: null,
+    bestTime: Infinity,
+    
+    init() {
+        this.board = document.getElementById('minesweeperBoard');
+        this.bestTime = parseInt(localStorage.getItem('minesweeperBest') || '999999');
+        if (this.bestTime === 999999) document.getElementById('minesweeperBest').textContent = '-';
+        else document.getElementById('minesweeperBest').textContent = this.bestTime;
+        this.restart();
+    },
+    
+    restart() {
+        this.gameOver = false;
+        this.gameWon = false;
+        this.revealed = 0;
+        this.flagged = 0;
+        this.timer = 0;
+        clearInterval(this.timerInterval);
+        this.timerInterval = setInterval(() => {
+            if (!this.gameOver && !this.gameWon) {
+                this.timer++;
+                document.getElementById('minesweeperTime').textContent = this.timer;
+            }
+        }, 1000);
+        
+        // Adjust difficulty for hardcore 2
+        if (isHardcore2()) {
+            this.rows = 16;
+            this.cols = 16;
+            this.mines = 40;
+        } else {
+            this.rows = 9;
+            this.cols = 9;
+            this.mines = 10;
+        }
+        
+        this.grid = [];
+        for (let r = 0; r < this.rows; r++) {
+            this.grid[r] = [];
+            for (let c = 0; c < this.cols; c++) {
+                this.grid[r][c] = {mine: false, revealed: false, flagged: false, count: 0};
+            }
+        }
+        
+        // Place mines
+        let placed = 0;
+        while (placed < this.mines) {
+            const r = Math.floor(Math.random() * this.rows);
+            const c = Math.floor(Math.random() * this.cols);
+            if (!this.grid[r][c].mine) {
+                this.grid[r][c].mine = true;
+                placed++;
+            }
+        }
+        
+        // Calculate counts
+        for (let r = 0; r < this.rows; r++) {
+            for (let c = 0; c < this.cols; c++) {
+                if (!this.grid[r][c].mine) {
+                    let count = 0;
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            if (r + dr >= 0 && r + dr < this.rows && c + dc >= 0 && c + dc < this.cols) {
+                                if (this.grid[r + dr][c + dc].mine) count++;
+                            }
+                        }
+                    }
+                    this.grid[r][c].count = count;
+                }
+            }
+        }
+        
+        this.render();
+    },
+    
+    reveal(r, c) {
+        if (this.gameOver || this.gameWon || this.grid[r][c].revealed || this.grid[r][c].flagged) return;
+        
+        this.grid[r][c].revealed = true;
+        this.revealed++;
+        
+        if (this.grid[r][c].mine) {
+            this.gameOver = true;
+            clearInterval(this.timerInterval);
+            alert('Game Over! You hit a mine!');
+            this.render();
+            return;
+        }
+        
+        if (this.grid[r][c].count === 0) {
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    if (r + dr >= 0 && r + dr < this.rows && c + dc >= 0 && c + dc < this.cols) {
+                        if (!this.grid[r + dr][c + dc].revealed) {
+                            this.reveal(r + dr, c + dc);
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (this.revealed === this.rows * this.cols - this.mines) {
+            this.gameWon = true;
+            clearInterval(this.timerInterval);
+            if (this.timer < this.bestTime) {
+                this.bestTime = this.timer;
+                localStorage.setItem('minesweeperBest', this.bestTime);
+                document.getElementById('minesweeperBest').textContent = this.bestTime;
+            }
+            alert(`You Win! Time: ${this.timer}s`);
+        }
+        
+        this.render();
+    },
+    
+    toggleFlag(r, c) {
+        if (this.gameOver || this.gameWon || this.grid[r][c].revealed) return;
+        this.grid[r][c].flagged = !this.grid[r][c].flagged;
+        this.flagged += this.grid[r][c].flagged ? 1 : -1;
+        document.getElementById('minesweeperMines').textContent = this.mines - this.flagged;
+        this.render();
+    },
+    
+    render() {
+        this.board.innerHTML = '';
+        this.board.style.gridTemplateColumns = `repeat(${this.cols}, 1fr)`;
+        
+        for (let r = 0; r < this.rows; r++) {
+            for (let c = 0; c < this.cols; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'minesweeper-cell';
+                if (this.grid[r][c].revealed) {
+                    cell.classList.add('revealed');
+                    if (this.grid[r][c].mine) {
+                        cell.textContent = '💣';
+                        cell.style.backgroundColor = '#ff0000';
+                    } else if (this.grid[r][c].count > 0) {
+                        cell.textContent = this.grid[r][c].count;
+                        const colors = ['', '#0000ff', '#008000', '#ff0000', '#800080', '#800000', '#008080', '#000000', '#808080'];
+                        cell.style.color = colors[this.grid[r][c].count] || '#000';
+                    }
+                } else if (this.grid[r][c].flagged) {
+                    cell.textContent = '🚩';
+                    cell.classList.add('flagged');
+                }
+                
+                cell.addEventListener('click', () => this.reveal(r, c));
+                cell.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    this.toggleFlag(r, c);
+                });
+                
+                this.board.appendChild(cell);
+            }
+        }
+    },
+    
+    changeDifficulty() {
+        const diff = prompt('Enter difficulty (easy: 9x9/10, medium: 16x16/40, hard: 30x16/99)');
+        if (diff === 'easy') { this.rows = 9; this.cols = 9; this.mines = 10; }
+        else if (diff === 'medium') { this.rows = 16; this.cols = 16; this.mines = 40; }
+        else if (diff === 'hard') { this.rows = 16; this.cols = 30; this.mines = 99; }
+        this.restart();
+    },
+    
+    stop() {
+        clearInterval(this.timerInterval);
+    }
+};
+
+// ==================== DOODLE JUMP GAME ====================
+const doodlejumpGame = {
+    canvas: null,
+    ctx: null,
+    player: {x: 200, y: 500, width: 30, height: 40, vx: 0, vy: 0},
+    platforms: [],
+    cameraY: 0,
+    score: 0,
+    best: 0,
+    gameLoop: null,
+    
+    init() {
+        this.canvas = document.getElementById('djCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.best = parseInt(localStorage.getItem('djBest') || '0');
+        document.getElementById('djBest').textContent = this.best;
+        this.restart();
+        this.setupControls();
+    },
+    
+    setupControls() {
+        if (this.keyHandler) document.removeEventListener('keydown', this.keyHandler);
+        this.keyHandler = (e) => {
+            const gameScreen = document.getElementById('doodlejumpGame');
+            if (!gameScreen || gameScreen.style.display === 'none') return;
+            const speed = isHardcore2() ? 6 : 4;
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') this.player.vx = -speed;
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.player.vx = speed;
+        };
+        document.addEventListener('keydown', this.keyHandler);
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A' || e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                this.player.vx = 0;
+            }
+        });
+    },
+    
+    restart() {
+        cancelAnimationFrame(this.gameLoop);
+        this.player = {x: 200, y: 500, width: 30, height: 40, vx: 0, vy: 0};
+        this.platforms = [];
+        this.cameraY = 0;
+        this.score = 0;
+        for (let i = 0; i < 20; i++) {
+            this.platforms.push({
+                x: Math.random() * (this.canvas.width - 100),
+                y: 600 - i * 80,
+                width: 100,
+                height: 15
+            });
+        }
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    },
+    
+    update() {
+        // Gravity
+        this.player.vy += 0.5;
+        this.player.y += this.player.vy;
+        this.player.x += this.player.vx;
+        
+        // Wrap around horizontally
+        if (this.player.x < 0) this.player.x = this.canvas.width;
+        if (this.player.x > this.canvas.width) this.player.x = 0;
+        
+        // Check platform collision
+        this.platforms.forEach(platform => {
+            if (this.player.vy > 0 && 
+                this.player.x < platform.x + platform.width &&
+                this.player.x + this.player.width > platform.x &&
+                this.player.y < platform.y + platform.height &&
+                this.player.y + this.player.height > platform.y) {
+                this.player.vy = isHardcore2() ? -18 : -15;
+            }
+        });
+        
+        // Camera follows player up
+        if (this.player.y < this.cameraY + 200) {
+            this.cameraY = this.player.y - 200;
+            this.score = Math.max(this.score, Math.floor(-this.cameraY / 10));
+            document.getElementById('djScore').textContent = this.score;
+            document.getElementById('djHeight').textContent = Math.floor(-this.cameraY / 10);
+        }
+        
+        // Generate new platforms
+        while (this.platforms.length < 20) {
+            const highest = Math.min(...this.platforms.map(p => p.y));
+            this.platforms.push({
+                x: Math.random() * (this.canvas.width - 100),
+                y: highest - 80,
+                width: 100,
+                height: 15
+            });
+        }
+        
+        // Remove old platforms
+        this.platforms = this.platforms.filter(p => p.y < this.cameraY + 800);
+        
+        // Game over
+        if (this.player.y > this.cameraY + 600) {
+            if (this.score > this.best) {
+                this.best = this.score;
+                localStorage.setItem('djBest', this.best);
+                document.getElementById('djBest').textContent = this.best;
+            }
+            alert(`Game Over! Height: ${Math.floor(-this.cameraY / 10)}m | Score: ${this.score}`);
+            this.restart();
+            return;
+        }
+        
+        this.draw();
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    },
+    
+    draw() {
+        this.ctx.fillStyle = '#87CEEB';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Draw platforms
+        this.ctx.fillStyle = '#90EE90';
+        this.platforms.forEach(platform => {
+            const screenY = platform.y - this.cameraY;
+            if (screenY > -50 && screenY < this.canvas.height + 50) {
+                this.ctx.fillRect(platform.x, screenY, platform.width, platform.height);
+            }
+        });
+        
+        // Draw player
+        const screenY = this.player.y - this.cameraY;
+        this.ctx.fillStyle = '#ffff00';
+        this.ctx.fillRect(this.player.x, screenY, this.player.width, this.player.height);
+        this.ctx.fillStyle = '#000';
+        this.ctx.fillRect(this.player.x + 5, screenY + 10, 8, 8);
+        this.ctx.fillRect(this.player.x + 17, screenY + 10, 8, 8);
+    },
+    
+    stop() {
+        cancelAnimationFrame(this.gameLoop);
+    }
+};
+
+// ==================== TYPING TEST GAME ====================
+const typingGame = {
+    texts: [
+        "The quick brown fox jumps over the lazy dog.",
+        "Programming is the art of telling another human what one wants the computer to do.",
+        "Code is like humor. When you have to explain it, it's bad.",
+        "First, solve the problem. Then, write the code.",
+        "Any fool can write code that a computer can understand. Good programmers write code that humans can understand."
+    ],
+    currentText: '',
+    userInput: '',
+    startTime: 0,
+    timer: 60,
+    timerInterval: null,
+    wpm: 0,
+    accuracy: 100,
+    best: 0,
+    wordsTyped: 0,
+    charsTyped: 0,
+    charsCorrect: 0,
+    active: false,
+    
+    init() {
+        this.best = parseInt(localStorage.getItem('typingBest') || '0');
+        document.getElementById('typingBest').textContent = this.best;
+        this.restart();
+    },
+    
+    restart() {
+        this.currentText = this.texts[Math.floor(Math.random() * this.texts.length)];
+        this.userInput = '';
+        this.timer = 60;
+        this.wpm = 0;
+        this.accuracy = 100;
+        this.wordsTyped = 0;
+        this.charsTyped = 0;
+        this.charsCorrect = 0;
+        this.active = false;
+        clearInterval(this.timerInterval);
+        document.getElementById('typingText').innerHTML = this.currentText.split('').map((char, i) => 
+            `<span class="char-${i}">${char}</span>`
+        ).join('');
+        document.getElementById('typingInput').value = '';
+        document.getElementById('typingInput').disabled = false;
+        this.updateDisplay();
+    },
+    
+    start() {
+        this.active = true;
+        this.startTime = Date.now();
+        document.getElementById('typingInput').focus();
+        this.timerInterval = setInterval(() => {
+            if (this.active) {
+                this.timer--;
+                document.getElementById('typingTime').textContent = this.timer;
+                if (this.timer <= 0) {
+                    this.end();
+                }
+            }
+        }, 1000);
+    },
+    
+    end() {
+        this.active = false;
+        clearInterval(this.timerInterval);
+        document.getElementById('typingInput').disabled = true;
+        if (this.wpm > this.best) {
+            this.best = this.wpm;
+            localStorage.setItem('typingBest', this.best);
+            document.getElementById('typingBest').textContent = this.best;
+        }
+        alert(`Time's up! WPM: ${this.wpm} | Accuracy: ${this.accuracy.toFixed(1)}%`);
+    },
+    
+    updateInput() {
+        const input = document.getElementById('typingInput').value;
+        this.userInput = input;
+        this.charsTyped = input.length;
+        
+        // Update display
+        this.currentText.split('').forEach((char, i) => {
+            const span = document.querySelector(`.char-${i}`);
+            if (i < input.length) {
+                span.className = `char-${i} ${char === input[i] ? 'correct' : 'incorrect'}`;
+            } else {
+                span.className = `char-${i}`;
+            }
+        });
+        
+        // Calculate stats
+        this.charsCorrect = 0;
+        for (let i = 0; i < Math.min(input.length, this.currentText.length); i++) {
+            if (input[i] === this.currentText[i]) this.charsCorrect++;
+        }
+        
+        if (this.active && this.charsTyped > 0) {
+            const timeElapsed = (Date.now() - this.startTime) / 1000 / 60; // minutes
+            this.wordsTyped = input.split(' ').filter(w => w.length > 0).length;
+            this.wpm = Math.floor(this.wordsTyped / timeElapsed) || 0;
+            this.accuracy = (this.charsCorrect / this.charsTyped) * 100;
+        }
+        
+        this.updateDisplay();
+        
+        // Check if complete
+        if (input === this.currentText && this.active) {
+            this.restart();
+            this.start();
+        }
+    },
+    
+    updateDisplay() {
+        document.getElementById('typingWPM').textContent = this.wpm;
+        document.getElementById('typingAccuracy').textContent = Math.floor(this.accuracy);
+        document.getElementById('typingWords').textContent = this.wordsTyped;
+    },
+    
+    stop() {
+        clearInterval(this.timerInterval);
+    }
+};
+
+// Setup typing input handler
+document.addEventListener('DOMContentLoaded', () => {
+    const typingInput = document.getElementById('typingInput');
+    if (typingInput) {
+        typingInput.addEventListener('input', () => {
+            if (typingGame && !typingGame.active) typingGame.start();
+            typingGame.updateInput();
+        });
+    }
+});
+
+// ==================== HANGMAN GAME ====================
+const hangmanGame = {
+    words: ['javascript', 'programming', 'computer', 'algorithm', 'function', 'variable', 'array', 'object', 'string', 'number'],
+    word: '',
+    guessed: [],
+    wrongGuesses: 0,
+    maxWrong: 6,
+    wins: 0,
+    losses: 0,
+    streak: 0,
+    canvas: null,
+    ctx: null,
+    
+    init() {
+        this.canvas = document.getElementById('hangmanCanvas');
+        if (this.canvas) this.ctx = this.canvas.getContext('2d');
+        this.wins = parseInt(localStorage.getItem('hangmanWins') || '0');
+        this.losses = parseInt(localStorage.getItem('hangmanLosses') || '0');
+        this.streak = parseInt(localStorage.getItem('hangmanStreak') || '0');
+        document.getElementById('hangmanWins').textContent = this.wins;
+        document.getElementById('hangmanLosses').textContent = this.losses;
+        document.getElementById('hangmanStreak').textContent = this.streak;
+        this.restart();
+    },
+    
+    restart() {
+        this.word = this.words[Math.floor(Math.random() * this.words.length)];
+        this.guessed = [];
+        this.wrongGuesses = 0;
+        this.createKeyboard();
+        this.updateDisplay();
+        this.drawHangman();
+    },
+    
+    createKeyboard() {
+        const keyboard = document.getElementById('hangmanKeyboard');
+        if (!keyboard) return;
+        keyboard.innerHTML = '';
+        'abcdefghijklmnopqrstuvwxyz'.split('').forEach(letter => {
+            const btn = document.createElement('button');
+            btn.textContent = letter;
+            btn.className = 'hangman-key';
+            btn.addEventListener('click', () => this.guess(letter));
+            keyboard.appendChild(btn);
+        });
+    },
+    
+    guess(letter) {
+        if (this.guessed.includes(letter)) return;
+        this.guessed.push(letter);
+        
+        if (!this.word.includes(letter)) {
+            this.wrongGuesses++;
+            if (this.wrongGuesses >= this.maxWrong) {
+                this.losses++;
+                this.streak = 0;
+                localStorage.setItem('hangmanLosses', this.losses);
+                localStorage.setItem('hangmanStreak', this.streak);
+                document.getElementById('hangmanLosses').textContent = this.losses;
+                document.getElementById('hangmanStreak').textContent = this.streak;
+                alert(`You lost! The word was: ${this.word}`);
+                this.restart();
+                return;
+            }
+        }
+        
+        // Check win
+        if (this.word.split('').every(l => this.guessed.includes(l))) {
+            this.wins++;
+            this.streak++;
+            localStorage.setItem('hangmanWins', this.wins);
+            localStorage.setItem('hangmanStreak', this.streak);
+            document.getElementById('hangmanWins').textContent = this.wins;
+            document.getElementById('hangmanStreak').textContent = this.streak;
+            alert('You won!');
+            this.restart();
+            return;
+        }
+        
+        this.updateDisplay();
+        this.drawHangman();
+    },
+    
+    updateDisplay() {
+        const wordDisplay = document.getElementById('hangmanWord');
+        if (!wordDisplay) return;
+        wordDisplay.textContent = this.word.split('').map(l => this.guessed.includes(l) ? l : '_').join(' ');
+        
+        // Update keyboard
+        document.querySelectorAll('.hangman-key').forEach(btn => {
+            if (this.guessed.includes(btn.textContent)) {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                if (this.word.includes(btn.textContent)) {
+                    btn.style.backgroundColor = '#90EE90';
+                } else {
+                    btn.style.backgroundColor = '#ff6b6b';
+                }
+            }
+        });
+    },
+    
+    drawHangman() {
+        if (!this.ctx) return;
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.strokeStyle = '#000';
+        this.ctx.lineWidth = 3;
+        
+        // Gallows
+        this.ctx.beginPath();
+        this.ctx.moveTo(50, 350);
+        this.ctx.lineTo(150, 350);
+        this.ctx.moveTo(100, 350);
+        this.ctx.lineTo(100, 50);
+        this.ctx.lineTo(200, 50);
+        this.ctx.lineTo(200, 80);
+        this.ctx.stroke();
+        
+        // Draw parts based on wrong guesses
+        if (this.wrongGuesses >= 1) {
+            // Head
+            this.ctx.beginPath();
+            this.ctx.arc(200, 110, 15, 0, Math.PI * 2);
+            this.ctx.stroke();
+        }
+        if (this.wrongGuesses >= 2) {
+            // Body
+            this.ctx.beginPath();
+            this.ctx.moveTo(200, 125);
+            this.ctx.lineTo(200, 200);
+            this.ctx.stroke();
+        }
+        if (this.wrongGuesses >= 3) {
+            // Left arm
+            this.ctx.beginPath();
+            this.ctx.moveTo(200, 150);
+            this.ctx.lineTo(170, 180);
+            this.ctx.stroke();
+        }
+        if (this.wrongGuesses >= 4) {
+            // Right arm
+            this.ctx.beginPath();
+            this.ctx.moveTo(200, 150);
+            this.ctx.lineTo(230, 180);
+            this.ctx.stroke();
+        }
+        if (this.wrongGuesses >= 5) {
+            // Left leg
+            this.ctx.beginPath();
+            this.ctx.moveTo(200, 200);
+            this.ctx.lineTo(170, 250);
+            this.ctx.stroke();
+        }
+        if (this.wrongGuesses >= 6) {
+            // Right leg
+            this.ctx.beginPath();
+            this.ctx.moveTo(200, 200);
+            this.ctx.lineTo(230, 250);
+            this.ctx.stroke();
+        }
+    },
+    
+    stop() {}
+};
+
+// ==================== CONNECT FOUR GAME ====================
+const connect4Game = {
+    board: null,
+    grid: [],
+    currentPlayer: 1, // 1 = Red, 2 = Yellow
+    redWins: 0,
+    yellowWins: 0,
+    gameOver: false,
+    
+    init() {
+        this.board = document.getElementById('connect4Board');
+        this.redWins = parseInt(localStorage.getItem('connect4RedWins') || '0');
+        this.yellowWins = parseInt(localStorage.getItem('connect4YellowWins') || '0');
+        document.getElementById('connect4RedWins').textContent = this.redWins;
+        document.getElementById('connect4YellowWins').textContent = this.yellowWins;
+        this.restart();
+    },
+    
+    restart() {
+        this.grid = [];
+        for (let r = 0; r < 6; r++) {
+            this.grid[r] = [];
+            for (let c = 0; c < 7; c++) {
+                this.grid[r][c] = 0;
+            }
+        }
+        this.currentPlayer = 1;
+        this.gameOver = false;
+        this.render();
+        this.updateStatus();
+    },
+    
+    dropPiece(col) {
+        if (this.gameOver) return;
+        
+        // Find lowest empty row
+        for (let r = 5; r >= 0; r--) {
+            if (this.grid[r][col] === 0) {
+                this.grid[r][col] = this.currentPlayer;
+                
+                if (this.checkWin(r, col)) {
+                    this.gameOver = true;
+                    if (this.currentPlayer === 1) {
+                        this.redWins++;
+                        localStorage.setItem('connect4RedWins', this.redWins);
+                        document.getElementById('connect4RedWins').textContent = this.redWins;
+                        alert('Red wins!');
+                    } else {
+                        this.yellowWins++;
+                        localStorage.setItem('connect4YellowWins', this.yellowWins);
+                        document.getElementById('connect4YellowWins').textContent = this.yellowWins;
+                        alert('Yellow wins!');
+                    }
+                } else if (this.isBoardFull()) {
+                    this.gameOver = true;
+                    alert('Draw!');
+                } else {
+                    this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
+                }
+                
+                this.render();
+                this.updateStatus();
+                return;
+            }
+        }
+    },
+    
+    checkWin(r, c) {
+        const player = this.grid[r][c];
+        const directions = [
+            [[0, 1], [0, -1]], // Horizontal
+            [[1, 0], [-1, 0]], // Vertical
+            [[1, 1], [-1, -1]], // Diagonal \
+            [[1, -1], [-1, 1]] // Diagonal /
+        ];
+        
+        for (let dir of directions) {
+            let count = 1;
+            for (let d of dir) {
+                let nr = r + d[0];
+                let nc = c + d[1];
+                while (nr >= 0 && nr < 6 && nc >= 0 && nc < 7 && this.grid[nr][nc] === player) {
+                    count++;
+                    nr += d[0];
+                    nc += d[1];
+                }
+            }
+            if (count >= 4) return true;
+        }
+        return false;
+    },
+    
+    isBoardFull() {
+        return this.grid[0].every(cell => cell !== 0);
+    },
+    
+    render() {
+        this.board.innerHTML = '';
+        this.board.style.gridTemplateColumns = 'repeat(7, 1fr)';
+        
+        // Column headers
+        for (let c = 0; c < 7; c++) {
+            const header = document.createElement('div');
+            header.className = 'connect4-header';
+            header.textContent = '↓';
+            header.addEventListener('click', () => this.dropPiece(c));
+            this.board.appendChild(header);
+        }
+        
+        // Board cells
+        for (let r = 0; r < 6; r++) {
+            for (let c = 0; c < 7; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'connect4-cell';
+                if (this.grid[r][c] === 1) {
+                    cell.classList.add('red');
+                } else if (this.grid[r][c] === 2) {
+                    cell.classList.add('yellow');
+                }
+                this.board.appendChild(cell);
+            }
+        }
+    },
+    
+    updateStatus() {
+        if (this.gameOver) {
+            document.getElementById('connect4Status').textContent = 'Game Over!';
+        } else {
+            document.getElementById('connect4Status').textContent = 
+                `Player ${this.currentPlayer}'s Turn (${this.currentPlayer === 1 ? 'Red' : 'Yellow'})`;
+        }
+    },
+    
+    stop() {}
+};
+
+// ==================== SOLITAIRE GAME ====================
+const solitaireGame = {
+    board: null,
+    deck: [],
+    tableau: [[], [], [], [], [], [], []],
+    foundations: [[], [], [], []],
+    waste: [],
+    stock: [],
+    selected: null,
+    moves: 0,
+    timer: 0,
+    timerInterval: null,
+    bestTime: Infinity,
+    
+    init() {
+        this.board = document.getElementById('solitaireBoard');
+        this.bestTime = parseInt(localStorage.getItem('solitaireBest') || '999999');
+        if (this.bestTime === 999999) document.getElementById('solitaireBest').textContent = '-';
+        else document.getElementById('solitaireBest').textContent = this.bestTime;
+        this.restart();
+    },
+    
+    restart() {
+        this.moves = 0;
+        this.timer = 0;
+        clearInterval(this.timerInterval);
+        this.timerInterval = setInterval(() => {
+            this.timer++;
+            document.getElementById('solitaireTime').textContent = this.timer;
+        }, 1000);
+        
+        // Create deck
+        const suits = ['♠', '♥', '♦', '♣'];
+        const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+        this.deck = [];
+        for (let suit of suits) {
+            for (let rank of ranks) {
+                this.deck.push({suit, rank, color: (suit === '♥' || suit === '♦') ? 'red' : 'black'});
+            }
+        }
+        
+        // Shuffle
+        for (let i = this.deck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
+        }
+        
+        // Deal to tableau
+        this.tableau = [[], [], [], [], [], [], []];
+        let cardIndex = 0;
+        for (let i = 0; i < 7; i++) {
+            for (let j = 0; j <= i; j++) {
+                const card = this.deck[cardIndex++];
+                card.faceUp = j === i;
+                this.tableau[i].push(card);
+            }
+        }
+        
+        // Remaining cards to stock
+        this.stock = this.deck.slice(cardIndex);
+        this.waste = [];
+        this.foundations = [[], [], [], []];
+        this.selected = null;
+        this.render();
+    },
+    
+    render() {
+        this.board.innerHTML = '';
+        
+        // Stock and waste
+        const stockWaste = document.createElement('div');
+        stockWaste.className = 'solitaire-stock-waste';
+        stockWaste.innerHTML = `
+            <div class="solitaire-pile" onclick="solitaireGame.flipStock()">
+                ${this.stock.length > 0 ? '🂠' : ''}
+            </div>
+            <div class="solitaire-pile" onclick="solitaireGame.selectWaste()">
+                ${this.waste.length > 0 ? this.getCardDisplay(this.waste[this.waste.length - 1]) : ''}
+            </div>
+        `;
+        this.board.appendChild(stockWaste);
+        
+        // Foundations
+        const foundations = document.createElement('div');
+        foundations.className = 'solitaire-foundations';
+        for (let i = 0; i < 4; i++) {
+            const pile = document.createElement('div');
+            pile.className = 'solitaire-pile foundation';
+            if (this.foundations[i].length > 0) {
+                pile.innerHTML = this.getCardDisplay(this.foundations[i][this.foundations[i].length - 1]);
+            } else {
+                pile.innerHTML = '🂠';
+            }
+            pile.onclick = () => this.selectFoundation(i);
+            foundations.appendChild(pile);
+        }
+        this.board.appendChild(foundations);
+        
+        // Tableau
+        const tableau = document.createElement('div');
+        tableau.className = 'solitaire-tableau';
+        for (let i = 0; i < 7; i++) {
+            const column = document.createElement('div');
+            column.className = 'solitaire-column';
+            this.tableau[i].forEach((card, index) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = `solitaire-card ${card.faceUp ? 'face-up' : 'face-down'}`;
+                if (card.faceUp) {
+                    cardEl.innerHTML = this.getCardDisplay(card);
+                    cardEl.onclick = () => this.selectTableau(i, index);
+                } else {
+                    cardEl.innerHTML = '🂠';
+                }
+                column.appendChild(cardEl);
+            });
+            tableau.appendChild(column);
+        }
+        this.board.appendChild(tableau);
+    },
+    
+    getCardDisplay(card) {
+        return `${card.rank}${card.suit}`;
+    },
+    
+    flipStock() {
+        if (this.stock.length > 0) {
+            const card = this.stock.pop();
+            card.faceUp = true;
+            this.waste.push(card);
+        } else {
+            this.stock = this.waste.reverse();
+            this.waste = [];
+            this.stock.forEach(c => c.faceUp = false);
+        }
+        this.moves++;
+        document.getElementById('solitaireMoves').textContent = this.moves;
+        this.render();
+    },
+    
+    selectWaste() {
+        if (this.waste.length > 0) {
+            this.selected = {type: 'waste', card: this.waste[this.waste.length - 1]};
+        }
+    },
+    
+    selectTableau(col, row) {
+        const card = this.tableau[col][row];
+        if (!card.faceUp) return;
+        this.selected = {type: 'tableau', col, row, cards: this.tableau[col].slice(row)};
+    },
+    
+    selectFoundation(index) {
+        if (this.selected) {
+            const card = this.selected.type === 'waste' ? this.selected.card : this.selected.cards[0];
+            if (this.canPlaceOnFoundation(card, index)) {
+                if (this.selected.type === 'waste') {
+                    this.waste.pop();
+                } else {
+                    this.tableau[this.selected.col].splice(this.selected.row);
+                }
+                this.foundations[index].push(card);
+                this.moves++;
+                document.getElementById('solitaireMoves').textContent = this.moves;
+                
+                // Check win
+                if (this.foundations.every(f => f.length === 13)) {
+                    clearInterval(this.timerInterval);
+                    if (this.timer < this.bestTime) {
+                        this.bestTime = this.timer;
+                        localStorage.setItem('solitaireBest', this.bestTime);
+                        document.getElementById('solitaireBest').textContent = this.bestTime;
+                    }
+                    alert(`You Win! Time: ${this.timer}s | Moves: ${this.moves}`);
+                }
+                
+                this.selected = null;
+                this.render();
+            }
+        }
+    },
+    
+    canPlaceOnFoundation(card, foundationIndex) {
+        const foundation = this.foundations[foundationIndex];
+        if (foundation.length === 0) {
+            return card.rank === 'A';
+        }
+        const topCard = foundation[foundation.length - 1];
+        const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+        return card.suit === topCard.suit && 
+               ranks.indexOf(card.rank) === ranks.indexOf(topCard.rank) + 1;
+    },
+    
+    hint() {
+        alert('Try to move Aces to foundations, then build up by suit!');
+    },
+    
+    stop() {
+        clearInterval(this.timerInterval);
+    }
+};
+
+// ==================== BUBBLE SHOOTER GAME ====================
+const bubbleshooterGame = {
+    canvas: null,
+    ctx: null,
+    bubbles: [],
+    shooter: {x: 300, y: 650, angle: -Math.PI / 2},
+    currentBubble: null,
+    nextBubble: null,
+    score: 0,
+    bubblesLeft: 50,
+    level: 1,
+    highScore: 0,
+    gameLoop: null,
+    colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'],
+    
+    init() {
+        this.canvas = document.getElementById('bubbleCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.highScore = parseInt(localStorage.getItem('bubbleHighScore') || '0');
+        document.getElementById('bubbleHighScore').textContent = this.highScore;
+        this.restart();
+        this.setupControls();
+    },
+    
+    setupControls() {
+        this.canvas.addEventListener('click', (e) => {
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            this.shoot(x, y);
+        });
+    },
+    
+    restart() {
+        cancelAnimationFrame(this.gameLoop);
+        this.bubbles = [];
+        this.score = 0;
+        this.bubblesLeft = isHardcore2() ? 40 : 50;
+        this.level = 1;
+        this.shooter = {x: 300, y: 650, angle: -Math.PI / 2};
+        
+        // Create initial bubbles
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 10; col++) {
+                if (Math.random() > 0.3) {
+                    this.bubbles.push({
+                        x: col * 50 + 50,
+                        y: row * 50 + 50,
+                        radius: 20,
+                        color: this.colors[Math.floor(Math.random() * this.colors.length)],
+                        row,
+                        col
+                    });
+                }
+            }
+        }
+        
+        this.currentBubble = {
+            x: this.shooter.x,
+            y: this.shooter.y,
+            vx: 0,
+            vy: 0,
+            radius: 20,
+            color: this.colors[Math.floor(Math.random() * this.colors.length)]
+        };
+        this.nextBubble = {
+            color: this.colors[Math.floor(Math.random() * this.colors.length)]
+        };
+        
+        this.updateStats();
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    },
+    
+    shoot(targetX, targetY) {
+        if (this.currentBubble.vx !== 0 || this.currentBubble.vy !== 0) return;
+        
+        const dx = targetX - this.shooter.x;
+        const dy = targetY - this.shooter.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const speed = isHardcore2() ? 12 : 10;
+        
+        this.currentBubble.vx = (dx / dist) * speed;
+        this.currentBubble.vy = (dy / dist) * speed;
+    },
+    
+    update() {
+        // Update current bubble
+        if (this.currentBubble.vx !== 0 || this.currentBubble.vy !== 0) {
+            this.currentBubble.x += this.currentBubble.vx;
+            this.currentBubble.y += this.currentBubble.vy;
+            
+            // Check collision with walls
+            if (this.currentBubble.x - this.currentBubble.radius < 0 || 
+                this.currentBubble.x + this.currentBubble.radius > this.canvas.width) {
+                this.currentBubble.vx = -this.currentBubble.vx;
+            }
+            
+            // Check collision with top or bubbles
+            if (this.currentBubble.y - this.currentBubble.radius < 0) {
+                this.attachBubble();
+            } else {
+                // Check collision with existing bubbles
+                for (let bubble of this.bubbles) {
+                    const dx = this.currentBubble.x - bubble.x;
+                    const dy = this.currentBubble.y - bubble.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < this.currentBubble.radius + bubble.radius) {
+                        this.attachBubble();
+                        break;
+                    }
+                }
+            }
+        }
+        
+        this.draw();
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    },
+    
+    attachBubble() {
+        // Snap to grid
+        const col = Math.round((this.currentBubble.x - 50) / 50);
+        const row = Math.round((this.currentBubble.y - 50) / 50);
+        
+        this.bubbles.push({
+            x: col * 50 + 50,
+            y: row * 50 + 50,
+            radius: 20,
+            color: this.currentBubble.color,
+            row,
+            col
+        });
+        
+        // Check for matches
+        this.checkMatches(row, col);
+        
+        // Reset shooter
+        this.currentBubble = {
+            x: this.shooter.x,
+            y: this.shooter.y,
+            vx: 0,
+            vy: 0,
+            radius: 20,
+            color: this.nextBubble.color
+        };
+        this.nextBubble = {
+            color: this.colors[Math.floor(Math.random() * this.colors.length)]
+        };
+        
+        this.bubblesLeft--;
+        if (this.bubblesLeft <= 0) {
+            this.gameOver();
+        }
+        
+        this.updateStats();
+    },
+    
+    checkMatches(row, col) {
+        const color = this.bubbles[this.bubbles.length - 1].color;
+        const visited = new Set();
+        const toRemove = [];
+        
+        const dfs = (r, c) => {
+            const key = `${r},${c}`;
+            if (visited.has(key)) return;
+            visited.add(key);
+            
+            const bubble = this.bubbles.find(b => b.row === r && b.col === c && b.color === color);
+            if (bubble) {
+                toRemove.push(bubble);
+                const neighbors = [[r-1, c], [r+1, c], [r, c-1], [r, c+1], [r-1, c-1], [r+1, c+1]];
+                neighbors.forEach(([nr, nc]) => dfs(nr, nc));
+            }
+        };
+        
+        dfs(row, col);
+        
+        if (toRemove.length >= 3) {
+            toRemove.forEach(bubble => {
+                const index = this.bubbles.indexOf(bubble);
+                if (index > -1) this.bubbles.splice(index, 1);
+            });
+            this.score += toRemove.length * 10;
+            this.updateStats();
+        }
+    },
+    
+    draw() {
+        this.ctx.fillStyle = '#87CEEB';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Draw bubbles
+        this.bubbles.forEach(bubble => {
+            this.ctx.fillStyle = bubble.color;
+            this.ctx.beginPath();
+            this.ctx.arc(bubble.x, bubble.y, bubble.radius, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.strokeStyle = '#000';
+            this.ctx.lineWidth = 2;
+            this.ctx.stroke();
+        });
+        
+        // Draw current bubble
+        if (this.currentBubble) {
+            this.ctx.fillStyle = this.currentBubble.color;
+            this.ctx.beginPath();
+            this.ctx.arc(this.currentBubble.x, this.currentBubble.y, this.currentBubble.radius, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.stroke();
+        }
+        
+        // Draw next bubble preview
+        this.ctx.fillStyle = this.nextBubble.color;
+        this.ctx.beginPath();
+        this.ctx.arc(50, 650, 15, 0, Math.PI * 2);
+        this.ctx.fill();
+    },
+    
+    updateStats() {
+        document.getElementById('bubbleScore').textContent = this.score;
+        document.getElementById('bubbleBubbles').textContent = this.bubblesLeft;
+        document.getElementById('bubbleLevel').textContent = this.level;
+    },
+    
+    gameOver() {
+        cancelAnimationFrame(this.gameLoop);
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('bubbleHighScore', this.highScore);
+            document.getElementById('bubbleHighScore').textContent = this.highScore;
+        }
+        alert(`Game Over! Score: ${this.score}`);
+        this.restart();
+    },
+    
+    stop() {
+        cancelAnimationFrame(this.gameLoop);
+    }
+};
+
+// ==================== FRUIT SLICER GAME ====================
+const fruitslicerGame = {
+    canvas: null,
+    ctx: null,
+    fruits: [],
+    slices: [],
+    score: 0,
+    combo: 0,
+    comboTime: 0,
+    lives: 3,
+    highScore: 0,
+    gameLoop: null,
+    lastMouseX: 0,
+    lastMouseY: 0,
+    fruitTypes: ['🍎', '🍌', '🍊', '🍇', '🍓', '🍉', '🥝'],
+    
+    init() {
+        this.canvas = document.getElementById('fruitCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.highScore = parseInt(localStorage.getItem('fruitHighScore') || '0');
+        document.getElementById('fruitHighScore').textContent = this.highScore;
+        this.restart();
+        this.setupControls();
+    },
+    
+    setupControls() {
+        this.canvas.addEventListener('mousemove', (e) => {
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Check if slicing
+            if (this.lastMouseX && this.lastMouseY) {
+                const dx = x - this.lastMouseX;
+                const dy = y - this.lastMouseY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist > 5) {
+                    this.checkSlice(this.lastMouseX, this.lastMouseY, x, y);
+                }
+            }
+            
+            this.lastMouseX = x;
+            this.lastMouseY = y;
+        });
+        
+        this.canvas.addEventListener('mouseleave', () => {
+            this.lastMouseX = 0;
+            this.lastMouseY = 0;
+        });
+    },
+    
+    restart() {
+        cancelAnimationFrame(this.gameLoop);
+        this.fruits = [];
+        this.slices = [];
+        this.score = 0;
+        this.combo = 0;
+        this.comboTime = 0;
+        this.lives = 3;
+        this.updateStats();
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    },
+    
+    spawnFruit() {
+        if (Math.random() < (isHardcore2() ? 0.08 : 0.05)) {
+            const isBomb = Math.random() < 0.1;
+            this.fruits.push({
+                x: Math.random() * (this.canvas.width - 100) + 50,
+                y: this.canvas.height + 50,
+                vx: (Math.random() - 0.5) * (isHardcore2() ? 4 : 2),
+                vy: -(Math.random() * (isHardcore2() ? 8 : 5) + 5),
+                radius: 30,
+                type: isBomb ? '💣' : this.fruitTypes[Math.floor(Math.random() * this.fruitTypes.length)],
+                isBomb
+            });
+        }
+    },
+    
+    checkSlice(x1, y1, x2, y2) {
+        for (let i = this.fruits.length - 1; i >= 0; i--) {
+            const fruit = this.fruits[i];
+            const dist = this.distToLine(x1, y1, x2, y2, fruit.x, fruit.y);
+            if (dist < fruit.radius) {
+                if (fruit.isBomb) {
+                    this.lives--;
+                    if (this.lives <= 0) this.gameOver();
+                } else {
+                    this.combo++;
+                    this.comboTime = 60;
+                    const points = 10 * (1 + Math.floor(this.combo / 3));
+                    this.score += points;
+                    
+                    // Create slice particles
+                    this.slices.push({
+                        x: fruit.x,
+                        y: fruit.y,
+                        vx: -2,
+                        vy: -3,
+                        life: 30,
+                        emoji: fruit.type
+                    });
+                    this.slices.push({
+                        x: fruit.x,
+                        y: fruit.y,
+                        vx: 2,
+                        vy: -3,
+                        life: 30,
+                        emoji: fruit.type
+                    });
+                }
+                this.fruits.splice(i, 1);
+                this.updateStats();
+            }
+        }
+    },
+    
+    distToLine(x1, y1, x2, y2, px, py) {
+        const A = px - x1;
+        const B = py - y1;
+        const C = x2 - x1;
+        const D = y2 - y1;
+        const dot = A * C + B * D;
+        const lenSq = C * C + D * D;
+        let param = -1;
+        if (lenSq !== 0) param = dot / lenSq;
+        let xx, yy;
+        if (param < 0) {
+            xx = x1;
+            yy = y1;
+        } else if (param > 1) {
+            xx = x2;
+            yy = y2;
+        } else {
+            xx = x1 + param * C;
+            yy = y1 + param * D;
+        }
+        const dx = px - xx;
+        const dy = py - yy;
+        return Math.sqrt(dx * dx + dy * dy);
+    },
+    
+    update() {
+        // Spawn fruits
+        this.spawnFruit();
+        
+        // Update fruits
+        this.fruits = this.fruits.filter(fruit => {
+            fruit.x += fruit.vx;
+            fruit.y += fruit.vy;
+            fruit.vy += 0.3; // gravity
+            
+            if (fruit.y > this.canvas.height + 100) {
+                if (!fruit.isBomb) {
+                    this.lives--;
+                    if (this.lives <= 0) this.gameOver();
+                    this.updateStats();
+                }
+                return false;
+            }
+            return true;
+        });
+        
+        // Update slices
+        this.slices = this.slices.filter(slice => {
+            slice.x += slice.vx;
+            slice.y += slice.vy;
+            slice.life--;
+            return slice.life > 0;
+        });
+        
+        // Update combo
+        if (this.comboTime > 0) {
+            this.comboTime--;
+        } else {
+            this.combo = 0;
+        }
+        
+        this.draw();
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    },
+    
+    draw() {
+        this.ctx.fillStyle = '#87CEEB';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Draw fruits
+        this.fruits.forEach(fruit => {
+            this.ctx.font = '40px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(fruit.type, fruit.x, fruit.y);
+        });
+        
+        // Draw slices
+        this.slices.forEach(slice => {
+            this.ctx.font = '30px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.globalAlpha = slice.life / 30;
+            this.ctx.fillText(slice.emoji, slice.x, slice.y);
+            this.ctx.globalAlpha = 1;
+        });
+        
+        // Draw combo
+        if (this.combo > 1) {
+            this.ctx.fillStyle = '#ffff00';
+            this.ctx.font = 'bold 48px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(`${this.combo}x COMBO!`, this.canvas.width / 2, 100);
+        }
+    },
+    
+    updateStats() {
+        document.getElementById('fruitScore').textContent = this.score;
+        document.getElementById('fruitCombo').textContent = this.combo;
+        document.getElementById('fruitLives').textContent = this.lives;
+    },
+    
+    gameOver() {
+        cancelAnimationFrame(this.gameLoop);
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('fruitHighScore', this.highScore);
+            document.getElementById('fruitHighScore').textContent = this.highScore;
+        }
+        alert(`Game Over! Score: ${this.score} | Combo: ${this.combo}x`);
+        this.restart();
+    },
+    
+    stop() {
+        cancelAnimationFrame(this.gameLoop);
+    }
+};
+
+// Placeholder stubs for complex games
+const sudokuGame = { init() {}, restart() {}, checkSolution() { alert('Feature coming soon!'); }, solve() { alert('Feature coming soon!'); }, stop() {} };
+const towerdefenseGame = { init() { alert('Tower Defense coming soon!'); }, restart() {}, pause() {}, stop() {} };
+const match3Game = { init() { alert('Match-3 coming soon!'); }, restart() {}, stop() {} };
+const chessGame = { init() { alert('Chess coming soon!'); }, restart() {}, undo() {}, stop() {} };
 
 // Initialize games when page loads
 document.addEventListener('DOMContentLoaded', () => {

@@ -102,6 +102,76 @@
                     <h3>Racing</h3>
                     <p>Top-down racing game</p>
                 </div>
+                <div class="game-card" data-game="pacman">
+                    <div class="game-card-icon">👻</div>
+                    <h3>Pac-Man</h3>
+                    <p>Classic maze game</p>
+                </div>
+                <div class="game-card" data-game="frogger">
+                    <div class="game-card-icon">🐸</div>
+                    <h3>Frogger</h3>
+                    <p>Cross the road safely</p>
+                </div>
+                <div class="game-card" data-game="minesweeper">
+                    <div class="game-card-icon">💣</div>
+                    <h3>Minesweeper</h3>
+                    <p>Find all the mines</p>
+                </div>
+                <div class="game-card" data-game="sudoku">
+                    <div class="game-card-icon">🔢</div>
+                    <h3>Sudoku</h3>
+                    <p>Number puzzle game</p>
+                </div>
+                <div class="game-card" data-game="towerdefense">
+                    <div class="game-card-icon">🏰</div>
+                    <h3>Tower Defense</h3>
+                    <p>Defend your base</p>
+                </div>
+                <div class="game-card" data-game="match3">
+                    <div class="game-card-icon">💎</div>
+                    <h3>Match-3</h3>
+                    <p>Match gems to score</p>
+                </div>
+                <div class="game-card" data-game="doodlejump">
+                    <div class="game-card-icon">🦘</div>
+                    <h3>Doodle Jump</h3>
+                    <p>Jump as high as you can</p>
+                </div>
+                <div class="game-card" data-game="typing">
+                    <div class="game-card-icon">⌨️</div>
+                    <h3>Typing Test</h3>
+                    <p>Test your typing speed</p>
+                </div>
+                <div class="game-card" data-game="chess">
+                    <div class="game-card-icon">♟️</div>
+                    <h3>Chess</h3>
+                    <p>Classic strategy game</p>
+                </div>
+                <div class="game-card" data-game="hangman">
+                    <div class="game-card-icon">🎯</div>
+                    <h3>Hangman</h3>
+                    <p>Guess the word</p>
+                </div>
+                <div class="game-card" data-game="connect4">
+                    <div class="game-card-icon">🔴</div>
+                    <h3>Connect Four</h3>
+                    <p>Get four in a row</p>
+                </div>
+                <div class="game-card" data-game="solitaire">
+                    <div class="game-card-icon">🃏</div>
+                    <h3>Solitaire</h3>
+                    <p>Classic card game</p>
+                </div>
+                <div class="game-card" data-game="bubbleshooter">
+                    <div class="game-card-icon">🎈</div>
+                    <h3>Bubble Shooter</h3>
+                    <p>Pop the bubbles</p>
+                </div>
+                <div class="game-card" data-game="fruitslicer">
+                    <div class="game-card-icon">🍎</div>
+                    <h3>Fruit Slicer</h3>
+                    <p>Slice the fruits</p>
+                </div>
             </div>
         </div>
 
@@ -449,6 +519,304 @@
                 <p>Use ← → arrow keys or A D to steer, avoid obstacles!</p>
                 <button class="game-button" onclick="racingGame.restart()">Restart</button>
                 <button class="game-button" onclick="racingGame.pause()">Pause</button>
+            </div>
+        </div>
+
+        <!-- Pac-Man Game -->
+        <div id="pacmanGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>👻 Pac-Man</h2>
+                <div class="game-stats">
+                    <div>Score: <span id="pacmanScore">0</span></div>
+                    <div>Lives: <span id="pacmanLives">3</span></div>
+                    <div>Level: <span id="pacmanLevel">1</span></div>
+                    <div>High Score: <span id="pacmanHighScore">0</span></div>
+                </div>
+            </div>
+            <canvas id="pacmanCanvas" width="600" height="600"></canvas>
+            <div class="game-controls">
+                <p>Use arrow keys to move. Eat all dots to win!</p>
+                <button class="game-button" onclick="pacmanGame.restart()">Restart</button>
+                <button class="game-button" onclick="pacmanGame.pause()">Pause</button>
+            </div>
+        </div>
+
+        <!-- Frogger Game -->
+        <div id="froggerGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>🐸 Frogger</h2>
+                <div class="game-stats">
+                    <div>Score: <span id="froggerScore">0</span></div>
+                    <div>Lives: <span id="froggerLives">3</span></div>
+                    <div>Level: <span id="froggerLevel">1</span></div>
+                    <div>High Score: <span id="froggerHighScore">0</span></div>
+                </div>
+            </div>
+            <canvas id="froggerCanvas" width="600" height="700"></canvas>
+            <div class="game-controls">
+                <p>Use arrow keys to move. Cross the road and river safely!</p>
+                <button class="game-button" onclick="froggerGame.restart()">Restart</button>
+                <button class="game-button" onclick="froggerGame.pause()">Pause</button>
+            </div>
+        </div>
+
+        <!-- Minesweeper Game -->
+        <div id="minesweeperGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>💣 Minesweeper</h2>
+                <div class="game-stats">
+                    <div>Mines: <span id="minesweeperMines">10</span></div>
+                    <div>Time: <span id="minesweeperTime">0</span>s</div>
+                    <div>Best Time: <span id="minesweeperBest">-</span></div>
+                </div>
+            </div>
+            <div class="minesweeper-container">
+                <div id="minesweeperBoard" class="minesweeper-board"></div>
+            </div>
+            <div class="game-controls">
+                <p>Left click to reveal, right click to flag. Find all mines!</p>
+                <button class="game-button" onclick="minesweeperGame.restart()">New Game</button>
+                <button class="game-button" onclick="minesweeperGame.changeDifficulty()">Difficulty</button>
+            </div>
+        </div>
+
+        <!-- Sudoku Game -->
+        <div id="sudokuGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>🔢 Sudoku</h2>
+                <div class="game-stats">
+                    <div>Time: <span id="sudokuTime">0</span>s</div>
+                    <div>Mistakes: <span id="sudokuMistakes">0</span></div>
+                    <div>Best Time: <span id="sudokuBest">-</span></div>
+                </div>
+            </div>
+            <div class="sudoku-container">
+                <div id="sudokuBoard" class="sudoku-board"></div>
+                <div class="sudoku-controls-panel">
+                    <div class="number-pad" id="sudokuNumberPad"></div>
+                    <button class="game-button" onclick="sudokuGame.restart()">New Puzzle</button>
+                    <button class="game-button" onclick="sudokuGame.checkSolution()">Check</button>
+                    <button class="game-button" onclick="sudokuGame.solve()">Solve</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tower Defense Game -->
+        <div id="towerdefenseGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>🏰 Tower Defense</h2>
+                <div class="game-stats">
+                    <div>Wave: <span id="tdWave">1</span></div>
+                    <div>Lives: <span id="tdLives">20</span></div>
+                    <div>Gold: <span id="tdGold">100</span></div>
+                    <div>Score: <span id="tdScore">0</span></div>
+                </div>
+            </div>
+            <div class="towerdefense-container">
+                <canvas id="tdCanvas" width="800" height="600"></canvas>
+                <div class="td-sidebar">
+                    <h3>Towers</h3>
+                    <div id="tdTowers" class="td-towers"></div>
+                    <h3>Upgrades</h3>
+                    <div id="tdUpgrades" class="td-upgrades"></div>
+                </div>
+            </div>
+            <div class="game-controls">
+                <p>Click to place towers. Defend against waves of enemies!</p>
+                <button class="game-button" onclick="towerdefenseGame.restart()">Restart</button>
+                <button class="game-button" onclick="towerdefenseGame.pause()">Pause</button>
+            </div>
+        </div>
+
+        <!-- Match-3 Game -->
+        <div id="match3Game" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>💎 Match-3</h2>
+                <div class="game-stats">
+                    <div>Score: <span id="match3Score">0</span></div>
+                    <div>Moves: <span id="match3Moves">30</span></div>
+                    <div>Target: <span id="match3Target">1000</span></div>
+                    <div>High Score: <span id="match3HighScore">0</span></div>
+                </div>
+            </div>
+            <div class="match3-container">
+                <div id="match3Board" class="match3-board"></div>
+            </div>
+            <div class="game-controls">
+                <p>Swap gems to match 3 or more. Match more for combos!</p>
+                <button class="game-button" onclick="match3Game.restart()">New Game</button>
+            </div>
+        </div>
+
+        <!-- Doodle Jump Game -->
+        <div id="doodlejumpGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>🦘 Doodle Jump</h2>
+                <div class="game-stats">
+                    <div>Height: <span id="djHeight">0</span>m</div>
+                    <div>Score: <span id="djScore">0</span></div>
+                    <div>Best: <span id="djBest">0</span></div>
+                </div>
+            </div>
+            <canvas id="djCanvas" width="400" height="600"></canvas>
+            <div class="game-controls">
+                <p>Use ← → arrow keys or A D to move. Jump on platforms!</p>
+                <button class="game-button" onclick="doodlejumpGame.restart()">Restart</button>
+            </div>
+        </div>
+
+        <!-- Typing Test Game -->
+        <div id="typingGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>⌨️ Typing Test</h2>
+                <div class="game-stats">
+                    <div>WPM: <span id="typingWPM">0</span></div>
+                    <div>Accuracy: <span id="typingAccuracy">100</span>%</div>
+                    <div>Best WPM: <span id="typingBest">0</span></div>
+                </div>
+            </div>
+            <div class="typing-container">
+                <div id="typingText" class="typing-text"></div>
+                <input type="text" id="typingInput" class="typing-input" autocomplete="off" spellcheck="false" placeholder="Start typing...">
+                <div class="typing-stats">
+                    <div>Time: <span id="typingTime">60</span>s</div>
+                    <div>Words: <span id="typingWords">0</span></div>
+                </div>
+            </div>
+            <div class="game-controls">
+                <p>Type the text above as fast and accurately as you can!</p>
+                <button class="game-button" onclick="typingGame.start()">Start</button>
+                <button class="game-button" onclick="typingGame.restart()">New Text</button>
+            </div>
+        </div>
+
+        <!-- Chess Game -->
+        <div id="chessGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>♟️ Chess</h2>
+                <div class="game-stats">
+                    <div id="chessStatus">White to move</div>
+                    <div>Moves: <span id="chessMoves">0</span></div>
+                </div>
+            </div>
+            <div class="chess-container">
+                <div id="chessBoard" class="chess-board"></div>
+                <div class="chess-sidebar">
+                    <div id="chessCaptured" class="chess-captured"></div>
+                    <button class="game-button" onclick="chessGame.restart()">New Game</button>
+                    <button class="game-button" onclick="chessGame.undo()">Undo</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hangman Game -->
+        <div id="hangmanGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>🎯 Hangman</h2>
+                <div class="game-stats">
+                    <div>Wins: <span id="hangmanWins">0</span></div>
+                    <div>Losses: <span id="hangmanLosses">0</span></div>
+                    <div>Streak: <span id="hangmanStreak">0</span></div>
+                </div>
+            </div>
+            <div class="hangman-container">
+                <canvas id="hangmanCanvas" width="300" height="400"></canvas>
+                <div class="hangman-word">
+                    <div id="hangmanWord" class="hangman-word-display"></div>
+                </div>
+                <div id="hangmanKeyboard" class="hangman-keyboard"></div>
+            </div>
+            <div class="game-controls">
+                <p>Guess the word letter by letter. You have 6 wrong guesses!</p>
+                <button class="game-button" onclick="hangmanGame.restart()">New Word</button>
+            </div>
+        </div>
+
+        <!-- Connect Four Game -->
+        <div id="connect4Game" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>🔴 Connect Four</h2>
+                <div class="game-stats">
+                    <div id="connect4Status">Player 1's Turn (Red)</div>
+                    <div>Wins - Red: <span id="connect4RedWins">0</span> | Yellow: <span id="connect4YellowWins">0</span></div>
+                </div>
+            </div>
+            <div class="connect4-container">
+                <div id="connect4Board" class="connect4-board"></div>
+            </div>
+            <div class="game-controls">
+                <p>Click a column to drop your piece. Get four in a row to win!</p>
+                <button class="game-button" onclick="connect4Game.restart()">New Game</button>
+            </div>
+        </div>
+
+        <!-- Solitaire Game -->
+        <div id="solitaireGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>🃏 Solitaire</h2>
+                <div class="game-stats">
+                    <div>Moves: <span id="solitaireMoves">0</span></div>
+                    <div>Time: <span id="solitaireTime">0</span>s</div>
+                    <div>Best Time: <span id="solitaireBest">-</span></div>
+                </div>
+            </div>
+            <div class="solitaire-container">
+                <div id="solitaireBoard" class="solitaire-board"></div>
+            </div>
+            <div class="game-controls">
+                <p>Click and drag cards. Build foundations from Ace to King!</p>
+                <button class="game-button" onclick="solitaireGame.restart()">New Game</button>
+                <button class="game-button" onclick="solitaireGame.hint()">Hint</button>
+            </div>
+        </div>
+
+        <!-- Bubble Shooter Game -->
+        <div id="bubbleshooterGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>🎈 Bubble Shooter</h2>
+                <div class="game-stats">
+                    <div>Score: <span id="bubbleScore">0</span></div>
+                    <div>Bubbles Left: <span id="bubbleBubbles">50</span></div>
+                    <div>Level: <span id="bubbleLevel">1</span></div>
+                    <div>High Score: <span id="bubbleHighScore">0</span></div>
+                </div>
+            </div>
+            <canvas id="bubbleCanvas" width="600" height="700"></canvas>
+            <div class="game-controls">
+                <p>Click to aim and shoot. Match 3+ bubbles of the same color to pop them!</p>
+                <button class="game-button" onclick="bubbleshooterGame.restart()">Restart</button>
+            </div>
+        </div>
+
+        <!-- Fruit Slicer Game -->
+        <div id="fruitslicerGame" class="game-screen" style="display: none;">
+            <div class="game-header">
+                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
+                <h2>🍎 Fruit Slicer</h2>
+                <div class="game-stats">
+                    <div>Score: <span id="fruitScore">0</span></div>
+                    <div>Combo: <span id="fruitCombo">0</span>x</div>
+                    <div>Lives: <span id="fruitLives">3</span></div>
+                    <div>High Score: <span id="fruitHighScore">0</span></div>
+                </div>
+            </div>
+            <canvas id="fruitCanvas" width="800" height="600"></canvas>
+            <div class="game-controls">
+                <p>Move your mouse to slice fruits! Avoid bombs. Build combos for bonus points!</p>
+                <button class="game-button" onclick="fruitslicerGame.restart()">Restart</button>
             </div>
         </div>
     </div>
