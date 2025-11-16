@@ -1,13 +1,22 @@
-// Animated Background System
+// Interactive Background System
 (function() {
-    // Create animated background canvas
-    function createAnimatedBackground() {
-        // Check if canvas already exists
-        if (document.getElementById('animatedBackground')) {
-            return;
+    let canvas, ctx;
+    let cursorParticles = []; // Particles that follow cursor
+    let floatingParticles = []; // Particles that float independently
+    let ripples = [];
+    let mouseX = 0;
+    let mouseY = 0;
+    let time = 0;
+    
+    // Create interactive background canvas
+    function createInteractiveBackground() {
+        // Remove existing canvas if present
+        const existing = document.getElementById('animatedBackground');
+        if (existing) {
+            existing.remove();
         }
         
-        const canvas = document.createElement('canvas');
+        canvas = document.createElement('canvas');
         canvas.id = 'animatedBackground';
         canvas.className = 'animated-background-canvas';
         canvas.style.position = 'fixed';
@@ -16,13 +25,13 @@
         canvas.style.width = '100%';
         canvas.style.height = '100%';
         canvas.style.zIndex = '-1';
-        canvas.style.pointerEvents = 'none';
+        canvas.style.pointerEvents = 'none'; // Don't block clicks on elements above
         document.body.appendChild(canvas);
         
         // Make body background transparent
         document.body.style.background = 'transparent';
         
-        const ctx = canvas.getContext('2d');
+        ctx = canvas.getContext('2d');
         
         // Set canvas size
         function resizeCanvas() {
@@ -32,31 +41,101 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
         
-        // Animation variables
-        let time = 0;
-        const particles = [];
-        const numParticles = 50;
-        
-        // Create particles
-        for (let i = 0; i < numParticles; i++) {
-            particles.push({
+        // Create particles that follow cursor
+        const numCursorParticles = 60;
+        for (let i = 0; i < numCursorParticles; i++) {
+            cursorParticles.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
+                targetX: 0,
+                targetY: 0,
                 radius: Math.random() * 3 + 1,
-                speedX: (Math.random() - 0.5) * 0.5,
-                speedY: (Math.random() - 0.5) * 0.5,
-                hue: Math.random() * 360
+                speed: Math.random() * 0.02 + 0.01,
+                hue: Math.random() * 360,
+                distance: Math.random() * 200 + 50,
+                angle: (Math.PI * 2 / numCursorParticles) * i
             });
         }
         
-        // Gradient colors that shift over time
-        const gradientColors = [
-            { r: 26, g: 26, b: 46 },   // #1a1a2e
-            { r: 22, g: 33, b: 62 },   // #16213e
-            { r: 15, g: 52, b: 96 },   // #0f3460
-            { r: 74, g: 158, b: 255 }, // #4a9eff
-            { r: 255, g: 107, b: 107 } // #ff6b6b
-        ];
+        // Create independent floating particles
+        const numFloatingParticles = 50;
+        for (let i = 0; i < numFloatingParticles; i++) {
+            floatingParticles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: (Math.random() - 0.5) * 0.5,
+                radius: Math.random() * 2.5 + 1,
+                hue: Math.random() * 360,
+                speed: Math.random() * 0.3 + 0.1
+            });
+        }
+        
+        // Helper function to check if point is on interactive element
+        function isInteractiveElement(x, y) {
+            const element = document.elementFromPoint(x, y);
+            if (!element) return false;
+            return element.tagName === 'A' || 
+                   element.tagName === 'BUTTON' || 
+                   element.closest('a') || 
+                   element.closest('button') ||
+                   element.closest('.song-card') ||
+                   element.closest('.feature-item') ||
+                   element.closest('.search-input') ||
+                   element.closest('.about-button');
+        }
+        
+        // Mouse move - update cursor position and cursor-following particles
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            // Update cursor-following particle targets to orbit around cursor
+            cursorParticles.forEach((particle, i) => {
+                const angle = particle.angle + time * 0.5;
+                particle.targetX = mouseX + Math.cos(angle) * particle.distance;
+                particle.targetY = mouseY + Math.sin(angle) * particle.distance;
+            });
+        });
+        
+        // Click to create ripples (only if not clicking on interactive elements)
+        document.addEventListener('click', (e) => {
+            // Check if click is on an interactive element
+            if (isInteractiveElement(e.clientX, e.clientY)) {
+                return; // Don't create ripple if clicking on interactive element
+            }
+            
+            // Create ripple
+            ripples.push({
+                x: e.clientX,
+                y: e.clientY,
+                radius: 0,
+                maxRadius: Math.random() * 150 + 100,
+                speed: 3,
+                opacity: 0.6,
+                hue: (time * 50) % 360
+            });
+        });
+        
+        // Touch support for ripples
+        document.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            mouseX = touch.clientX;
+            mouseY = touch.clientY;
+            
+            if (!isInteractiveElement(mouseX, mouseY)) {
+                // Create ripple on touch
+                ripples.push({
+                    x: mouseX,
+                    y: mouseY,
+                    radius: 0,
+                    maxRadius: 150,
+                    speed: 3,
+                    opacity: 0.6,
+                    hue: (time * 50) % 360
+                });
+            }
+        });
         
         // Animate
         function animate() {
@@ -65,16 +144,12 @@
             // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Create animated gradient background
+            // Draw base gradient background
             const gradient = ctx.createLinearGradient(
                 0, 0, 
                 canvas.width, 
                 canvas.height
             );
-            
-            // Animate gradient colors
-            const colorShift = Math.sin(time) * 0.3 + 0.7;
-            const hueShift = (time * 10) % 360;
             
             gradient.addColorStop(0, `rgba(${26 + Math.sin(time) * 20}, ${26 + Math.cos(time * 0.7) * 20}, ${46 + Math.sin(time * 1.3) * 20}, 0.95)`);
             gradient.addColorStop(0.3, `rgba(${22 + Math.sin(time * 1.2) * 15}, ${33 + Math.cos(time * 0.9) * 15}, ${62 + Math.sin(time * 1.1) * 15}, 0.95)`);
@@ -84,7 +159,7 @@
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Add radial gradient overlays for depth
+            // Draw radial gradient overlays
             for (let i = 0; i < 3; i++) {
                 const x = canvas.width * (0.2 + i * 0.3) + Math.sin(time + i) * 100;
                 const y = canvas.height * (0.3 + i * 0.2) + Math.cos(time * 0.8 + i) * 80;
@@ -98,11 +173,38 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
             
-            // Animate particles
-            particles.forEach(particle => {
+            // Update and draw ripples
+            ripples = ripples.filter(ripple => {
+                ripple.radius += ripple.speed;
+                ripple.opacity -= 0.01;
+                
+                if (ripple.radius > ripple.maxRadius || ripple.opacity <= 0) {
+                    return false;
+                }
+                
+                // Draw ripple
+                const gradient = ctx.createRadialGradient(
+                    ripple.x, ripple.y, 0,
+                    ripple.x, ripple.y, ripple.radius
+                );
+                gradient.addColorStop(0, `hsla(${ripple.hue}, 70%, 60%, ${ripple.opacity})`);
+                gradient.addColorStop(0.5, `hsla(${ripple.hue}, 70%, 60%, ${ripple.opacity * 0.5})`);
+                gradient.addColorStop(1, `hsla(${ripple.hue}, 70%, 60%, 0)`);
+                
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(ripple.x, ripple.y, ripple.radius, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                return true;
+            });
+            
+            // Update and draw independent floating particles
+            floatingParticles.forEach(particle => {
                 // Update position
-                particle.x += particle.speedX;
-                particle.y += particle.speedY;
+                particle.x += particle.vx;
+                particle.y += particle.vy;
                 
                 // Wrap around edges
                 if (particle.x < 0) particle.x = canvas.width;
@@ -110,26 +212,61 @@
                 if (particle.y < 0) particle.y = canvas.height;
                 if (particle.y > canvas.height) particle.y = 0;
                 
-                // Update hue
-                particle.hue = (particle.hue + 0.5) % 360;
+                // Add some drift
+                particle.vx += (Math.random() - 0.5) * 0.01;
+                particle.vy += (Math.random() - 0.5) * 0.01;
                 
-                // Draw particle
+                // Limit velocity
+                const maxVel = 1;
+                particle.vx = Math.max(-maxVel, Math.min(maxVel, particle.vx));
+                particle.vy = Math.max(-maxVel, Math.min(maxVel, particle.vy));
+                
+                // Update hue slowly
+                particle.hue = (particle.hue + particle.speed) % 360;
+                
+                // Draw floating particle
                 const alpha = 0.3 + Math.sin(time + particle.x * 0.01) * 0.2;
                 ctx.fillStyle = `hsla(${particle.hue}, 70%, 60%, ${alpha})`;
+                ctx.shadowColor = `hsla(${particle.hue}, 70%, 60%, 0.6)`;
+                ctx.shadowBlur = 8;
                 ctx.beginPath();
                 ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.shadowBlur = 0;
             });
             
-            // Add connecting lines between nearby particles
-            particles.forEach((particle, i) => {
-                particles.slice(i + 1).forEach(otherParticle => {
+            // Update and draw cursor-following particles
+            cursorParticles.forEach((particle, i) => {
+                // Smooth movement towards target
+                const dx = particle.targetX - particle.x;
+                const dy = particle.targetY - particle.y;
+                particle.x += dx * particle.speed;
+                particle.y += dy * particle.speed;
+                
+                // Update hue
+                particle.hue = (particle.hue + 0.5) % 360;
+                
+                // Draw particle with glow
+                const alpha = 0.4 + Math.sin(time + particle.x * 0.01) * 0.3;
+                ctx.fillStyle = `hsla(${particle.hue}, 70%, 60%, ${alpha})`;
+                ctx.shadowColor = `hsla(${particle.hue}, 70%, 60%, 0.8)`;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+            
+            // Draw connecting lines between nearby particles (both types)
+            const allParticles = [...cursorParticles, ...floatingParticles];
+            allParticles.forEach((particle, i) => {
+                allParticles.slice(i + 1).forEach(otherParticle => {
                     const dx = particle.x - otherParticle.x;
                     const dy = particle.y - otherParticle.y;
                     const distance = Math.sqrt(dx * dx + dy * dy);
                     
                     if (distance < 150) {
-                        const alpha = (1 - distance / 150) * 0.2;
+                        const alpha = (1 - distance / 150) * 0.15;
                         ctx.strokeStyle = `rgba(74, 158, 255, ${alpha})`;
                         ctx.lineWidth = 1;
                         ctx.beginPath();
@@ -148,16 +285,15 @@
     
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', createAnimatedBackground);
+        document.addEventListener('DOMContentLoaded', createInteractiveBackground);
     } else {
-        createAnimatedBackground();
+        createInteractiveBackground();
     }
     
     // Re-initialize on page transitions
     window.addEventListener('pageshow', () => {
         if (!document.getElementById('animatedBackground')) {
-            setTimeout(createAnimatedBackground, 100);
+            setTimeout(createInteractiveBackground, 100);
         }
     });
 })();
-
