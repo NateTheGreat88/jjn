@@ -20,6 +20,11 @@ service cloud.firestore {
       allow read, write: if true;
     }
     
+    // Allow anyone to read and write visitor positions (for Live Visitor Map)
+    match /visitors/{visitorId} {
+      allow read, write: if true;
+    }
+    
   }
 }
 
