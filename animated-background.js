@@ -41,19 +41,33 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
         
-        // Create particles that follow cursor
+        // Create particles that follow cursor - better formation
         const numCursorParticles = 60;
+        let lastMouseX = canvas.width / 2;
+        let lastMouseY = canvas.height / 2;
+        
         for (let i = 0; i < numCursorParticles; i++) {
+            // Create a trailing cloud formation instead of circle
+            const progress = i / numCursorParticles; // 0 to 1
+            const angle = Math.random() * Math.PI * 2; // Random angle for spread
+            const distance = Math.random() * 120 + 20; // Distance from cursor (20-140)
+            const offsetX = Math.cos(angle) * distance;
+            const offsetY = Math.sin(angle) * distance;
+            
             cursorParticles.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
                 targetX: 0,
                 targetY: 0,
-                radius: Math.random() * 3 + 1,
-                speed: Math.random() * 0.02 + 0.01,
+                radius: Math.random() * 2.5 + 1.5,
+                ease: Math.random() * 0.015 + 0.005, // Much slower - 0.005 to 0.02
                 hue: Math.random() * 360,
-                distance: Math.random() * 200 + 50,
-                angle: (Math.PI * 2 / numCursorParticles) * i
+                offsetX: offsetX, // Offset from cursor
+                offsetY: offsetY,
+                driftSpeed: (Math.random() - 0.5) * 0.02, // Slow drift
+                driftAngle: Math.random() * Math.PI * 2,
+                vx: 0, // Velocity for smoother physics
+                vy: 0
             });
         }
         
@@ -85,17 +99,12 @@
                    element.closest('.about-button');
         }
         
-        // Mouse move - update cursor position and cursor-following particles
+        // Mouse move - update cursor position
         document.addEventListener('mousemove', (e) => {
             mouseX = e.clientX;
             mouseY = e.clientY;
-            
-            // Update cursor-following particle targets to orbit around cursor
-            cursorParticles.forEach((particle, i) => {
-                const angle = particle.angle + time * 0.5;
-                particle.targetX = mouseX + Math.cos(angle) * particle.distance;
-                particle.targetY = mouseY + Math.sin(angle) * particle.distance;
-            });
+            lastMouseX = mouseX;
+            lastMouseY = mouseY;
         });
         
         // Click to create ripples (only if not clicking on interactive elements)
@@ -237,20 +246,49 @@
             
             // Update and draw cursor-following particles
             cursorParticles.forEach((particle, i) => {
-                // Smooth movement towards target
+                // Always drifting - particles are always shifting
+                particle.driftAngle += particle.driftSpeed;
+                
+                // Calculate target position - cloud formation around cursor
+                // Add slow circular drift for organic movement
+                const driftX = Math.cos(particle.driftAngle + time * 0.1) * 15;
+                const driftY = Math.sin(particle.driftAngle + time * 0.1) * 15;
+                
+                particle.targetX = mouseX + particle.offsetX + driftX;
+                particle.targetY = mouseY + particle.offsetY + driftY;
+                
+                // Calculate distance to target
                 const dx = particle.targetX - particle.x;
                 const dy = particle.targetY - particle.y;
-                particle.x += dx * particle.speed;
-                particle.y += dy * particle.speed;
                 
-                // Update hue
-                particle.hue = (particle.hue + 0.5) % 360;
+                // Much slower physics-based movement
+                const targetVx = dx * particle.ease;
+                const targetVy = dy * particle.ease;
                 
-                // Draw particle with glow
-                const alpha = 0.4 + Math.sin(time + particle.x * 0.01) * 0.3;
-                ctx.fillStyle = `hsla(${particle.hue}, 70%, 60%, ${alpha})`;
-                ctx.shadowColor = `hsla(${particle.hue}, 70%, 60%, 0.8)`;
-                ctx.shadowBlur = 10;
+                // Very slow velocity interpolation
+                particle.vx += (targetVx - particle.vx) * 0.08; // Much slower response
+                particle.vy += (targetVy - particle.vy) * 0.08;
+                
+                // Apply velocity with damping
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                
+                // Update hue with variation
+                particle.hue = (particle.hue + 0.2 + Math.sin(time + i) * 0.15) % 360;
+                
+                // Dynamic alpha based on distance from cursor
+                const distFromCursor = Math.sqrt(
+                    Math.pow(particle.x - mouseX, 2) + 
+                    Math.pow(particle.y - mouseY, 2)
+                );
+                const maxDist = 250;
+                const distAlpha = Math.max(0.25, 1 - (distFromCursor / maxDist));
+                const alpha = (0.5 + Math.sin(time + particle.x * 0.01) * 0.15) * distAlpha;
+                
+                // Draw particle with enhanced glow
+                ctx.fillStyle = `hsla(${particle.hue}, 75%, 65%, ${alpha})`;
+                ctx.shadowColor = `hsla(${particle.hue}, 75%, 65%, ${alpha * 1.5})`;
+                ctx.shadowBlur = 10 + Math.sin(time + i) * 2;
                 ctx.beginPath();
                 ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
                 ctx.fill();

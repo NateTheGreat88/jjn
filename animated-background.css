@@ -10,6 +10,8 @@
     pointer-events: none; /* Don't block clicks on elements above */
     opacity: 1;
     transition: opacity 0.3s ease;
+    transform: translateZ(0); /* Force flat rendering, optimize performance */
+    transform-style: flat; /* Ensure no 3D transforms affect this element */
 }
 
 /* Ensure body background doesn't conflict when canvas exists */

@@ -387,12 +387,12 @@
                     } else {
                         // Fallback to localStorage
                         const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
-                        // Filter by room code if in a room
-                        let filteredMessages = messages;
+                        // Filter by room code if in a room, and exclude deleted messages
+                        let filteredMessages = messages.filter(msg => !msg.deleted);
                         if (currentRoomCode) {
-                            filteredMessages = messages.filter(msg => msg.roomCode === currentRoomCode);
+                            filteredMessages = filteredMessages.filter(msg => msg.roomCode === currentRoomCode);
                         } else {
-                            filteredMessages = messages.filter(msg => !msg.roomCode);
+                            filteredMessages = filteredMessages.filter(msg => !msg.roomCode);
                         }
                         // Only show the most recent messages
                         const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
@@ -417,7 +417,7 @@
                         loadMessagesFromFirestore(null);
                     } else {
                         const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
-                        const filteredMessages = messages.filter(msg => !msg.roomCode);
+                        const filteredMessages = messages.filter(msg => !msg.deleted && !msg.roomCode);
                         const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                         recentMessages.forEach(msg => {
                             addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id, msg.userId);
@@ -439,7 +439,7 @@
                     loadMessagesFromFirestore(null);
                 } else {
                     const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
-                    const filteredMessages = messages.filter(msg => !msg.roomCode);
+                    const filteredMessages = messages.filter(msg => !msg.deleted && !msg.roomCode);
                     const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                     recentMessages.forEach(msg => {
                         addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, null, null, msg.id, msg.userId);
@@ -482,6 +482,10 @@
                         const messages = [];
                         querySnapshot.forEach((doc) => {
                             const data = doc.data();
+                            // Skip deleted messages
+                            if (data.deleted === true) {
+                                return;
+                            }
                             // Double-check room code match for safety
                             if (roomCode) {
                                 // Only include messages with matching room code
@@ -535,6 +539,10 @@
                         querySnapshot.docChanges().forEach((change) => {
                             if (change.type === 'added' && !loadedMessageIds.has(change.doc.id)) {
                                 const data = change.doc.data();
+                                // Skip deleted messages
+                                if (data.deleted === true) {
+                                    return;
+                                }
                                 console.log('New message received:', { 
                                     user: data.user, 
                                     message: data.message,
@@ -556,8 +564,21 @@
                                         loadedMessageIds.add(change.doc.id);
                                     }
                                 }
+                            } else if (change.type === 'modified') {
+                                // Message was updated (e.g., marked as deleted)
+                                const data = change.doc.data();
+                                if (data.deleted === true) {
+                                    // Remove deleted message from DOM
+                                    const messageId = change.doc.id;
+                                    const messageElement = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
+                                    if (messageElement) {
+                                        console.log('Removing deleted message from DOM:', messageId);
+                                        messageElement.remove();
+                                        loadedMessageIds.delete(messageId);
+                                    }
+                                }
                             } else if (change.type === 'removed') {
-                                // Message was deleted - remove it from DOM
+                                // Message was actually deleted - remove it from DOM
                                 const messageId = change.doc.id;
                                 const messageElement = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
                                 if (messageElement) {
@@ -584,6 +605,10 @@
                                 const messages = [];
                                 querySnapshot.forEach((doc) => {
                                     const data = doc.data();
+                                    // Skip deleted messages
+                                    if (data.deleted === true) {
+                                        return;
+                                    }
                                     if (data.roomCode === roomCode) {
                                         messages.push({
                                             id: doc.id,
@@ -616,13 +641,30 @@
                                         snapshot.docChanges().forEach((change) => {
                                             if (change.type === 'added' && !loadedMessageIds.has(change.doc.id)) {
                                                 const data = change.doc.data();
+                                                // Skip deleted messages
+                                                if (data.deleted === true) {
+                                                    return;
+                                                }
                                                 console.log('Fallback listener - New message:', { user: data.user, hasGif: !!data.gif, gifUrl: data.gif, fullData: data });
                                                 if (data.roomCode === roomCode) {
                                                     addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, change.doc.id, data.userId);
                                                     loadedMessageIds.add(change.doc.id);
                                                 }
+                                            } else if (change.type === 'modified') {
+                                                // Message was updated (e.g., marked as deleted)
+                                                const data = change.doc.data();
+                                                if (data.deleted === true) {
+                                                    // Remove deleted message from DOM
+                                                    const messageId = change.doc.id;
+                                                    const messageElement = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
+                                                    if (messageElement) {
+                                                        console.log('Fallback listener - Removing deleted message from DOM:', messageId);
+                                                        messageElement.remove();
+                                                        loadedMessageIds.delete(messageId);
+                                                    }
+                                                }
                                             } else if (change.type === 'removed') {
-                                                // Message was deleted - remove it from DOM
+                                                // Message was actually deleted - remove it from DOM
                                                 const messageId = change.doc.id;
                                                 const messageElement = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
                                                 if (messageElement) {
@@ -1770,21 +1812,24 @@
                 console.log('Deleting message:', { messageId, roomCode, collection, hasDb: !!db });
                 
                 if (db && messageId && !messageId.startsWith('temp-')) {
-                    // Delete from Firestore
+                    // Mark as deleted in Firestore (don't actually delete)
                     const docRef = db.collection(collection).doc(messageId);
-                    docRef.delete()
+                    docRef.update({
+                        deleted: true,
+                        deletedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    })
                         .then(() => {
-                            console.log('Message deleted from Firestore successfully:', messageId);
+                            console.log('Message marked as deleted in Firestore successfully:', messageId);
                             selectedMessageForAction.remove();
                             messageActionsModal.style.display = 'none';
                         })
                         .catch(error => {
-                            console.error('Error deleting message from Firestore:', error);
+                            console.error('Error marking message as deleted in Firestore:', error);
                             console.error('Error details:', error.code, error.message);
-                            // Still remove from DOM even if Firestore delete fails
+                            // Still remove from DOM even if Firestore update fails
                             selectedMessageForAction.remove();
                             messageActionsModal.style.display = 'none';
-                            alert('Message removed from view, but there was an error deleting from database. Error: ' + error.message);
+                            alert('Message removed from view, but there was an error saving deletion. Error: ' + error.message);
                         });
                 } else if (db && messageId && messageId.startsWith('temp-')) {
                     // Temp message - just remove from DOM
@@ -1792,18 +1837,23 @@
                     selectedMessageForAction.remove();
                     messageActionsModal.style.display = 'none';
                 } else if (!db) {
-                    // No Firestore - delete from localStorage
-                    console.log('Deleting from localStorage (no Firestore)');
+                    // No Firestore - mark as deleted in localStorage
+                    console.log('Marking as deleted in localStorage (no Firestore)');
                     const timestamp = selectedMessageForAction.getAttribute('data-timestamp');
                     const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
-                    const filteredMessages = messages.filter(msg => {
+                    const updatedMessages = messages.map(msg => {
                         if (roomCode) {
-                            return !(msg.timestamp == timestamp && msg.roomCode === roomCode);
+                            if (msg.timestamp == timestamp && msg.roomCode === roomCode) {
+                                return { ...msg, deleted: true, deletedAt: Date.now() };
+                            }
                         } else {
-                            return !(msg.timestamp == timestamp && !msg.roomCode);
+                            if (msg.timestamp == timestamp && !msg.roomCode) {
+                                return { ...msg, deleted: true, deletedAt: Date.now() };
+                            }
                         }
+                        return msg;
                     });
-                    localStorage.setItem('jjnChatMessages', JSON.stringify(filteredMessages));
+                    localStorage.setItem('jjnChatMessages', JSON.stringify(updatedMessages));
                     selectedMessageForAction.remove();
                     messageActionsModal.style.display = 'none';
                 } else {
