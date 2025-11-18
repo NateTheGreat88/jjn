@@ -75,6 +75,12 @@ function showMenu() {
 }
 
 function showGame(gameName) {
+    // Redirect to word combiner page if selected
+    if (gameName === 'wordcombiner') {
+        window.location.href = 'wordcombiner.html';
+        return;
+    }
+    
     document.getElementById('gameMenu').style.display = 'none';
     document.getElementById('snakeGame').style.display = 'none';
     document.getElementById('tetrisGame').style.display = 'none';

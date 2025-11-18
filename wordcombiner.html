@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinite Craft - JNJ Website</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #ffffff;
+            color: #000;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .game-wrapper {
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Canvas Area */
+        .canvas-area {
+            flex: 1;
+            position: relative;
+            background: #ffffff;
+            overflow: hidden;
+            cursor: grab;
+        }
+
+        .canvas-area:active {
+            cursor: grabbing;
+        }
+
+        .canvas-title {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 32px;
+            font-weight: bold;
+            color: #000;
+            z-index: 10;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .menu-button {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 10;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .menu-button:hover {
+            background: #e8e8e8;
+        }
+
+        /* Canvas Elements */
+        .canvas-element {
+            position: absolute;
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 13px;
+            cursor: move;
+            user-select: none;
+            z-index: 5;
+            white-space: nowrap;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .canvas-element:hover {
+            background: #f9f9f9;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+
+        .canvas-element.dragging {
+            opacity: 0.7;
+            z-index: 1000;
+        }
+
+        .canvas-element.new {
+            animation: newElementPulse 0.5s ease-out;
+        }
+
+        @keyframes newElementPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        .element-icon {
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        /* Connection Lines */
+        .connection-line {
+            position: absolute;
+            background: #e0e0e0;
+            height: 1px;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: #fafafa;
+            border-left: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .sidebar-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 12px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #4a9eff;
+        }
+
+        .sidebar-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .sidebar-button {
+            flex: 1;
+            padding: 8px 12px;
+            background: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .sidebar-button:hover {
+            background: #f5f5f5;
+        }
+
+        .inventory-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .inventory-item {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.15s;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .inventory-item:hover {
+            background: #f5f5f5;
+            border-color: #4a9eff;
+        }
+
+        .inventory-item.selected {
+            background: #e3f2fd;
+            border-color: #4a9eff;
+        }
+
+        .inventory-icon {
+            font-size: 16px;
+            line-height: 1;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Combination Effect */
+        .combination-effect {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(74, 158, 255, 0.1);
+            border: 2px dashed #4a9eff;
+            border-radius: 8px;
+            padding: 20px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .combination-effect.active {
+            display: flex;
+        }
+
+        .combination-preview {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .combination-result {
+            font-size: 18px;
+            font-weight: 600;
+            color: #4a9eff;
+            margin-top: 5px;
+        }
+
+        /* Discoveries Modal */
+        .discoveries-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .discoveries-modal.active {
+            display: flex;
+        }
+
+        .discoveries-content {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 90%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .discoveries-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .discoveries-title {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .close-button {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #666;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+
+        .close-button:hover {
+            background: #f5f5f5;
+        }
+
+        .discoveries-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        .discovery-item {
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 12px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .discovery-icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-wrapper">
+        <!-- Canvas Area -->
+        <div class="canvas-area" id="canvasArea">
+            <div class="canvas-title">JNJCODE.COM</div>
+            <div class="menu-button" id="menuButton">
+                <span>☰</span> Menu
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">Infinite Craft</div>
+                <input type="text" class="search-box" id="searchBox" placeholder="Search items...">
+                <div class="sidebar-controls">
+                    <button class="sidebar-button" id="discoveriesButton">
+                        ✨ Discoveries
+                    </button>
+                    <button class="sidebar-button" id="resetButton">
+                        🗑️ Reset
+                    </button>
+                </div>
+            </div>
+            <div class="inventory-list" id="inventoryList"></div>
+        </div>
+    </div>
+
+    <!-- Combination Effect -->
+    <div class="combination-effect" id="combinationEffect">
+        <div class="combination-preview">
+            <span id="combEl1"></span>
+            <span>+</span>
+            <span id="combEl2"></span>
+        </div>
+        <div class="combination-result" id="combResult"></div>
+    </div>
+
+    <!-- Discoveries Modal -->
+    <div class="discoveries-modal" id="discoveriesModal">
+        <div class="discoveries-content">
+            <div class="discoveries-header">
+                <div class="discoveries-title">Discoveries</div>
+                <button class="close-button" id="closeDiscoveries">×</button>
+            </div>
+            <div class="discoveries-grid" id="discoveriesGrid"></div>
+        </div>
+    </div>
+
+    <script>
+        // Special logical combinations (for realistic results)
+        const specialCombinations = {
+            'fire': { 'water': 'steam', 'earth': 'lava', 'air': 'smoke', 'ice': 'water', 'wood': 'ash' },
+            'water': { 'fire': 'steam', 'earth': 'mud', 'air': 'rain', 'ice': 'ice' },
+            'earth': { 'water': 'mud', 'fire': 'lava', 'air': 'dust' },
+            'air': { 'water': 'rain', 'fire': 'smoke', 'earth': 'dust' },
+            'lawnmower': { 'person': 'lawnmowing' },
+            'person': { 'lawnmower': 'lawnmowing' },
+        };
+
+        // Generate logical word combination
+        function generateCombinedWord(word1, word2) {
+            // Check special combinations first
+            if (specialCombinations[word1] && specialCombinations[word1][word2]) {
+                return specialCombinations[word1][word2];
+            }
+            if (specialCombinations[word2] && specialCombinations[word2][word1]) {
+                return specialCombinations[word2][word1];
+            }
+            
+            const w1 = word1.toLowerCase();
+            const w2 = word2.toLowerCase();
+            const len1 = w1.length;
+            const len2 = w2.length;
+            
+            // Special case: same word + same word
+            if (w1 === w2) {
+                // Try to make it a plural or action form
+                if (w1.endsWith('er') || w1.endsWith('or')) {
+                    return w1 + 'ing';
+                } else if (w1.endsWith('ing')) {
+                    return w1.substring(0, len1 - 3) + 'er';
+                } else {
+                    return w1 + w1.substring(Math.floor(len1 / 2));
+                }
+            }
+            
+            // Try to create logical portmanteau
+            const methods = [
+                // Method 1: Remove common endings and combine
+                () => {
+                    const endings = ['er', 'or', 'ing', 'ed', 'ly', 'tion', 'sion', 'ness', 'ment'];
+                    for (let ending of endings) {
+                        if (w1.endsWith(ending) && len1 > ending.length + 2) {
+                            const base1 = w1.substring(0, len1 - ending.length);
+                            if (w2.endsWith('ing')) {
+                                return base1 + w2;
+                            }
+                            return base1 + w2;
+                        }
+                        if (w2.endsWith(ending) && len2 > ending.length + 2) {
+                            const base2 = w2.substring(0, len2 - ending.length);
+                            if (w1.endsWith('ing')) {
+                                return w1 + base2;
+                            }
+                            return w1 + base2;
+                        }
+                    }
+                    return null;
+                },
+                // Method 2: Smart portmanteau - find best split point
+                () => {
+                    // Find vowel in second word to start from
+                    const vowels = 'aeiou';
+                    let split2 = 0;
+                    for (let i = 0; i < len2; i++) {
+                        if (vowels.includes(w2[i])) {
+                            split2 = i;
+                            break;
+                        }
+                    }
+                    if (split2 === 0) split2 = Math.floor(len2 / 2);
+                    
+                    // Take most of first word
+                    const split1 = Math.ceil(len1 * 0.7);
+                    return w1.substring(0, split1) + w2.substring(split2);
+                },
+                // Method 3: Reverse - most of second word + end of first
+                () => {
+                    const vowels = 'aeiou';
+                    let split1 = len1;
+                    for (let i = len1 - 1; i >= 0; i--) {
+                        if (vowels.includes(w1[i])) {
+                            split1 = i + 1;
+                            break;
+                        }
+                    }
+                    if (split1 === len1) split1 = Math.floor(len1 / 2);
+                    
+                    const split2 = Math.ceil(len2 * 0.7);
+                    return w2.substring(0, split2) + w1.substring(split1);
+                },
+                // Method 4: Blend at vowel boundaries
+                () => {
+                    const vowels = 'aeiou';
+                    // Find last vowel in w1
+                    let lastVowel1 = -1;
+                    for (let i = len1 - 1; i >= 0; i--) {
+                        if (vowels.includes(w1[i])) {
+                            lastVowel1 = i;
+                            break;
+                        }
+                    }
+                    // Find first vowel in w2
+                    let firstVowel2 = -1;
+                    for (let i = 0; i < len2; i++) {
+                        if (vowels.includes(w2[i])) {
+                            firstVowel2 = i;
+                            break;
+                        }
+                    }
+                    
+                    if (lastVowel1 > 0 && firstVowel2 > 0) {
+                        return w1.substring(0, lastVowel1 + 1) + w2.substring(firstVowel2);
+                    }
+                    return null;
+                },
+                // Method 5: Simple blend
+                () => {
+                    return w1.substring(0, Math.ceil(len1 * 0.6)) + w2.substring(Math.floor(len2 * 0.4));
+                },
+            ];
+            
+            // Try each method
+            for (let method of methods) {
+                const result = method();
+                if (result && result.length >= 3 && result.length <= 25) {
+                    // Capitalize first letter
+                    return result.charAt(0).toUpperCase() + result.slice(1);
+                }
+            }
+            
+            // Fallback: simple combination
+            const fallback = w1.substring(0, Math.ceil(len1 * 0.6)) + w2.substring(Math.floor(len2 * 0.4));
+            return fallback.charAt(0).toUpperCase() + fallback.slice(1);
+        }
+
+        // Element icons
+        const elementIcons = {
+            'fire': '🔥', 'water': '💧', 'earth': '🌍', 'air': '💨',
+            'steam': '💨', 'lava': '🌋', 'mud': '🟤', 'rain': '🌧️',
+            'smoke': '💨', 'dust': '🌫️', 'cloud': '☁️', 'stone': '🪨',
+            'sand': '🏖️', 'snow': '❄️', 'metal': '⚙️', 'glass': '🪟',
+            'rainbow': '🌈', 'storm': '⛈️', 'brick': '🧱', 'wood': '🪵',
+            'plant': '🌱', 'tree': '🌳', 'flower': '🌸', 'seed': '🌰',
+            'bee': '🐝', 'honey': '🍯', 'steel': '⚔️', 'sword': '🗡️',
+            'house': '🏠', 'castle': '🏰', 'engine': '🚂', 'car': '🚗',
+            'light': '💡', 'energy': '⚡', 'time': '⏰', 'tool': '🔧',
+            'machine': '⚙️', 'rock': '🪨', 'river': '🌊', 'volcano': '🌋',
+            'eruption': '🌋', 'mountain': '⛰️', 'wind': '💨', 'breeze': '💨'
+        };
+
+        const startingElements = ['fire', 'water', 'earth', 'air'];
+
+        // Game state
+        let inventory = [...startingElements];
+        let discoveredElements = new Set(startingElements);
+        let canvasElements = [];
+        let draggedElement = null;
+        let isDraggingCanvas = false;
+        let canvasPan = { x: 0, y: 0 };
+        let lastMousePos = { x: 0, y: 0 };
+        let connections = [];
+
+        // DOM elements
+        const canvasArea = document.getElementById('canvasArea');
+        const inventoryList = document.getElementById('inventoryList');
+        const searchBox = document.getElementById('searchBox');
+        const combinationEffect = document.getElementById('combinationEffect');
+        const discoveriesModal = document.getElementById('discoveriesModal');
+        const discoveriesGrid = document.getElementById('discoveriesGrid');
+        const menuButton = document.getElementById('menuButton');
+        const discoveriesButton = document.getElementById('discoveriesButton');
+        const resetButton = document.getElementById('resetButton');
+        const closeDiscoveries = document.getElementById('closeDiscoveries');
+
+        // Initialize
+        function init() {
+            loadGameState();
+            updateInventory();
+            updateCanvas();
+            updateDiscoveries();
+            setupEventListeners();
+        }
+
+        // Global drag state for sidebar items
+        let sidebarDragState = {
+            isDragging: false,
+            dragElement: null,
+            sourceElement: null
+        };
+
+        function setupEventListeners() {
+            // Canvas panning
+            canvasArea.addEventListener('mousedown', (e) => {
+                // Don't pan if clicking on an element or in sidebar
+                if (e.target.classList.contains('canvas-element') || 
+                    e.target.closest('.canvas-element') ||
+                    e.target.closest('.sidebar') ||
+                    sidebarDragState.isDragging) {
+                    isDraggingCanvas = false;
+                    return;
+                }
+                
+                if (e.target === canvasArea || e.target.classList.contains('connection-line')) {
+                    isDraggingCanvas = true;
+                    lastMousePos = { x: e.clientX, y: e.clientY };
+                }
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDraggingCanvas) {
+                    const dx = e.clientX - lastMousePos.x;
+                    const dy = e.clientY - lastMousePos.y;
+                    canvasPan.x += dx;
+                    canvasPan.y += dy;
+                    updateCanvasPosition();
+                    lastMousePos = { x: e.clientX, y: e.clientY };
+                }
+                
+                // Handle sidebar drag
+                if (sidebarDragState.isDragging && sidebarDragState.dragElement) {
+                    sidebarDragState.dragElement.style.left = (e.clientX - 50) + 'px';
+                    sidebarDragState.dragElement.style.top = (e.clientY - 20) + 'px';
+                }
+            });
+
+            document.addEventListener('mouseup', (e) => {
+                isDraggingCanvas = false;
+                
+                // Handle sidebar drop
+                if (sidebarDragState.isDragging && sidebarDragState.dragElement) {
+                    const canvasRect = canvasArea.getBoundingClientRect();
+                    const dropX = e.clientX - canvasRect.left;
+                    const dropY = e.clientY - canvasRect.top;
+                    
+                    // Check if dropped on canvas
+                    if (dropX >= 0 && dropX <= canvasRect.width && 
+                        dropY >= 0 && dropY <= canvasRect.height) {
+                        
+                        // Check if dropped on another element
+                        let targetElement = null;
+                        canvasElements.forEach(({ el, element: otherElement }) => {
+                            const rect = el.getBoundingClientRect();
+                            if (e.clientX >= rect.left && e.clientX <= rect.right &&
+                                e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                                targetElement = otherElement;
+                            }
+                        });
+                        
+                        if (targetElement && targetElement !== sidebarDragState.sourceElement) {
+                            // Combine elements
+                            combineElements(sidebarDragState.sourceElement, targetElement);
+                        } else {
+                            // Add to canvas at drop position
+                            addElementToCanvas(sidebarDragState.sourceElement, dropX, dropY);
+                        }
+                    }
+                    
+                    // Clean up drag element
+                    if (sidebarDragState.dragElement && sidebarDragState.dragElement.parentNode) {
+                        sidebarDragState.dragElement.remove();
+                    }
+                    sidebarDragState.isDragging = false;
+                    sidebarDragState.dragElement = null;
+                    sidebarDragState.sourceElement = null;
+                }
+            });
+
+            searchBox.addEventListener('input', (e) => {
+                updateInventory(e.target.value.toLowerCase());
+            });
+
+            discoveriesButton.addEventListener('click', () => {
+                discoveriesModal.classList.add('active');
+            });
+
+            closeDiscoveries.addEventListener('click', () => {
+                discoveriesModal.classList.remove('active');
+            });
+
+            discoveriesModal.addEventListener('click', (e) => {
+                if (e.target === discoveriesModal) {
+                    discoveriesModal.classList.remove('active');
+                }
+            });
+
+            resetButton.addEventListener('click', () => {
+                resetGame();
+            });
+        }
+
+        function updateInventory(filter = '') {
+            inventoryList.innerHTML = '';
+            const filtered = inventory.filter(el => el.toLowerCase().includes(filter));
+            
+            filtered.forEach(element => {
+                const item = document.createElement('div');
+                item.className = 'inventory-item';
+                item.dataset.element = element;
+                item.innerHTML = `
+                    <div class="inventory-icon">${elementIcons[element] || '🔷'}</div>
+                    <span>${element}</span>
+                `;
+                
+                // Make draggable from sidebar
+                item.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    sidebarDragState.isDragging = true;
+                    sidebarDragState.sourceElement = element;
+                    
+                    // Create a visual drag element
+                    sidebarDragState.dragElement = document.createElement('div');
+                    sidebarDragState.dragElement.className = 'canvas-element';
+                    sidebarDragState.dragElement.style.position = 'fixed';
+                    sidebarDragState.dragElement.style.pointerEvents = 'none';
+                    sidebarDragState.dragElement.style.zIndex = '10000';
+                    sidebarDragState.dragElement.style.opacity = '0.8';
+                    sidebarDragState.dragElement.innerHTML = `
+                        <span class="element-icon">${elementIcons[element] || '🔷'}</span>
+                        <span>${element}</span>
+                    `;
+                    sidebarDragState.dragElement.style.left = (e.clientX - 50) + 'px';
+                    sidebarDragState.dragElement.style.top = (e.clientY - 20) + 'px';
+                    document.body.appendChild(sidebarDragState.dragElement);
+                });
+                
+                inventoryList.appendChild(item);
+            });
+        }
+
+        function addElementToCanvas(element, x = null, y = null, isNew = false) {
+            // Check if element already exists on canvas
+            const existing = canvasElements.find(ce => ce.element === element);
+            if (existing) {
+                // Just update position if provided
+                if (x !== null && y !== null) {
+                    existing.el.style.left = x + 'px';
+                    existing.el.style.top = y + 'px';
+                    existing.x = x;
+                    existing.y = y;
+                }
+                return existing.el;
+            }
+
+            const canvasEl = document.createElement('div');
+            canvasEl.className = 'canvas-element';
+            canvasEl.dataset.element = element;
+            canvasEl.innerHTML = `
+                <span class="element-icon">${elementIcons[element] || '🔷'}</span>
+                <span>${element}</span>
+            `;
+
+            if (x === null || y === null) {
+                x = Math.random() * (canvasArea.offsetWidth - 150) + 100;
+                y = Math.random() * (canvasArea.offsetHeight - 100) + 100;
+            }
+
+            canvasEl.style.left = x + 'px';
+            canvasEl.style.top = y + 'px';
+
+            if (isNew) {
+                canvasEl.classList.add('new');
+                setTimeout(() => canvasEl.classList.remove('new'), 500);
+            }
+
+            makeDraggable(canvasEl);
+            canvasArea.appendChild(canvasEl);
+            
+            canvasElements.push({ element, el: canvasEl, x, y });
+            drawConnections();
+            return canvasEl;
+        }
+
+        function makeDraggable(elementEl) {
+            let isDragging = false;
+            let startPos = { x: 0, y: 0 };
+            let elementStartPos = { x: 0, y: 0 };
+            let targetElement = null;
+
+            elementEl.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                isDragging = true;
+                elementEl.classList.add('dragging');
+                
+                const rect = elementEl.getBoundingClientRect();
+                const canvasRect = canvasArea.getBoundingClientRect();
+                
+                startPos.x = e.clientX;
+                startPos.y = e.clientY;
+                elementStartPos.x = rect.left - canvasRect.left;
+                elementStartPos.y = rect.top - canvasRect.top;
+                
+                draggedElement = elementEl.dataset.element;
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const canvasRect = canvasArea.getBoundingClientRect();
+                    const deltaX = e.clientX - startPos.x;
+                    const deltaY = e.clientY - startPos.y;
+                    
+                    const newX = elementStartPos.x + deltaX;
+                    const newY = elementStartPos.y + deltaY;
+                    
+                    elementEl.style.left = newX + 'px';
+                    elementEl.style.top = newY + 'px';
+                    
+                    // Check for overlap with other elements
+                    const rect = elementEl.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+                    
+                    let foundTarget = false;
+                    canvasElements.forEach(({ el, element }) => {
+                        if (el !== elementEl) {
+                            const otherRect = el.getBoundingClientRect();
+                            const otherCenterX = otherRect.left + otherRect.width / 2;
+                            const otherCenterY = otherRect.top + otherRect.height / 2;
+                            
+                            const distance = Math.sqrt(
+                                Math.pow(centerX - otherCenterX, 2) + 
+                                Math.pow(centerY - otherCenterY, 2)
+                            );
+                            
+                            if (distance < 60) {
+                                el.style.border = '2px solid #4a9eff';
+                                el.style.background = '#e3f2fd';
+                                targetElement = element;
+                                foundTarget = true;
+                            } else {
+                                el.style.border = '1px solid #e0e0e0';
+                                el.style.background = '#ffffff';
+                            }
+                        }
+                    });
+                    
+                    if (!foundTarget) {
+                        targetElement = null;
+                    }
+                }
+            });
+
+            document.addEventListener('mouseup', (e) => {
+                if (isDragging) {
+                    isDragging = false;
+                    elementEl.classList.remove('dragging');
+                    
+                    // Check if dropped on another element
+                    if (targetElement && draggedElement !== targetElement) {
+                        combineElements(draggedElement, targetElement);
+                    }
+                    
+                    // Reset borders and backgrounds
+                    canvasElements.forEach(({ el }) => {
+                        el.style.border = '1px solid #e0e0e0';
+                        el.style.background = '#ffffff';
+                    });
+                    
+                    // Update position in canvasElements array
+                    const index = canvasElements.findIndex(ce => ce.el === elementEl);
+                    if (index !== -1) {
+                        canvasElements[index].x = parseInt(elementEl.style.left);
+                        canvasElements[index].y = parseInt(elementEl.style.top);
+                    }
+                    
+                    targetElement = null;
+                    draggedElement = null;
+                    updateConnections();
+                    saveGameState();
+                }
+            });
+        }
+
+        function combineElements(el1, el2) {
+            // Generate combined word (always works, even same + same)
+            let result = generateCombinedWord(el1, el2);
+            result = result.toLowerCase();
+            
+            // If already discovered, don't create duplicate - just do nothing
+            if (discoveredElements.has(result)) {
+                // Silently do nothing - element already exists
+                return;
+            }
+            
+            // Add to inventory and discovered
+            inventory.push(result);
+            discoveredElements.add(result);
+            
+            // Show combination effect
+            document.getElementById('combEl1').textContent = el1;
+            document.getElementById('combEl2').textContent = el2;
+            document.getElementById('combResult').textContent = result;
+            combinationEffect.classList.add('active');
+            
+            setTimeout(() => {
+                combinationEffect.classList.remove('active');
+                addElementToCanvas(result, null, null, true);
+            }, 1500);
+
+            updateInventory(searchBox.value.toLowerCase());
+            updateDiscoveries();
+            saveGameState();
+        }
+
+        function updateCanvas() {
+            // Clear existing
+            document.querySelectorAll('.canvas-element, .connection-line').forEach(el => el.remove());
+            canvasElements = [];
+            connections = [];
+
+            // Add discovered elements (except starting ones)
+            discoveredElements.forEach(element => {
+                if (!startingElements.includes(element)) {
+                    addElementToCanvas(element);
+                }
+            });
+
+            // Draw connections
+            drawConnections();
+        }
+
+        function drawConnections() {
+            // Clear existing connections
+            document.querySelectorAll('.connection-line').forEach(line => line.remove());
+            connections = [];
+            
+            // Connect all elements (since everything can combine)
+            canvasElements.forEach(({ element, el }, i) => {
+                canvasElements.slice(i + 1).forEach(({ element: otherElement, el: otherEl }) => {
+                    // Connect all elements with faint lines
+                    const line = document.createElement('div');
+                    line.className = 'connection-line';
+                    updateConnectionLine(line, el, otherEl);
+                    canvasArea.appendChild(line);
+                    connections.push({ line, el1: el, el2: otherEl });
+                });
+            });
+        }
+
+        function updateConnections() {
+            connections.forEach(({ line, el1, el2 }) => {
+                updateConnectionLine(line, el1, el2);
+            });
+        }
+
+        function updateConnectionLine(line, el1, el2) {
+            const rect1 = el1.getBoundingClientRect();
+            const rect2 = el2.getBoundingClientRect();
+            const canvasRect = canvasArea.getBoundingClientRect();
+            
+            const x1 = rect1.left + rect1.width / 2 - canvasRect.left;
+            const y1 = rect1.top + rect1.height / 2 - canvasRect.top;
+            const x2 = rect2.left + rect2.width / 2 - canvasRect.left;
+            const y2 = rect2.top + rect2.height / 2 - canvasRect.top;
+            
+            const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+            const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+            
+            line.style.width = length + 'px';
+            line.style.left = x1 + 'px';
+            line.style.top = y1 + 'px';
+            line.style.transform = `rotate(${angle}deg)`;
+            line.style.transformOrigin = '0 50%';
+        }
+
+        function updateCanvasPosition() {
+            canvasElements.forEach(({ el }) => {
+                const currentX = parseInt(el.style.left);
+                const currentY = parseInt(el.style.top);
+                el.style.left = (currentX + canvasPan.x) + 'px';
+                el.style.top = (currentY + canvasPan.y) + 'px';
+            });
+            
+            connections.forEach(({ line, el1, el2 }) => {
+                updateConnectionLine(line, el1, el2);
+            });
+            
+            canvasPan = { x: 0, y: 0 };
+        }
+
+        function updateDiscoveries() {
+            discoveriesGrid.innerHTML = '';
+            Array.from(discoveredElements).sort().forEach(element => {
+                const item = document.createElement('div');
+                item.className = 'discovery-item';
+                item.innerHTML = `
+                    <div class="discovery-icon">${elementIcons[element] || '🔷'}</div>
+                    <div>${element}</div>
+                `;
+                discoveriesGrid.appendChild(item);
+            });
+        }
+
+        function resetGame() {
+            inventory = [...startingElements];
+            discoveredElements = new Set(startingElements);
+            canvasElements = [];
+            canvasPan = { x: 0, y: 0 };
+            updateInventory();
+            updateCanvas();
+            updateDiscoveries();
+            saveGameState();
+        }
+
+        function saveGameState() {
+            localStorage.setItem('infiniteCraftInventory', JSON.stringify(inventory));
+            localStorage.setItem('infiniteCraftDiscovered', JSON.stringify(Array.from(discoveredElements)));
+            localStorage.setItem('infiniteCraftCanvas', JSON.stringify(canvasElements.map(ce => ({
+                element: ce.element,
+                x: parseInt(ce.el.style.left),
+                y: parseInt(ce.el.style.top)
+            }))));
+        }
+
+        function loadGameState() {
+            const savedInventory = localStorage.getItem('infiniteCraftInventory');
+            const savedDiscovered = localStorage.getItem('infiniteCraftDiscovered');
+            const savedCanvas = localStorage.getItem('infiniteCraftCanvas');
+
+            if (savedInventory) inventory = JSON.parse(savedInventory);
+            if (savedDiscovered) discoveredElements = new Set(JSON.parse(savedDiscovered));
+            if (savedCanvas) {
+                const canvasData = JSON.parse(savedCanvas);
+                canvasData.forEach(({ element, x, y }) => {
+                    const el = addElementToCanvas(element, x, y);
+                    canvasElements.push({ element, el, x, y });
+                });
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
