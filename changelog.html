@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Changelog - JNJ Website</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="animated-background.css">
+    <script src="page-transitions.js" defer></script>
+    <script src="animated-background.js" defer></script>
+    <style>
+        .changelog-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .version-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .version-section:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .version-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .version-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4a9eff;
+            margin: 0;
+        }
+        
+        .version-date {
+            font-size: 14px;
+            opacity: 0.7;
+            color: #b0b0b0;
+        }
+        
+        .changes-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .changes-list li {
+            padding: 10px 0;
+            padding-left: 25px;
+            position: relative;
+            line-height: 1.6;
+            color: #e0e0e0;
+        }
+        
+        .changes-list li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #4a9eff;
+            font-size: 20px;
+            line-height: 1;
+        }
+        
+        .change-type {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-right: 8px;
+            text-transform: uppercase;
+        }
+        
+        .change-type.added {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+        
+        .change-type.fixed {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+        }
+        
+        .change-type.changed {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+        
+        .change-type.removed {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+        
+        .current-version {
+            border: 2px solid #4a9eff;
+            background: rgba(74, 158, 255, 0.1);
+        }
+        
+        .current-version .version-number {
+            color: #4a9eff;
+            text-shadow: 0 0 10px rgba(74, 158, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-button">← Back to Home</a>
+    
+    <div class="changelog-container">
+        <header>
+            <h1>Changelog</h1>
+            <p class="subtitle">Version History & Updates</p>
+        </header>
+        
+        <main>
+            <div class="version-section current-version">
+                <div class="version-header">
+                    <h2 class="version-number">v2.1.0</h2>
+                    <span class="version-date">January 2025</span>
+                </div>
+                <ul class="changes-list">
+                    <li><span class="change-type added">Added</span> Message deletion now marks messages as deleted instead of removing them from database</li>
+                    <li><span class="change-type fixed">Fixed</span> Deleted messages are properly filtered from chat view</li>
+                    <li><span class="change-type changed">Changed</span> Message deletion system to preserve data with deleted flag</li>
+                </ul>
+            </div>
+            
+            <div class="version-section">
+                <div class="version-header">
+                    <h2 class="version-number">v2.0.0</h2>
+                    <span class="version-date">January 2025</span>
+                </div>
+                <ul class="changes-list">
+                    <li><span class="change-type added">Added</span> Interactive background with particles, ripples, and cursor-following effects</li>
+                    <li><span class="change-type added">Added</span> Live visitor map feature with real-time cursor tracking</li>
+                    <li><span class="change-type added">Added</span> Multiple new minigames (Pac-Man, Frogger, Minesweeper, Doodle Jump, Typing, Hangman, Connect Four, Solitaire, Bubble Shooter, Fruit Slicer)</li>
+                    <li><span class="change-type removed">Removed</span> Asteroids game from minigames collection</li>
+                    <li><span class="change-type changed">Changed</span> Button sizes and spacing for better UI</li>
+                    <li><span class="change-type changed">Changed</span> Subtitle positioning and styling</li>
+                </ul>
+            </div>
+            
+            <div class="version-section">
+                <div class="version-header">
+                    <h2 class="version-number">v1.5.0</h2>
+                    <span class="version-date">December 2024</span>
+                </div>
+                <ul class="changes-list">
+                    <li><span class="change-type added">Added</span> Private room functionality for chat</li>
+                    <li><span class="change-type added">Added</span> Dev chat room with special access</li>
+                    <li><span class="change-type added">Added</span> Message moderation tools for dev users</li>
+                    <li><span class="change-type added">Added</span> GIF support in chat messages</li>
+                    <li><span class="change-type added">Added</span> Image upload and preview in chat</li>
+                    <li><span class="change-type added">Added</span> Emoji picker for chat messages</li>
+                </ul>
+            </div>
+            
+            <div class="version-section">
+                <div class="version-header">
+                    <h2 class="version-number">v1.4.0</h2>
+                    <span class="version-date">December 2024</span>
+                </div>
+                <ul class="changes-list">
+                    <li><span class="change-type added">Added</span> Profile system with avatars and custom names</li>
+                    <li><span class="change-type added">Added</span> User session management</li>
+                    <li><span class="change-type added">Added</span> Firebase integration for real-time chat</li>
+                    <li><span class="change-type added">Added</span> Real-time message synchronization</li>
+                    <li><span class="change-type changed">Changed</span> Chat UI with improved styling</li>
+                </ul>
+            </div>
+            
+            <div class="version-section">
+                <div class="version-header">
+                    <h2 class="version-number">v1.3.0</h2>
+                    <span class="version-date">November 2024</span>
+                </div>
+                <ul class="changes-list">
+                    <li><span class="change-type added">Added</span> Code editor page</li>
+                    <li><span class="change-type added">Added</span> Image editor page</li>
+                    <li><span class="change-type added">Added</span> Minigames collection page</li>
+                    <li><span class="change-type added">Added</span> Scratch games page</li>
+                    <li><span class="change-type added">Added</span> Secrets and easter eggs system</li>
+                </ul>
+            </div>
+            
+            <div class="version-section">
+                <div class="version-header">
+                    <h2 class="version-number">v1.2.0</h2>
+                    <span class="version-date">November 2024</span>
+                </div>
+                <ul class="changes-list">
+                    <li><span class="change-type added">Added</span> Songs page with music player</li>
+                    <li><span class="change-type added">Added</span> Multiple original music tracks</li>
+                    <li><span class="change-type added">Added</span> Page transitions and animations</li>
+                    <li><span class="change-type changed">Changed</span> Overall site styling and theme</li>
+                </ul>
+            </div>
+            
+            <div class="version-section">
+                <div class="version-header">
+                    <h2 class="version-number">v1.1.0</h2>
+                    <span class="version-date">October 2024</span>
+                </div>
+                <ul class="changes-list">
+                    <li><span class="change-type added">Added</span> Chat functionality</li>
+                    <li><span class="change-type added">Added</span> Search functionality for pages</li>
+                    <li><span class="change-type added">Added</span> Recently visited page tracking</li>
+                    <li><span class="change-type changed">Changed</span> Homepage layout and design</li>
+                </ul>
+            </div>
+            
+            <div class="version-section">
+                <div class="version-header">
+                    <h2 class="version-number">v1.0.0</h2>
+                    <span class="version-date">October 2024</span>
+                </div>
+                <ul class="changes-list">
+                    <li><span class="change-type added">Added</span> Initial website launch</li>
+                    <li><span class="change-type added">Added</span> Homepage with navigation</li>
+                    <li><span class="change-type added">Added</span> About page</li>
+                    <li><span class="change-type added">Added</span> Profile page</li>
+                    <li><span class="change-type added">Added</span> Basic styling and theme</li>
+                </ul>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
+
