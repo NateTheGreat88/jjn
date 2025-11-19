@@ -476,7 +476,8 @@
             }
             
             // Set up real-time listener that gets all current messages and then listens for changes
-            messagesUnsubscribe = query.onSnapshot((querySnapshot) => {
+            // Use includeMetadataChanges to ensure we get all updates, including deletions
+            messagesUnsubscribe = query.onSnapshot({ includeMetadataChanges: false }, (querySnapshot) => {
                     // On initial load, clear and reload all messages
                     if (isInitialLoad) {
                         const messages = [];
@@ -537,8 +538,10 @@
                     } else {
                         // After initial load, only process new changes
                         querySnapshot.docChanges().forEach((change) => {
-                            if (change.type === 'added' && !loadedMessageIds.has(change.doc.id)) {
-                                const data = change.doc.data();
+                            const messageId = change.doc.id;
+                            const data = change.doc.data();
+                            
+                            if (change.type === 'added' && !loadedMessageIds.has(messageId)) {
                                 // Skip deleted messages
                                 if (data.deleted === true) {
                                     return;
@@ -554,40 +557,85 @@
                                 // Double-check room code match
                                 if (roomCode) {
                                     if (data.roomCode === roomCode) {
-                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, change.doc.id, data.userId);
-                                        loadedMessageIds.add(change.doc.id);
+                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId);
+                                        loadedMessageIds.add(messageId);
                                     }
                                 } else {
                                     // Only show messages without roomCode in public chat
                                     if (!data.roomCode) {
-                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, change.doc.id, data.userId);
-                                        loadedMessageIds.add(change.doc.id);
+                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId);
+                                        loadedMessageIds.add(messageId);
                                     }
                                 }
                             } else if (change.type === 'modified') {
                                 // Message was updated (e.g., marked as deleted)
-                                const data = change.doc.data();
+                                console.log('Message modified:', { messageId, deleted: data.deleted, roomCode: data.roomCode });
+                                
+                                // Always check for deleted flag first, regardless of room code
                                 if (data.deleted === true) {
-                                    // Remove deleted message from DOM
-                                    const messageId = change.doc.id;
+                                    // Remove deleted message from DOM immediately
                                     const messageElement = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
                                     if (messageElement) {
                                         console.log('Removing deleted message from DOM:', messageId);
-                                        messageElement.remove();
+                                        messageElement.style.transition = 'opacity 0.3s';
+                                        messageElement.style.opacity = '0';
+                                        setTimeout(() => {
+                                            messageElement.remove();
+                                        }, 300);
                                         loadedMessageIds.delete(messageId);
+                                    } else {
+                                        // Message not in DOM, but mark as deleted in loadedMessageIds
+                                        loadedMessageIds.delete(messageId);
+                                    }
+                                } else {
+                                    // Message was modified but not deleted
+                                    // Check if message should be visible based on room code
+                                    let shouldShow = false;
+                                    if (roomCode) {
+                                        shouldShow = data.roomCode === roomCode;
+                                    } else {
+                                        shouldShow = !data.roomCode;
+                                    }
+                                    
+                                    if (shouldShow && !loadedMessageIds.has(messageId)) {
+                                        // Message was modified but not deleted, and we haven't loaded it yet
+                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId);
+                                        loadedMessageIds.add(messageId);
                                     }
                                 }
                             } else if (change.type === 'removed') {
                                 // Message was actually deleted - remove it from DOM
-                                const messageId = change.doc.id;
                                 const messageElement = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
                                 if (messageElement) {
                                     console.log('Removing deleted message from DOM:', messageId);
-                                    messageElement.remove();
+                                    messageElement.style.transition = 'opacity 0.3s';
+                                    messageElement.style.opacity = '0';
+                                    setTimeout(() => {
+                                        messageElement.remove();
+                                    }, 300);
                                     loadedMessageIds.delete(messageId);
                                 }
                             }
                         });
+                        
+                        // Also check all current messages in snapshot for deleted flag (in case modified event was missed)
+                        querySnapshot.forEach((doc) => {
+                            const data = doc.data();
+                            const docId = doc.id;
+                            if (data.deleted === true && loadedMessageIds.has(docId)) {
+                                const messageElement = chatMessages.querySelector(`[data-message-id="${docId}"]`);
+                                if (messageElement) {
+                                    console.log('Found deleted message in snapshot, removing:', docId);
+                                    messageElement.style.transition = 'opacity 0.3s';
+                                    messageElement.style.opacity = '0';
+                                    setTimeout(() => {
+                                        messageElement.remove();
+                                    }, 300);
+                                    loadedMessageIds.delete(docId);
+                                }
+                            }
+                        });
+                        
                         scrollToBottom();
                     }
                 }, (error) => {
@@ -637,7 +685,7 @@
                                 // Set up a simpler listener without orderBy
                                 messagesUnsubscribe = db.collection('roomMessages')
                                     .where('roomCode', '==', roomCode)
-                                    .onSnapshot((snapshot) => {
+                                    .onSnapshot({ includeMetadataChanges: false }, (snapshot) => {
                                         snapshot.docChanges().forEach((change) => {
                                             if (change.type === 'added' && !loadedMessageIds.has(change.doc.id)) {
                                                 const data = change.doc.data();
@@ -653,15 +701,28 @@
                                             } else if (change.type === 'modified') {
                                                 // Message was updated (e.g., marked as deleted)
                                                 const data = change.doc.data();
+                                                const messageId = change.doc.id;
+                                                
+                                                // Check if message should be visible based on room code
+                                                let shouldShow = false;
+                                                if (roomCode) {
+                                                    shouldShow = data.roomCode === roomCode;
+                                                } else {
+                                                    shouldShow = !data.roomCode;
+                                                }
+                                                
                                                 if (data.deleted === true) {
                                                     // Remove deleted message from DOM
-                                                    const messageId = change.doc.id;
                                                     const messageElement = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
                                                     if (messageElement) {
                                                         console.log('Fallback listener - Removing deleted message from DOM:', messageId);
                                                         messageElement.remove();
                                                         loadedMessageIds.delete(messageId);
                                                     }
+                                                } else if (shouldShow && !loadedMessageIds.has(messageId)) {
+                                                    // Message was modified but not deleted, and we haven't loaded it yet
+                                                    addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId);
+                                                    loadedMessageIds.add(messageId);
                                                 }
                                             } else if (change.type === 'removed') {
                                                 // Message was actually deleted - remove it from DOM
