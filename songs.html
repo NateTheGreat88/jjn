@@ -214,6 +214,89 @@
                 }
             }
         });
+        
+        // Sparkle effect for song cards
+        function createSparkle(element, x, y) {
+            const sparkle = document.createElement('span');
+            const sparkles = ['✨', '⭐'];
+            sparkle.textContent = sparkles[Math.floor(Math.random() * sparkles.length)];
+            sparkle.style.position = 'absolute';
+            sparkle.style.left = x + 'px';
+            sparkle.style.top = y + 'px';
+            sparkle.style.fontSize = (8 + Math.random() * 6) + 'px';
+            sparkle.style.pointerEvents = 'none';
+            sparkle.style.zIndex = '1000';
+            sparkle.style.opacity = '1';
+            sparkle.style.userSelect = 'none';
+            sparkle.style.transform = 'translate(-50%, -50%)';
+            
+            // Random direction
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 40 + Math.random() * 30;
+            const endX = Math.cos(angle) * distance;
+            const endY = Math.sin(angle) * distance;
+            const rotation = Math.random() * 360 - 180;
+            
+            element.appendChild(sparkle);
+            
+            // Animate
+            sparkle.animate([
+                {
+                    transform: 'translate(-50%, -50%) scale(1) rotate(0deg)',
+                    opacity: 1
+                },
+                {
+                    transform: `translate(calc(-50% + ${endX}px), calc(-50% + ${endY}px)) scale(0.2) rotate(${rotation}deg)`,
+                    opacity: 0
+                }
+            ], {
+                duration: 600 + Math.random() * 300,
+                easing: 'ease-out',
+                fill: 'forwards'
+            });
+            
+            // Remove after animation
+            setTimeout(() => {
+                if (sparkle.parentNode) {
+                    sparkle.remove();
+                }
+            }, 1000);
+        }
+        
+        // Add sparkle effect to all song cards
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.song-card').forEach(card => {
+                let sparkleInterval;
+                
+                card.addEventListener('mouseenter', () => {
+                    // Create sparkles continuously while hovering
+                    sparkleInterval = setInterval(() => {
+                        const cardRect = card.getBoundingClientRect();
+                        const mouseX = window.mouseX || cardRect.left + cardRect.width / 2;
+                        const mouseY = window.mouseY || cardRect.top + cardRect.height / 2;
+                        
+                        // Convert to relative position within card
+                        const relativeX = mouseX - cardRect.left;
+                        const relativeY = mouseY - cardRect.top;
+                        
+                        // Create a sparkle
+                        createSparkle(card, relativeX, relativeY);
+                    }, 150); // Create sparkle every 150ms while hovering
+                });
+                
+                card.addEventListener('mouseleave', () => {
+                    if (sparkleInterval) {
+                        clearInterval(sparkleInterval);
+                    }
+                });
+                
+                card.addEventListener('mousemove', (e) => {
+                    // Store mouse position for sparkle creation
+                    window.mouseX = e.clientX;
+                    window.mouseY = e.clientY;
+                });
+            });
+        });
     </script>
 </body>
 </html>
