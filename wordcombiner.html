@@ -142,8 +142,37 @@
         .sidebar-title {
             font-size: 24px;
             font-weight: bold;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .stats-display {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 6px 10px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            flex: 1;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            font-size: 16px;
+            color: #4a9eff;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            margin-top: 2px;
         }
 
         .search-box {
@@ -214,6 +243,14 @@
         .inventory-item.selected {
             background: #e3f2fd;
             border-color: #4a9eff;
+            box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.3);
+        }
+
+        .inventory-item.selected::after {
+            content: '✓';
+            margin-left: auto;
+            color: #4a9eff;
+            font-weight: bold;
         }
 
         .inventory-icon {
@@ -352,6 +389,16 @@
         <div class="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-title">Infinite Craft</div>
+                <div class="stats-display">
+                    <div class="stat-item">
+                        <div class="stat-value" id="discoveriesCount">4</div>
+                        <div class="stat-label">Discovered</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="combinationsCount">0</div>
+                        <div class="stat-label">Combinations</div>
+                    </div>
+                </div>
                 <input type="text" class="search-box" id="searchBox" placeholder="Search items...">
                 <div class="sidebar-controls">
                     <button class="sidebar-button" id="discoveriesButton">
@@ -388,17 +435,68 @@
     </div>
 
     <script>
-        // Special logical combinations (for realistic results)
+        // Extensive special logical combinations (for realistic results)
         const specialCombinations = {
-            'fire': { 'water': 'steam', 'earth': 'lava', 'air': 'smoke', 'ice': 'water', 'wood': 'ash' },
-            'water': { 'fire': 'steam', 'earth': 'mud', 'air': 'rain', 'ice': 'ice' },
-            'earth': { 'water': 'mud', 'fire': 'lava', 'air': 'dust' },
-            'air': { 'water': 'rain', 'fire': 'smoke', 'earth': 'dust' },
-            'lawnmower': { 'person': 'lawnmowing' },
-            'person': { 'lawnmower': 'lawnmowing' },
+            'fire': { 'water': 'steam', 'earth': 'lava', 'air': 'smoke', 'ice': 'water', 'wood': 'ash', 'metal': 'molten', 'stone': 'lava', 'sand': 'glass' },
+            'water': { 'fire': 'steam', 'earth': 'mud', 'air': 'rain', 'ice': 'ice', 'salt': 'saltwater', 'sugar': 'syrup', 'coffee': 'coffee' },
+            'earth': { 'water': 'mud', 'fire': 'lava', 'air': 'dust', 'seed': 'plant', 'stone': 'rock', 'tree': 'forest' },
+            'air': { 'water': 'rain', 'fire': 'smoke', 'earth': 'dust', 'wind': 'breeze', 'cloud': 'sky' },
+            'steam': { 'cold': 'water', 'engine': 'power', 'pressure': 'energy', 'machine': 'engine' },
+            'lava': { 'water': 'stone', 'cold': 'rock', 'time': 'volcano', 'earth': 'volcano' },
+            'mud': { 'fire': 'brick', 'sun': 'clay', 'time': 'soil', 'earth': 'dirt' },
+            'rain': { 'sun': 'rainbow', 'cold': 'snow', 'wind': 'storm', 'cloud': 'storm' },
+            'smoke': { 'water': 'cloud', 'air': 'fog', 'fire': 'ash' },
+            'cloud': { 'lightning': 'storm', 'cold': 'snow', 'sun': 'rainbow', 'rain': 'storm' },
+            'stone': { 'fire': 'metal', 'water': 'sand', 'tool': 'weapon', 'time': 'rock' },
+            'sand': { 'fire': 'glass', 'water': 'beach', 'time': 'desert' },
+            'snow': { 'sun': 'water', 'fire': 'steam', 'cold': 'ice' },
+            'metal': { 'fire': 'steel', 'tool': 'sword', 'water': 'rust' },
+            'glass': { 'fire': 'lens', 'light': 'prism', 'sand': 'bottle' },
+            'rainbow': { 'light': 'spectrum', 'prism': 'light', 'water': 'refraction' },
+            'storm': { 'wind': 'hurricane', 'lightning': 'thunder', 'rain': 'flood' },
+            'brick': { 'wood': 'house', 'cement': 'wall', 'fire': 'kiln' },
+            'wood': { 'fire': 'ash', 'tool': 'handle', 'water': 'boat' },
+            'plant': { 'water': 'tree', 'sun': 'flower', 'earth': 'garden' },
+            'tree': { 'fire': 'charcoal', 'tool': 'lumber', 'time': 'forest' },
+            'flower': { 'bee': 'honey', 'sun': 'seed', 'water': 'garden' },
+            'seed': { 'water': 'sprout', 'earth': 'plant', 'sun': 'flower' },
+            'bee': { 'flower': 'honey', 'hive': 'wax' },
+            'honey': { 'water': 'syrup', 'bee': 'wax' },
+            'steel': { 'fire': 'blade', 'tool': 'weapon', 'metal': 'alloy' },
+            'sword': { 'fire': 'flame', 'ice': 'frost', 'metal': 'blade' },
+            'house': { 'stone': 'castle', 'wood': 'cabin', 'brick': 'mansion' },
+            'castle': { 'king': 'kingdom', 'stone': 'fortress' },
+            'engine': { 'fuel': 'car', 'steam': 'train', 'fire': 'motor' },
+            'car': { 'speed': 'race', 'electricity': 'motor', 'engine': 'vehicle' },
+            'light': { 'prism': 'rainbow', 'fire': 'flame', 'electricity': 'bulb' },
+            'energy': { 'fire': 'plasma', 'electricity': 'power', 'light': 'radiation' },
+            'time': { 'sand': 'hourglass', 'clock': 'watch', 'space': 'spacetime' },
+            'tool': { 'metal': 'weapon', 'wood': 'handle', 'stone': 'hammer' },
+            'machine': { 'metal': 'gear', 'energy': 'engine', 'tool': 'robot' },
+            'lawnmower': { 'person': 'lawnmowing', 'grass': 'mowing' },
+            'person': { 'lawnmower': 'lawnmowing', 'work': 'worker' },
+            'computer': { 'internet': 'website', 'code': 'program', 'electricity': 'power' },
+            'internet': { 'computer': 'website', 'connection': 'network' },
+            'code': { 'computer': 'program', 'language': 'script' },
+            'music': { 'sound': 'song', 'instrument': 'melody' },
+            'sound': { 'music': 'song', 'wave': 'frequency' },
+            'book': { 'paper': 'page', 'story': 'novel' },
+            'paper': { 'tree': 'pulp', 'ink': 'document' },
+            'food': { 'fire': 'cooked', 'water': 'soup' },
+            'cooked': { 'food': 'meal', 'fire': 'baked' },
         };
 
-        // Generate logical word combination
+        // Creative word/phrase generators
+        const creativePhrases = {
+            'fire': { 'water': 'steam', 'earth': 'lava', 'air': 'smoke', 'ice': 'water', 'wood': 'ash', 'metal': 'molten', 'person': 'firefighter', 'house': 'inferno' },
+            'water': { 'fire': 'steam', 'earth': 'mud', 'air': 'rain', 'ice': 'ice', 'person': 'swimmer', 'house': 'flood' },
+            'earth': { 'water': 'mud', 'fire': 'lava', 'air': 'dust', 'person': 'farmer', 'house': 'foundation' },
+            'air': { 'water': 'rain', 'fire': 'smoke', 'earth': 'dust', 'person': 'pilot', 'house': 'ventilation' },
+            'person': { 'fire': 'firefighter', 'water': 'swimmer', 'earth': 'farmer', 'air': 'pilot', 'house': 'homeowner', 'computer': 'programmer', 'music': 'musician' },
+            'house': { 'fire': 'inferno', 'water': 'flood', 'earth': 'foundation', 'air': 'ventilation', 'person': 'homeowner' },
+        };
+
+        // Generate creative and weird word/phrase combinations
         function generateCombinedWord(word1, word2) {
             // Check special combinations first
             if (specialCombinations[word1] && specialCombinations[word1][word2]) {
@@ -408,6 +506,14 @@
                 return specialCombinations[word2][word1];
             }
             
+            // Check creative phrases
+            if (creativePhrases[word1] && creativePhrases[word1][word2]) {
+                return creativePhrases[word1][word2];
+            }
+            if (creativePhrases[word2] && creativePhrases[word2][word1]) {
+                return creativePhrases[word2][word1];
+            }
+            
             const w1 = word1.toLowerCase();
             const w2 = word2.toLowerCase();
             const len1 = w1.length;
@@ -415,77 +521,44 @@
             
             // Special case: same word + same word
             if (w1 === w2) {
-                // Try to make it a plural or action form
                 if (w1.endsWith('er') || w1.endsWith('or')) {
                     return w1 + 'ing';
                 } else if (w1.endsWith('ing')) {
                     return w1.substring(0, len1 - 3) + 'er';
+                } else if (w1.endsWith('y')) {
+                    return w1.substring(0, len1 - 1) + 'ies';
                 } else {
-                    return w1 + w1.substring(Math.floor(len1 / 2));
+                    return w1 + 's';
                 }
             }
             
-            // Try to create logical portmanteau
+            // Creative combination methods - generate weird but interesting words/phrases
             const methods = [
-                // Method 1: Remove common endings and combine
+                // Method 1: Full compound words (only for short words)
                 () => {
-                    const endings = ['er', 'or', 'ing', 'ed', 'ly', 'tion', 'sion', 'ness', 'ment'];
-                    for (let ending of endings) {
-                        if (w1.endsWith(ending) && len1 > ending.length + 2) {
-                            const base1 = w1.substring(0, len1 - ending.length);
-                            if (w2.endsWith('ing')) {
-                                return base1 + w2;
-                            }
-                            return base1 + w2;
-                        }
-                        if (w2.endsWith(ending) && len2 > ending.length + 2) {
-                            const base2 = w2.substring(0, len2 - ending.length);
-                            if (w1.endsWith('ing')) {
-                                return w1 + base2;
-                            }
-                            return w1 + base2;
+                    if (len1 <= 6 && len2 <= 6 && (len1 + len2) <= 10) {
+                        return w1 + w2;
+                    }
+                    return null;
+                },
+                // Method 2: Hyphenated phrases (preferred for longer combinations)
+                () => {
+                    if (len1 + len2 <= 20) {
+                        // 70% chance of hyphenated, 30% spaced
+                        if (Math.random() > 0.3) {
+                            return w1 + '-' + w2;
+                        } else {
+                            return w1 + ' ' + w2;
                         }
                     }
                     return null;
                 },
-                // Method 2: Smart portmanteau - find best split point
-                () => {
-                    // Find vowel in second word to start from
-                    const vowels = 'aeiou';
-                    let split2 = 0;
-                    for (let i = 0; i < len2; i++) {
-                        if (vowels.includes(w2[i])) {
-                            split2 = i;
-                            break;
-                        }
-                    }
-                    if (split2 === 0) split2 = Math.floor(len2 / 2);
-                    
-                    // Take most of first word
-                    const split1 = Math.ceil(len1 * 0.7);
-                    return w1.substring(0, split1) + w2.substring(split2);
-                },
-                // Method 3: Reverse - most of second word + end of first
-                () => {
-                    const vowels = 'aeiou';
-                    let split1 = len1;
-                    for (let i = len1 - 1; i >= 0; i--) {
-                        if (vowels.includes(w1[i])) {
-                            split1 = i + 1;
-                            break;
-                        }
-                    }
-                    if (split1 === len1) split1 = Math.floor(len1 / 2);
-                    
-                    const split2 = Math.ceil(len2 * 0.7);
-                    return w2.substring(0, split2) + w1.substring(split1);
-                },
-                // Method 4: Blend at vowel boundaries
+                // Method 3: Smart portmanteau - find natural break points
                 () => {
                     const vowels = 'aeiou';
                     // Find last vowel in w1
                     let lastVowel1 = -1;
-                    for (let i = len1 - 1; i >= 0; i--) {
+                    for (let i = len1 - 1; i >= Math.max(0, len1 - 4); i--) {
                         if (vowels.includes(w1[i])) {
                             lastVowel1 = i;
                             break;
@@ -493,35 +566,148 @@
                     }
                     // Find first vowel in w2
                     let firstVowel2 = -1;
-                    for (let i = 0; i < len2; i++) {
+                    for (let i = 0; i < Math.min(len2, 4); i++) {
                         if (vowels.includes(w2[i])) {
                             firstVowel2 = i;
                             break;
                         }
                     }
                     
-                    if (lastVowel1 > 0 && firstVowel2 > 0) {
-                        return w1.substring(0, lastVowel1 + 1) + w2.substring(firstVowel2);
+                    if (lastVowel1 >= 0 && firstVowel2 >= 0) {
+                        const result = w1.substring(0, lastVowel1 + 1) + w2.substring(firstVowel2);
+                        if (result.length >= 5 && result.length <= 14 && result !== w1 && result !== w2) {
+                            return result;
+                        }
                     }
                     return null;
                 },
-                // Method 5: Simple blend
+                // Method 4: Prefix + suffix (take meaningful chunks)
                 () => {
-                    return w1.substring(0, Math.ceil(len1 * 0.6)) + w2.substring(Math.floor(len2 * 0.4));
+                    // Take first 60-70% of w1, last 30-40% of w2
+                    const take1 = Math.max(3, Math.min(len1 - 1, Math.floor(len1 * 0.65)));
+                    const take2 = Math.max(2, Math.min(len2 - 1, Math.floor(len2 * 0.35)));
+                    const result = w1.substring(0, take1) + w2.substring(len2 - take2);
+                    if (result.length >= 5 && result.length <= 14 && result !== w1 && result !== w2) {
+                        // Avoid awkward consonant clusters
+                        if (!/[^aeiou]{4,}/.test(result)) {
+                            return result;
+                        }
+                    }
+                    return null;
+                },
+                // Method 5: Reverse - take from w2 first
+                () => {
+                    const take2 = Math.max(3, Math.min(len2 - 1, Math.floor(len2 * 0.65)));
+                    const take1 = Math.max(2, Math.min(len1 - 1, Math.floor(len1 * 0.35)));
+                    const result = w2.substring(0, take2) + w1.substring(len1 - take1);
+                    if (result.length >= 5 && result.length <= 14 && result !== w1 && result !== w2) {
+                        if (!/[^aeiou]{4,}/.test(result)) {
+                            return result;
+                        }
+                    }
+                    return null;
+                },
+                // Method 6: Add creative suffixes
+                () => {
+                    const suffixes = ['er', 'ing', 'ed', 'ly', 'y', 'ish', 'ful', 'less', 'able'];
+                    for (let suffix of suffixes) {
+                        if (!w1.endsWith(suffix) && !w2.endsWith(suffix)) {
+                            // Add suffix to the shorter word
+                            const shorter = len1 <= len2 ? w1 : w2;
+                            const result = shorter + suffix;
+                            if (result.length >= 4 && result.length <= 12) {
+                                return result;
+                            }
+                        }
+                    }
+                    return null;
+                },
+                // Method 7: Blend at consonant-vowel boundaries
+                () => {
+                    const vowels = 'aeiou';
+                    // Find where w1 ends (prefer ending at vowel)
+                    let split1 = len1;
+                    for (let i = len1 - 1; i >= Math.max(0, len1 - 3); i--) {
+                        if (vowels.includes(w1[i])) {
+                            split1 = i + 1;
+                            break;
+                        }
+                    }
+                    // Find where w2 starts (prefer starting at vowel)
+                    let split2 = 0;
+                    for (let i = 0; i < Math.min(len2, 3); i++) {
+                        if (vowels.includes(w2[i])) {
+                            split2 = i;
+                            break;
+                        }
+                    }
+                    
+                    if (split1 > 2 && split2 < len2 - 1) {
+                        const result = w1.substring(0, split1) + w2.substring(split2);
+                        if (result.length >= 5 && result.length <= 14 && result !== w1 && result !== w2) {
+                            if (!/[^aeiou]{4,}/.test(result)) {
+                                return result;
+                            }
+                        }
+                    }
+                    return null;
                 },
             ];
             
-            // Try each method
+            // Score and filter results
+            const scoredResults = [];
             for (let method of methods) {
                 const result = method();
-                if (result && result.length >= 3 && result.length <= 25) {
-                    // Capitalize first letter
-                    return result.charAt(0).toUpperCase() + result.slice(1);
+                if (result && result.length >= 4 && result.length <= 18) {
+                    // Skip if it's just one of the input words
+                    if (result === w1 || result === w2) continue;
+                    
+                    let score = 0;
+                    // Prefer 5-10 character results
+                    if (result.length >= 5 && result.length <= 10) score += 10;
+                    else if (result.length >= 4 && result.length <= 12) score += 5;
+                    
+                    // Prefer hyphenated/spaced phrases (they're more creative)
+                    if (result.includes('-') || result.includes(' ')) score += 15;
+                    
+                    // Penalize awkward consonant clusters
+                    const consonantClusters = result.match(/[^aeiou -]{3,}/g);
+                    if (consonantClusters) {
+                        score -= consonantClusters.length * 10;
+                    }
+                    
+                    // Prefer results with vowels
+                    const vowelCount = (result.match(/[aeiou]/g) || []).length;
+                    score += vowelCount * 2;
+                    
+                    // Prefer results that don't look like random character soup
+                    if (result.length >= 5) {
+                        const uniqueChars = new Set(result.replace(/[ -]/g, '')).size;
+                        if (uniqueChars >= 3) score += 5;
+                    }
+                    
+                    scoredResults.push({ result, score });
                 }
             }
             
-            // Fallback: simple combination
-            const fallback = w1.substring(0, Math.ceil(len1 * 0.6)) + w2.substring(Math.floor(len2 * 0.4));
+            // Sort by score and pick from top results
+            if (scoredResults.length > 0) {
+                scoredResults.sort((a, b) => b.score - a.score);
+                // Pick from top 3 results randomly for variety
+                const topResults = scoredResults.slice(0, Math.min(3, scoredResults.length));
+                const finalResult = topResults[Math.floor(Math.random() * topResults.length)].result;
+                return finalResult.charAt(0).toUpperCase() + finalResult.slice(1);
+            }
+            
+            // Fallback: hyphenated phrase
+            if (len1 + len2 <= 20) {
+                return (w1 + '-' + w2).charAt(0).toUpperCase() + (w1 + '-' + w2).slice(1);
+            }
+            
+            // Last resort: simple blend
+            const take1 = Math.max(3, Math.min(len1 - 1, Math.floor(len1 * 0.6)));
+            const take2 = Math.max(2, Math.min(len2 - 1, Math.floor(len2 * 0.4)));
+            const fallback = w1.substring(0, take1) + w2.substring(len2 - take2);
             return fallback.charAt(0).toUpperCase() + fallback.slice(1);
         }
 
@@ -551,6 +737,8 @@
         let canvasPan = { x: 0, y: 0 };
         let lastMousePos = { x: 0, y: 0 };
         let connections = [];
+        let combinationsMade = 0;
+        let selectedElements = [];
 
         // DOM elements
         const canvasArea = document.getElementById('canvasArea');
@@ -570,6 +758,7 @@
             updateInventory();
             updateCanvas();
             updateDiscoveries();
+            updateStats();
             setupEventListeners();
         }
 
@@ -686,35 +875,73 @@
             
             filtered.forEach(element => {
                 const item = document.createElement('div');
-                item.className = 'inventory-item';
+                const isSelected = selectedElements.includes(element);
+                item.className = `inventory-item ${isSelected ? 'selected' : ''}`;
                 item.dataset.element = element;
                 item.innerHTML = `
                     <div class="inventory-icon">${elementIcons[element] || '🔷'}</div>
                     <span>${element}</span>
                 `;
                 
+                // Click to select/deselect for combination
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const index = selectedElements.indexOf(element);
+                    if (index > -1) {
+                        // Deselect
+                        selectedElements.splice(index, 1);
+                        item.classList.remove('selected');
+                    } else {
+                        // Select (max 2)
+                        if (selectedElements.length < 2) {
+                            selectedElements.push(element);
+                            item.classList.add('selected');
+                            
+                            // If 2 selected, combine them
+                            if (selectedElements.length === 2) {
+                                combineElements(selectedElements[0], selectedElements[1]);
+                                selectedElements = [];
+                                updateInventory(filter);
+                            }
+                        } else {
+                            // Replace first selection
+                            const firstItem = inventoryList.querySelector(`[data-element="${selectedElements[0]}"]`);
+                            if (firstItem) firstItem.classList.remove('selected');
+                            selectedElements[0] = element;
+                            item.classList.add('selected');
+                        }
+                    }
+                });
+                
                 // Make draggable from sidebar
                 item.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    sidebarDragState.isDragging = true;
-                    sidebarDragState.sourceElement = element;
-                    
-                    // Create a visual drag element
-                    sidebarDragState.dragElement = document.createElement('div');
-                    sidebarDragState.dragElement.className = 'canvas-element';
-                    sidebarDragState.dragElement.style.position = 'fixed';
-                    sidebarDragState.dragElement.style.pointerEvents = 'none';
-                    sidebarDragState.dragElement.style.zIndex = '10000';
-                    sidebarDragState.dragElement.style.opacity = '0.8';
-                    sidebarDragState.dragElement.innerHTML = `
-                        <span class="element-icon">${elementIcons[element] || '🔷'}</span>
-                        <span>${element}</span>
-                    `;
-                    sidebarDragState.dragElement.style.left = (e.clientX - 50) + 'px';
-                    sidebarDragState.dragElement.style.top = (e.clientY - 20) + 'px';
-                    document.body.appendChild(sidebarDragState.dragElement);
+                    // Only start drag if not clicking (to allow click selection)
+                    if (e.detail === 1) {
+                        setTimeout(() => {
+                            if (!item.classList.contains('selected')) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                
+                                sidebarDragState.isDragging = true;
+                                sidebarDragState.sourceElement = element;
+                                
+                                // Create a visual drag element
+                                sidebarDragState.dragElement = document.createElement('div');
+                                sidebarDragState.dragElement.className = 'canvas-element';
+                                sidebarDragState.dragElement.style.position = 'fixed';
+                                sidebarDragState.dragElement.style.pointerEvents = 'none';
+                                sidebarDragState.dragElement.style.zIndex = '10000';
+                                sidebarDragState.dragElement.style.opacity = '0.8';
+                                sidebarDragState.dragElement.innerHTML = `
+                                    <span class="element-icon">${elementIcons[element] || '🔷'}</span>
+                                    <span>${element}</span>
+                                `;
+                                sidebarDragState.dragElement.style.left = (e.clientX - 50) + 'px';
+                                sidebarDragState.dragElement.style.top = (e.clientY - 20) + 'px';
+                                document.body.appendChild(sidebarDragState.dragElement);
+                            }
+                        }, 200);
+                    }
                 });
                 
                 inventoryList.appendChild(item);
@@ -880,6 +1107,10 @@
             // Add to inventory and discovered
             inventory.push(result);
             discoveredElements.add(result);
+            combinationsMade++;
+            
+            // Update stats
+            updateStats();
             
             // Show combination effect
             document.getElementById('combEl1').textContent = el1;
@@ -895,6 +1126,11 @@
             updateInventory(searchBox.value.toLowerCase());
             updateDiscoveries();
             saveGameState();
+        }
+
+        function updateStats() {
+            document.getElementById('discoveriesCount').textContent = discoveredElements.size;
+            document.getElementById('combinationsCount').textContent = combinationsMade;
         }
 
         function updateCanvas() {
@@ -991,9 +1227,12 @@
             discoveredElements = new Set(startingElements);
             canvasElements = [];
             canvasPan = { x: 0, y: 0 };
+            combinationsMade = 0;
+            selectedElements = [];
             updateInventory();
             updateCanvas();
             updateDiscoveries();
+            updateStats();
             saveGameState();
         }
 
@@ -1005,15 +1244,18 @@
                 x: parseInt(ce.el.style.left),
                 y: parseInt(ce.el.style.top)
             }))));
+            localStorage.setItem('infiniteCraftCombinations', combinationsMade.toString());
         }
 
         function loadGameState() {
             const savedInventory = localStorage.getItem('infiniteCraftInventory');
             const savedDiscovered = localStorage.getItem('infiniteCraftDiscovered');
             const savedCanvas = localStorage.getItem('infiniteCraftCanvas');
+            const savedCombinations = localStorage.getItem('infiniteCraftCombinations');
 
             if (savedInventory) inventory = JSON.parse(savedInventory);
             if (savedDiscovered) discoveredElements = new Set(JSON.parse(savedDiscovered));
+            if (savedCombinations) combinationsMade = parseInt(savedCombinations) || 0;
             if (savedCanvas) {
                 const canvasData = JSON.parse(savedCanvas);
                 canvasData.forEach(({ element, x, y }) => {
@@ -1021,6 +1263,7 @@
                     canvasElements.push({ element, el, x, y });
                 });
             }
+            updateStats();
         }
 
         init();
