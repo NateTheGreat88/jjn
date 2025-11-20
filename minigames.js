@@ -27,7 +27,6 @@ function showMenu() {
     if (spaceInvadersGame) spaceInvadersGame.stop();
     if (wordleGame) wordleGame.stop();
     if (whackamoleGame) whackamoleGame.stop();
-    if (platformerGame) platformerGame.stop();
     if (racingGame) racingGame.stop();
     if (pacmanGame) pacmanGame.stop();
     if (froggerGame) froggerGame.stop();
@@ -59,7 +58,6 @@ function showMenu() {
     document.getElementById('spaceinvadersGame').style.display = 'none';
     document.getElementById('wordleGame').style.display = 'none';
     document.getElementById('whackamoleGame').style.display = 'none';
-    document.getElementById('platformerGame').style.display = 'none';
     document.getElementById('racingGame').style.display = 'none';
     document.getElementById('pacmanGame').style.display = 'none';
     document.getElementById('froggerGame').style.display = 'none';
@@ -81,6 +79,12 @@ function showGame(gameName) {
         return;
     }
     
+    // Redirect to wordle page if selected
+    if (gameName === 'wordle') {
+        window.location.href = 'wordle.html';
+        return;
+    }
+    
     document.getElementById('gameMenu').style.display = 'none';
     document.getElementById('snakeGame').style.display = 'none';
     document.getElementById('tetrisGame').style.display = 'none';
@@ -96,7 +100,6 @@ function showGame(gameName) {
     document.getElementById('spaceinvadersGame').style.display = 'none';
     document.getElementById('wordleGame').style.display = 'none';
     document.getElementById('whackamoleGame').style.display = 'none';
-    document.getElementById('platformerGame').style.display = 'none';
     document.getElementById('racingGame').style.display = 'none';
     document.getElementById('pacmanGame').style.display = 'none';
     document.getElementById('froggerGame').style.display = 'none';
@@ -130,7 +133,6 @@ function showGame(gameName) {
     if (gameName === 'spaceinvaders' && spaceInvadersGame) spaceInvadersGame.init();
     if (gameName === 'wordle' && wordleGame) wordleGame.init();
     if (gameName === 'whackamole' && whackamoleGame) whackamoleGame.init();
-    if (gameName === 'platformer' && platformerGame) platformerGame.init();
     if (gameName === 'racing' && racingGame) racingGame.init();
     if (gameName === 'pacman' && pacmanGame) pacmanGame.init();
     if (gameName === 'frogger' && froggerGame) froggerGame.init();
@@ -3438,369 +3440,6 @@ const whackamoleGame = {
     
     stop() {
         this.endGame();
-    }
-};
-
-// ==================== PLATFORMER GAME ====================
-const platformerGame = {
-    canvas: null,
-    ctx: null,
-    player: {x: 100, y: 300, width: 30, height: 40, vx: 0, vy: 0, speed: 5, jumpPower: 12, onGround: false},
-    platforms: [],
-    enemies: [],
-    coins: [],
-    score: 0,
-    distance: 0,
-    highScore: 0,
-    gameLoop: null,
-    paused: false,
-    gravity: 0.6,
-    cameraX: 0,
-    
-    init() {
-        this.canvas = document.getElementById('platformerCanvas');
-        this.ctx = this.canvas.getContext('2d');
-        this.highScore = parseInt(localStorage.getItem('platformerHighScore') || '0');
-        document.getElementById('platformerHighScore').textContent = this.highScore;
-        this.restart();
-        this.setupControls();
-    },
-    
-    setupControls() {
-        if (this.keyHandler) {
-            document.removeEventListener('keydown', this.keyHandler);
-            document.removeEventListener('keyup', this.keyUpHandler);
-        }
-        
-        const keys = {};
-        this.keyHandler = (e) => {
-            const gameScreen = document.getElementById('platformerGame');
-            if (!gameScreen || gameScreen.style.display === 'none') return;
-            
-            if (e.key === 'p' || e.key === 'P') {
-                this.pause();
-                return;
-            }
-            
-            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
-                keys.left = true;
-            } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
-                keys.right = true;
-            } else if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
-                if (this.player.onGround) {
-                    this.player.vy = -this.player.jumpPower;
-                    this.player.onGround = false;
-                }
-            }
-        };
-        
-        this.keyUpHandler = (e) => {
-            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
-                keys.left = false;
-            } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
-                keys.right = false;
-            }
-        };
-        
-        document.addEventListener('keydown', this.keyHandler);
-        document.addEventListener('keyup', this.keyUpHandler);
-        
-        const updatePlayer = () => {
-            const gameScreen = document.getElementById('platformerGame');
-            if (!gameScreen || gameScreen.style.display === 'none') return;
-            
-            if (!this.paused) {
-                this.player.vx = 0;
-                if (keys.left) this.player.vx = -this.player.speed;
-                if (keys.right) this.player.vx = this.player.speed;
-            }
-            requestAnimationFrame(updatePlayer);
-        };
-        updatePlayer();
-    },
-    
-    stop() {
-        if (this.gameLoop) {
-            cancelAnimationFrame(this.gameLoop);
-            this.gameLoop = null;
-        }
-        if (this.keyHandler) {
-            document.removeEventListener('keydown', this.keyHandler);
-            document.removeEventListener('keyup', this.keyUpHandler);
-            this.keyHandler = null;
-            this.keyUpHandler = null;
-        }
-        this.paused = true;
-    },
-    
-    restart() {
-        this.score = 0;
-        this.distance = 0;
-        this.paused = false;
-        this.player.x = 100;
-        this.player.y = 300;
-        this.player.vx = 0;
-        this.player.vy = 0;
-        this.cameraX = 0;
-        this.platforms = [];
-        this.enemies = [];
-        this.coins = [];
-        this.createLevel();
-        
-        document.getElementById('platformerScore').textContent = this.score;
-        document.getElementById('platformerDistance').textContent = this.distance;
-        
-        if (this.gameLoop) cancelAnimationFrame(this.gameLoop);
-        this.gameLoop = requestAnimationFrame(() => this.update());
-    },
-    
-    createLevel() {
-        // Create ground platforms
-        for (let i = 0; i < 20; i++) {
-            this.platforms.push({
-                x: i * 200,
-                y: this.canvas.height - 50,
-                width: 200,
-                height: 50
-            });
-        }
-        
-        // Create floating platforms
-        for (let i = 0; i < 15; i++) {
-            this.platforms.push({
-                x: 300 + i * 250,
-                y: this.canvas.height - 150 - (i % 3) * 100,
-                width: 150,
-                height: 20
-            });
-        }
-        
-        // Create coins
-        for (let i = 0; i < 30; i++) {
-            this.coins.push({
-                x: 200 + i * 150,
-                y: this.canvas.height - 200 - Math.random() * 200,
-                collected: false,
-                radius: 15
-            });
-        }
-        
-        // Create enemies - Hardcore 2: More enemies (30 instead of 10) and faster - EXTREME DIFFICULTY
-        const enemyCount = isHardcore2() ? 30 : 10;
-        const enemySpeed = isHardcore2() ? -6 : -2;
-        for (let i = 0; i < enemyCount; i++) {
-            this.enemies.push({
-                x: 400 + i * (isHardcore2() ? 150 : 300),
-                y: this.canvas.height - 80,
-                width: 30,
-                height: 30,
-                vx: enemySpeed,
-                direction: -1
-            });
-        }
-    },
-    
-    pause() {
-        this.paused = !this.paused;
-        if (!this.paused) {
-            this.gameLoop = requestAnimationFrame(() => this.update());
-        }
-    },
-    
-    update() {
-        const gameScreen = document.getElementById('platformerGame');
-        if (!gameScreen || gameScreen.style.display === 'none') return;
-        
-        if (!this.paused) {
-            // Apply gravity
-            this.player.vy += this.gravity;
-            
-            // Update player position
-            this.player.x += this.player.vx;
-            this.player.y += this.player.vy;
-            
-            // Check platform collisions
-            this.player.onGround = false;
-            for (let platform of this.platforms) {
-                if (this.player.x < platform.x + platform.width &&
-                    this.player.x + this.player.width > platform.x &&
-                    this.player.y < platform.y + platform.height &&
-                    this.player.y + this.player.height > platform.y) {
-                    
-                    // Landing on top
-                    if (this.player.vy > 0 && this.player.y < platform.y) {
-                        this.player.y = platform.y - this.player.height;
-                        this.player.vy = 0;
-                        this.player.onGround = true;
-                    }
-                    // Hitting from below
-                    else if (this.player.vy < 0) {
-                        this.player.y = platform.y + platform.height;
-                        this.player.vy = 0;
-                    }
-                    // Side collision
-                    else if (this.player.vx > 0) {
-                        this.player.x = platform.x - this.player.width;
-                    } else if (this.player.vx < 0) {
-                        this.player.x = platform.x + platform.width;
-                    }
-                }
-            }
-            
-            // Update camera
-            if (this.player.x > this.canvas.width / 2) {
-                this.cameraX = this.player.x - this.canvas.width / 2;
-                this.distance = Math.floor(this.cameraX / 10);
-                document.getElementById('platformerDistance').textContent = this.distance;
-            }
-            
-            // Update enemies
-            this.enemies.forEach(enemy => {
-                enemy.x += enemy.vx;
-                // Simple AI - turn around at edges
-                if (enemy.x < this.cameraX || enemy.x > this.cameraX + this.canvas.width) {
-                    enemy.vx *= -1;
-                }
-                
-                // Check collision with player
-                if (this.player.x < enemy.x + enemy.width &&
-                    this.player.x + this.player.width > enemy.x &&
-                    this.player.y < enemy.y + enemy.height &&
-                    this.player.y + this.player.height > enemy.y) {
-                    this.gameOver();
-                    return;
-                }
-            });
-            
-            // Check coin collection
-            this.coins.forEach(coin => {
-                if (!coin.collected) {
-                    const dx = (this.player.x + this.player.width / 2) - coin.x;
-                    const dy = (this.player.y + this.player.height / 2) - coin.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    if (distance < coin.radius + 20) {
-                        coin.collected = true;
-                        this.score += 50;
-                        document.getElementById('platformerScore').textContent = this.score;
-                    }
-                }
-            });
-            
-            // Check boundaries
-            if (this.player.y > this.canvas.height) {
-                this.gameOver();
-                return;
-            }
-        }
-        
-        this.draw();
-        if (!this.paused) {
-            this.gameLoop = requestAnimationFrame(() => this.update());
-        }
-    },
-    
-    draw() {
-        // Sky gradient
-        const skyGradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-        skyGradient.addColorStop(0, '#87ceeb');
-        skyGradient.addColorStop(1, '#98d8f0');
-        this.ctx.fillStyle = skyGradient;
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Draw clouds
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        for (let i = 0; i < 5; i++) {
-            const cloudX = (this.cameraX * 0.3 + i * 200) % (this.canvas.width + 200) - 100;
-            const cloudY = 50 + i * 30;
-            this.ctx.beginPath();
-            this.ctx.arc(cloudX, cloudY, 30, 0, Math.PI * 2);
-            this.ctx.arc(cloudX + 25, cloudY, 35, 0, Math.PI * 2);
-            this.ctx.arc(cloudX - 25, cloudY, 35, 0, Math.PI * 2);
-            this.ctx.fill();
-        }
-        
-        // Draw platforms (with camera offset)
-        this.ctx.fillStyle = '#8b7355';
-        this.platforms.forEach(platform => {
-            const screenX = platform.x - this.cameraX;
-            if (screenX > -platform.width && screenX < this.canvas.width) {
-                this.ctx.fillRect(screenX, platform.y, platform.width, platform.height);
-                // Platform highlight
-                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-                this.ctx.fillRect(screenX, platform.y, platform.width, 5);
-                this.ctx.fillStyle = '#8b7355';
-            }
-        });
-        
-        // Draw coins
-        this.coins.forEach(coin => {
-            if (!coin.collected) {
-                const screenX = coin.x - this.cameraX;
-                if (screenX > -coin.radius && screenX < this.canvas.width + coin.radius) {
-                    const coinGradient = this.ctx.createRadialGradient(
-                        screenX, coin.y, 0,
-                        screenX, coin.y, coin.radius
-                    );
-                    coinGradient.addColorStop(0, '#ffd700');
-                    coinGradient.addColorStop(1, '#ffa500');
-                    this.ctx.fillStyle = coinGradient;
-                    this.ctx.shadowColor = 'rgba(255, 215, 0, 0.6)';
-                    this.ctx.shadowBlur = 10;
-                    this.ctx.beginPath();
-                    this.ctx.arc(screenX, coin.y, coin.radius, 0, Math.PI * 2);
-                    this.ctx.fill();
-                    this.ctx.shadowBlur = 0;
-                }
-            }
-        });
-        
-        // Draw enemies
-        this.enemies.forEach(enemy => {
-            const screenX = enemy.x - this.cameraX;
-            if (screenX > -enemy.width && screenX < this.canvas.width + enemy.width) {
-                this.ctx.fillStyle = '#ff4444';
-                this.ctx.shadowColor = 'rgba(255, 68, 68, 0.6)';
-                this.ctx.shadowBlur = 8;
-                this.ctx.fillRect(screenX, enemy.y, enemy.width, enemy.height);
-                this.ctx.shadowBlur = 0;
-            }
-        });
-        
-        // Draw player
-        const playerScreenX = this.player.x - this.cameraX;
-        const playerGradient = this.ctx.createLinearGradient(
-            playerScreenX, this.player.y,
-            playerScreenX, this.player.y + this.player.height
-        );
-        playerGradient.addColorStop(0, '#4a9eff');
-        playerGradient.addColorStop(1, '#2563eb');
-        this.ctx.fillStyle = playerGradient;
-        this.ctx.shadowColor = 'rgba(74, 158, 255, 0.8)';
-        this.ctx.shadowBlur = 10;
-        this.ctx.fillRect(playerScreenX, this.player.y, this.player.width, this.player.height);
-        this.ctx.shadowBlur = 0;
-        
-        // Pause overlay
-        if (this.paused) {
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            this.ctx.fillStyle = '#fff';
-            this.ctx.font = 'bold 36px Courier New';
-            this.ctx.textAlign = 'center';
-            this.ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2);
-        }
-    },
-    
-    gameOver() {
-        cancelAnimationFrame(this.gameLoop);
-        const finalScore = this.score + this.distance;
-        if (finalScore > this.highScore) {
-            this.highScore = finalScore;
-            localStorage.setItem('platformerHighScore', this.highScore);
-            document.getElementById('platformerHighScore').textContent = this.highScore;
-        }
-        alert(`Game Over! Score: ${finalScore} | Distance: ${this.distance}m`);
-        this.restart();
     }
 };
 

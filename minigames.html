@@ -92,11 +92,6 @@
                     <h3>Whack-a-Mole</h3>
                     <p>Reaction timing game</p>
                 </div>
-                <div class="game-card" data-game="platformer">
-                    <div class="game-card-icon">🏃</div>
-                    <h3>Platformer</h3>
-                    <p>Side-scrolling adventure</p>
-                </div>
                 <div class="game-card" data-game="racing">
                     <div class="game-card-icon">🏎️</div>
                     <h3>Racing</h3>
@@ -488,24 +483,6 @@
             </div>
         </div>
 
-        <!-- Platformer Game -->
-        <div id="platformerGame" class="game-screen" style="display: none;">
-            <div class="game-header">
-                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
-                <h2>🏃 Platformer</h2>
-                <div class="game-stats">
-                    <div>Score: <span id="platformerScore">0</span></div>
-                    <div>Distance: <span id="platformerDistance">0</span>m</div>
-                    <div>High Score: <span id="platformerHighScore">0</span></div>
-                </div>
-            </div>
-            <canvas id="platformerCanvas" width="800" height="500"></canvas>
-            <div class="game-controls">
-                <p>Use ← → arrow keys or A D to move, SPACE or ↑ to jump</p>
-                <button class="game-button" onclick="platformerGame.restart()">Restart</button>
-                <button class="game-button" onclick="platformerGame.pause()">Pause</button>
-            </div>
-        </div>
 
         <!-- Racing Game -->
         <div id="racingGame" class="game-screen" style="display: none;">
