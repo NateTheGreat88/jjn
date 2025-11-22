@@ -14,8 +14,10 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <!-- Firebase Config -->
     <script src="firebase-config.js"></script>
+    <script src="auth.js" defer></script>
 </head>
 <body>
     <a href="index.html" class="back-button">← Back to Home</a>
@@ -1762,7 +1764,7 @@
         }
         
         // Handle dev password submission
-        function submitDevPasswordHandler() {
+        async function submitDevPasswordHandler() {
             const password = devPasswordInput.value.trim();
             if (password === DEV_PASSWORD) {
                 // Save dev status to profile
@@ -1774,6 +1776,15 @@
                     }
                     profile.isDev = true;
                     localStorage.setItem('jnjUserProfile', JSON.stringify(profile));
+                    
+                    // Also save to Firestore if authenticated
+                    if (window.authSystem && window.authSystem.isAuthenticated()) {
+                        try {
+                            await window.authSystem.saveUserData({ isDev: true });
+                        } catch (e) {
+                            console.error('Error saving dev status to Firestore:', e);
+                        }
+                    }
                     
                     // Hide star button and close modal
                     devStarButton.style.display = 'none';

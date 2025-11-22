@@ -67,7 +67,25 @@
     };
     
     // Load discovered secrets
-    function loadSecrets() {
+    async function loadSecrets() {
+        // Try to load from Firestore if authenticated
+        if (window.authSystem && window.authSystem.isAuthenticated()) {
+            try {
+                const userData = await window.authSystem.loadUserData(window.authSystem.getUser().uid);
+                if (userData && userData.secrets) {
+                    Object.keys(secrets).forEach(key => {
+                        if (userData.secrets[key]) {
+                            secrets[key].unlocked = true;
+                        }
+                    });
+                    return;
+                }
+            } catch (e) {
+                console.error('Error loading secrets from Firestore:', e);
+            }
+        }
+        
+        // Fallback to localStorage
         const saved = localStorage.getItem(SECRET_STORAGE_KEY);
         if (saved) {
             try {
@@ -84,19 +102,30 @@
     }
     
     // Save discovered secrets
-    function saveSecrets() {
+    async function saveSecrets() {
         const data = {};
         Object.keys(secrets).forEach(key => {
             data[key] = secrets[key].unlocked;
         });
+        
+        // Save to localStorage
         localStorage.setItem(SECRET_STORAGE_KEY, JSON.stringify(data));
+        
+        // Also save to Firestore if authenticated
+        if (window.authSystem && window.authSystem.isAuthenticated()) {
+            try {
+                await window.authSystem.saveUserData({ secrets: data });
+            } catch (e) {
+                console.error('Error saving secrets to Firestore:', e);
+            }
+        }
     }
     
     // Unlock a secret
-    function unlockSecret(key) {
+    async function unlockSecret(key) {
         if (secrets[key] && !secrets[key].unlocked) {
             secrets[key].unlocked = true;
-            saveSecrets();
+            await saveSecrets();
             showSecretNotification(secrets[key].name);
             // Always redirect to secrets page when a secret is unlocked
             setTimeout(() => {
@@ -143,7 +172,22 @@
     }
     
     // Initialize
-    loadSecrets();
+    // Wait for auth system to be ready
+    function initSecrets() {
+        if (window.authSystem) {
+            loadSecrets();
+        } else {
+            // Wait a bit and try again
+            setTimeout(initSecrets, 100);
+        }
+    }
+    
+    // Listen for auth state changes to reload secrets
+    window.addEventListener('authStateChanged', () => {
+        loadSecrets();
+    });
+    
+    initSecrets();
     
     // Export to window
     window.secretPages = {
