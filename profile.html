@@ -319,6 +319,18 @@
                     </div>
                 </div>
 
+                <div class="profile-form-group">
+                    <label>Title</label>
+                    <div id="titlesContainer" style="margin-top: 10px;">
+                        <div id="equippedTitle" style="margin-bottom: 15px; padding: 12px; background: rgba(255, 215, 0, 0.1); border: 2px solid rgba(255, 215, 0, 0.3); border-radius: 8px; text-align: center;">
+                            <span style="color: rgba(255, 255, 255, 0.5);">No title equipped</span>
+                        </div>
+                        <div id="titlesList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; max-height: 300px; overflow-y: auto; padding: 10px; background: rgba(0, 0, 0, 0.2); border-radius: 12px;">
+                            <!-- Titles will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
                 <div class="profile-actions">
                     <button type="button" class="profile-button" onclick="saveProfile()">💾 Save Profile</button>
                     <button type="button" class="profile-button secondary" onclick="resetProfile()">🔄 Reset</button>
@@ -338,6 +350,177 @@
         let selectedEmoji = '👤';
         let selectedImage = null; // Base64 image data
         let avatarSelectorVisible = false;
+        let equippedTitle = null;
+        let unlockedTitles = [];
+        
+        // Titles system
+        const TITLES = {
+            'newbie': {
+                name: 'Newbie',
+                description: 'Just getting started',
+                unlockCondition: (profile) => {
+                    // Unlock after sending first message (handled in chat)
+                    return false; // Will be unlocked in chat
+                }
+            },
+            'tech-wizard': {
+                name: 'Tech Wizard',
+                description: 'Master of code',
+                unlockCondition: (profile) => {
+                    // Unlock after 100 messages sent
+                    const messageCount = localStorage.getItem('jnjMessageCount') || 0;
+                    return parseInt(messageCount) >= 100;
+                }
+            },
+            'early-bird': {
+                name: 'Early Bird',
+                description: 'Joined early',
+                unlockCondition: (profile) => {
+                    // Unlock if joined before a certain date (e.g., first month)
+                    if (profile.joinDate) {
+                        const joinDate = new Date(profile.joinDate);
+                        const earlyDate = new Date('2024-01-01'); // Adjust as needed
+                        return joinDate < earlyDate;
+                    }
+                    return false;
+                }
+            },
+            'dev': {
+                name: 'Developer',
+                description: 'Site developer',
+                unlockCondition: (profile) => {
+                    return profile.isDev === true;
+                }
+            },
+            'veteran': {
+                name: 'Veteran',
+                description: 'Been here a while',
+                unlockCondition: (profile) => {
+                    if (profile.joinDate) {
+                        const joinDate = new Date(profile.joinDate);
+                        const now = new Date();
+                        const daysSinceJoin = (now - joinDate) / (1000 * 60 * 60 * 24);
+                        return daysSinceJoin >= 30; // 30 days
+                    }
+                    return false;
+                }
+            },
+            'chatterbox': {
+                name: 'Chatterbox',
+                description: 'Loves to chat',
+                unlockCondition: (profile) => {
+                    const messageCount = localStorage.getItem('jnjMessageCount') || 0;
+                    return parseInt(messageCount) >= 500;
+                }
+            },
+            'legend': {
+                name: 'Legend',
+                description: 'Ultimate achievement',
+                unlockCondition: (profile) => {
+                    const messageCount = localStorage.getItem('jnjMessageCount') || 0;
+                    if (profile.joinDate) {
+                        const joinDate = new Date(profile.joinDate);
+                        const now = new Date();
+                        const daysSinceJoin = (now - joinDate) / (1000 * 60 * 60 * 24);
+                        return parseInt(messageCount) >= 1000 && daysSinceJoin >= 60;
+                    }
+                    return false;
+                }
+            }
+        };
+        
+        // Check and unlock titles
+        function checkTitleUnlocks(profile) {
+            const newlyUnlocked = [];
+            Object.keys(TITLES).forEach(titleId => {
+                if (!unlockedTitles.includes(titleId)) {
+                    const title = TITLES[titleId];
+                    if (title.unlockCondition(profile)) {
+                        unlockedTitles.push(titleId);
+                        newlyUnlocked.push(titleId);
+                    }
+                }
+            });
+            return newlyUnlocked;
+        }
+        
+        // Render titles
+        function renderTitles() {
+            const titlesList = document.getElementById('titlesList');
+            const equippedTitleDiv = document.getElementById('equippedTitle');
+            
+            if (!titlesList || !equippedTitleDiv) return;
+            
+            titlesList.innerHTML = '';
+            
+            // Show equipped title
+            if (equippedTitle && TITLES[equippedTitle]) {
+                equippedTitleDiv.innerHTML = `
+                    <span style="color: #FFD700; font-weight: bold; font-size: 18px;">${TITLES[equippedTitle].name}</span>
+                    <button onclick="unequipTitle()" style="margin-left: 10px; padding: 4px 8px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 4px; color: rgba(255, 255, 255, 0.7); cursor: pointer; font-size: 12px;">Unequip</button>
+                `;
+            } else {
+                equippedTitleDiv.innerHTML = '<span style="color: rgba(255, 255, 255, 0.5);">No title equipped</span>';
+            }
+            
+            // Show all titles
+            Object.keys(TITLES).forEach(titleId => {
+                const title = TITLES[titleId];
+                const isUnlocked = unlockedTitles.includes(titleId);
+                const isEquipped = equippedTitle === titleId;
+                
+                const titleDiv = document.createElement('div');
+                titleDiv.style.cssText = `
+                    padding: 12px;
+                    background: ${isUnlocked ? (isEquipped ? 'rgba(255, 215, 0, 0.2)' : 'rgba(102, 126, 234, 0.1)') : 'rgba(0, 0, 0, 0.3)'};
+                    border: 2px solid ${isUnlocked ? (isEquipped ? 'rgba(255, 215, 0, 0.5)' : 'rgba(102, 126, 234, 0.3)') : 'rgba(255, 255, 255, 0.1)'};
+                    border-radius: 8px;
+                    cursor: ${isUnlocked ? 'pointer' : 'not-allowed'};
+                    opacity: ${isUnlocked ? '1' : '0.5'};
+                    transition: all 0.2s ease;
+                `;
+                
+                titleDiv.innerHTML = `
+                    <div style="font-weight: bold; color: ${isUnlocked ? '#FFD700' : 'rgba(255, 255, 255, 0.5)'}; margin-bottom: 5px;">${title.name}</div>
+                    <div style="font-size: 12px; color: rgba(255, 255, 255, 0.6);">${title.description}</div>
+                    ${!isUnlocked ? '<div style="font-size: 11px; color: rgba(255, 255, 255, 0.4); margin-top: 5px;">🔒 Locked</div>' : ''}
+                    ${isUnlocked && !isEquipped ? '<div style="font-size: 11px; color: rgba(255, 215, 0, 0.8); margin-top: 5px;">Click to equip</div>' : ''}
+                    ${isEquipped ? '<div style="font-size: 11px; color: #FFD700; margin-top: 5px;">✓ Equipped</div>' : ''}
+                `;
+                
+                if (isUnlocked && !isEquipped) {
+                    titleDiv.addEventListener('click', () => equipTitle(titleId));
+                    titleDiv.style.cursor = 'pointer';
+                    titleDiv.addEventListener('mouseenter', () => {
+                        titleDiv.style.transform = 'scale(1.05)';
+                        titleDiv.style.background = 'rgba(102, 126, 234, 0.2)';
+                    });
+                    titleDiv.addEventListener('mouseleave', () => {
+                        titleDiv.style.transform = 'scale(1)';
+                        titleDiv.style.background = 'rgba(102, 126, 234, 0.1)';
+                    });
+                }
+                
+                titlesList.appendChild(titleDiv);
+            });
+        }
+        
+        // Equip a title
+        function equipTitle(titleId) {
+            if (unlockedTitles.includes(titleId)) {
+                equippedTitle = titleId;
+                renderTitles();
+                // Auto-save
+                saveProfile();
+            }
+        }
+        
+        // Unequip title
+        function unequipTitle() {
+            equippedTitle = null;
+            renderTitles();
+            saveProfile();
+        }
 
         // Generate a unique user ID
         function generateUserId() {
@@ -390,10 +573,24 @@
                             document.getElementById('themeColor').value = profile.themeColor || '#667eea';
                             selectedEmoji = profile.avatar || '👤';
                             selectedImage = profile.avatarImage || null;
+                            equippedTitle = profile.equippedTitle || null;
+                            unlockedTitles = profile.unlockedTitles || [];
+                            
+                            // Check for new title unlocks
+                            const newlyUnlocked = checkTitleUnlocks(profile);
+                            if (newlyUnlocked.length > 0) {
+                                // Save updated unlocked titles
+                                profile.unlockedTitles = unlockedTitles;
+                                if (window.authSystem && window.authSystem.isAuthenticated()) {
+                                    await window.authSystem.saveUserData({ profile: profile });
+                                }
+                                localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+                            }
                             
                             updateAvatarPreview();
                             updateColorPreview();
                             updateBioCount();
+                            renderTitles();
                             
                             // Show dev star if user is a dev
                             const devStarBadge = document.getElementById('devStarBadge');
@@ -434,10 +631,20 @@
                     document.getElementById('themeColor').value = profile.themeColor || '#667eea';
                     selectedEmoji = profile.avatar || '👤';
                     selectedImage = profile.avatarImage || null;
+                    equippedTitle = profile.equippedTitle || null;
+                    unlockedTitles = profile.unlockedTitles || [];
+                    
+                    // Check for new title unlocks
+                    const newlyUnlocked = checkTitleUnlocks(profile);
+                    if (newlyUnlocked.length > 0) {
+                        unlockedTitles = profile.unlockedTitles = [...(profile.unlockedTitles || []), ...newlyUnlocked];
+                        localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+                    }
                     
                     updateAvatarPreview();
                     updateColorPreview();
                     updateBioCount();
+                    renderTitles();
                     
                     // Show dev star if user is a dev
                     const devStarBadge = document.getElementById('devStarBadge');
@@ -471,6 +678,8 @@
                 themeColor: document.getElementById('themeColor').value,
                 avatar: selectedEmoji,
                 avatarImage: selectedImage,
+                equippedTitle: equippedTitle,
+                unlockedTitles: unlockedTitles,
                 lastUpdated: new Date().toISOString()
             };
 

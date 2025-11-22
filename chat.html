@@ -237,6 +237,105 @@
         const MAX_VISIBLE_MESSAGES = 35; // Maximum number of messages to display
         let isInitialLoad = true; // Track if this is the first load
         let selectedImage = null; // Store selected image as base64
+        
+        // Titles system (same as profile)
+        const TITLES = {
+            'newbie': { name: 'Newbie', description: 'Just getting started' },
+            'tech-wizard': { name: 'Tech Wizard', description: 'Master of code' },
+            'early-bird': { name: 'Early Bird', description: 'Joined early' },
+            'dev': { name: 'Developer', description: 'Site developer' },
+            'veteran': { name: 'Veteran', description: 'Been here a while' },
+            'chatterbox': { name: 'Chatterbox', description: 'Loves to chat' },
+            'legend': { name: 'Legend', description: 'Ultimate achievement' }
+        };
+        
+        // Get title name by ID
+        function getTitleName(titleId) {
+            return TITLES[titleId] ? TITLES[titleId].name : titleId;
+        }
+        
+        // Check and unlock titles
+        function checkTitleUnlocks(profile) {
+            const newlyUnlocked = [];
+            let unlockedTitles = profile.unlockedTitles || [];
+            
+            // Check newbie (first message)
+            if (!unlockedTitles.includes('newbie')) {
+                const messageCount = parseInt(localStorage.getItem('jnjMessageCount') || '0');
+                if (messageCount >= 1) {
+                    unlockedTitles.push('newbie');
+                    newlyUnlocked.push('newbie');
+                }
+            }
+            
+            // Check tech-wizard (100 messages)
+            if (!unlockedTitles.includes('tech-wizard')) {
+                const messageCount = parseInt(localStorage.getItem('jnjMessageCount') || '0');
+                if (messageCount >= 100) {
+                    unlockedTitles.push('tech-wizard');
+                    newlyUnlocked.push('tech-wizard');
+                }
+            }
+            
+            // Check early-bird
+            if (!unlockedTitles.includes('early-bird') && profile.joinDate) {
+                const joinDate = new Date(profile.joinDate);
+                const earlyDate = new Date('2024-01-01');
+                if (joinDate < earlyDate) {
+                    unlockedTitles.push('early-bird');
+                    newlyUnlocked.push('early-bird');
+                }
+            }
+            
+            // Check dev
+            if (!unlockedTitles.includes('dev') && profile.isDev === true) {
+                unlockedTitles.push('dev');
+                newlyUnlocked.push('dev');
+            }
+            
+            // Check veteran (30 days)
+            if (!unlockedTitles.includes('veteran') && profile.joinDate) {
+                const joinDate = new Date(profile.joinDate);
+                const now = new Date();
+                const daysSinceJoin = (now - joinDate) / (1000 * 60 * 60 * 24);
+                if (daysSinceJoin >= 30) {
+                    unlockedTitles.push('veteran');
+                    newlyUnlocked.push('veteran');
+                }
+            }
+            
+            // Check chatterbox (500 messages)
+            if (!unlockedTitles.includes('chatterbox')) {
+                const messageCount = parseInt(localStorage.getItem('jnjMessageCount') || '0');
+                if (messageCount >= 500) {
+                    unlockedTitles.push('chatterbox');
+                    newlyUnlocked.push('chatterbox');
+                }
+            }
+            
+            // Check legend (1000 messages + 60 days)
+            if (!unlockedTitles.includes('legend') && profile.joinDate) {
+                const messageCount = parseInt(localStorage.getItem('jnjMessageCount') || '0');
+                const joinDate = new Date(profile.joinDate);
+                const now = new Date();
+                const daysSinceJoin = (now - joinDate) / (1000 * 60 * 60 * 24);
+                if (messageCount >= 1000 && daysSinceJoin >= 60) {
+                    unlockedTitles.push('legend');
+                    newlyUnlocked.push('legend');
+                }
+            }
+            
+            if (newlyUnlocked.length > 0) {
+                profile.unlockedTitles = unlockedTitles;
+                localStorage.setItem('jnjUserProfile', JSON.stringify(profile));
+                // Save to Firestore if authenticated
+                if (window.authSystem && window.authSystem.isAuthenticated()) {
+                    window.authSystem.saveUserData({ profile: profile }).catch(e => console.error('Error saving titles:', e));
+                }
+            }
+            
+            return newlyUnlocked;
+        }
 
         // Load saved name from profile only
         function loadUserName() {
@@ -399,7 +498,7 @@
                         // Only show the most recent messages
                         const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                         recentMessages.forEach(msg => {
-                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id, msg.userId);
+                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id, msg.userId, msg.title, msg);
                         });
                         scrollToBottom();
                     }
@@ -422,7 +521,7 @@
                         const filteredMessages = messages.filter(msg => !msg.deleted && !msg.roomCode);
                         const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                         recentMessages.forEach(msg => {
-                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id, msg.userId);
+                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id, msg.userId, msg.title, msg);
                         });
                         scrollToBottom();
                     }
@@ -559,13 +658,13 @@
                                 // Double-check room code match
                                 if (roomCode) {
                                     if (data.roomCode === roomCode) {
-                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId);
+                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId, data.title, data);
                                         loadedMessageIds.add(messageId);
                                     }
                                 } else {
                                     // Only show messages without roomCode in public chat
                                     if (!data.roomCode) {
-                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId);
+                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId, data.title, data);
                                         loadedMessageIds.add(messageId);
                                     }
                                 }
@@ -601,7 +700,7 @@
                                     
                                     if (shouldShow && !loadedMessageIds.has(messageId)) {
                                         // Message was modified but not deleted, and we haven't loaded it yet
-                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId);
+                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId, data.title, data);
                                         loadedMessageIds.add(messageId);
                                     }
                                 }
@@ -678,7 +777,7 @@
                                 recentMessages.reverse();
                                 recentMessages.forEach(msg => {
                                     if (!loadedMessageIds.has(msg.id)) {
-                                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id, msg.userId);
+                                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id, msg.userId, msg.title, msg);
                                         loadedMessageIds.add(msg.id);
                                     }
                                 });
@@ -723,7 +822,7 @@
                                                     }
                                                 } else if (shouldShow && !loadedMessageIds.has(messageId)) {
                                                     // Message was modified but not deleted, and we haven't loaded it yet
-                                                    addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId);
+                                                    addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId, data.title, data);
                                                     loadedMessageIds.add(messageId);
                                                 }
                                             } else if (change.type === 'removed') {
@@ -773,7 +872,7 @@
         }
 
         // Save message to Firestore or localStorage fallback
-        function saveMessage(user, message, timestamp, imageData = null, gifData = null, avatar = null, avatarImage = null, userId = null) {
+        function saveMessage(user, message, timestamp, imageData = null, gifData = null, avatar = null, avatarImage = null, userId = null, title = null) {
             const messageData = {
                 user: user,
                 message: message,
@@ -798,6 +897,11 @@
                 messageData.avatarImage = avatarImage;
             } else if (avatar) {
                 messageData.avatar = avatar;
+            }
+            
+            // Save title with message
+            if (title) {
+                messageData.title = title;
             }
             
             // Log what we're saving
@@ -853,16 +957,16 @@
                     console.error('Error details:', error.code, error.message);
                     console.error('Message data that failed:', messageData);
                     // Fallback to localStorage
-                    saveMessageToLocalStorage(user, message, timestamp, imageData, gifData, avatar, avatarImage, userId);
+                    saveMessageToLocalStorage(user, message, timestamp, imageData, gifData, avatar, avatarImage, userId, title);
                 });
             } else {
                 // Fallback to localStorage
-                saveMessageToLocalStorage(user, message, timestamp, imageData, gifData, avatar, avatarImage, userId);
+                saveMessageToLocalStorage(user, message, timestamp, imageData, gifData, avatar, avatarImage, userId, title);
             }
         }
 
         // Fallback: Save messages to localStorage
-        function saveMessageToLocalStorage(user, message, timestamp, imageData = null, gifData = null, avatar = null, avatarImage = null, userId = null) {
+        function saveMessageToLocalStorage(user, message, timestamp, imageData = null, gifData = null, avatar = null, avatarImage = null, userId = null, title = null) {
             const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
             const messageObj = { user, message, timestamp };
             if (imageData) {
@@ -881,6 +985,10 @@
             if (userId) {
                 messageObj.userId = userId;
             }
+            // Save title if provided
+            if (title) {
+                messageObj.title = title;
+            }
             // Add room code if in a private room
             if (currentRoomCode) {
                 messageObj.roomCode = currentRoomCode;
@@ -894,7 +1002,7 @@
         }
 
         // Add message to chat display
-        function addMessageToChat(user, message, timestamp, shouldSave = true, imageData = null, gifData = null, avatar = null, avatarImage = null, messageId = null, userId = null) {
+        function addMessageToChat(user, message, timestamp, shouldSave = true, imageData = null, gifData = null, avatar = null, avatarImage = null, messageId = null, userId = null, title = null, messageData = null) {
             // Remove welcome message if it exists
             const welcomeMsg = chatMessages.querySelector('.welcome-message');
             if (welcomeMsg) {
@@ -966,30 +1074,41 @@
             let userAvatar = avatar || '👤';
             let userAvatarImage = avatarImage || null;
             let displayUsername = user; // Default to the user value
+            let userTitle = null; // Title to display
             
-            // If no avatar in message data, check if it's the current user and use their profile
-            if (!avatar && !avatarImage) {
-                try {
-                    const profileData = localStorage.getItem('jnjUserProfile');
-                    if (profileData) {
-                        const profile = JSON.parse(profileData);
-                        // Check if this message is from the current user (match by username or displayName)
-                        if (user === profile.username || user === profile.displayName) {
-                            // Use username for display if available
-                            if (profile.username && profile.username.trim() !== '') {
-                                displayUsername = profile.username.trim();
-                            }
-                            // Get avatar from profile
-                            if (profile.avatarImage) {
-                                userAvatarImage = profile.avatarImage;
-                            } else if (profile.avatar) {
-                                userAvatar = profile.avatar;
-                            }
+            // Get user's profile to check for title
+            // First, try to get title from messageData (saved with message)
+            if (messageData && messageData.title) {
+                userTitle = messageData.title;
+            } else if (title) {
+                // Title passed as parameter
+                userTitle = title;
+            }
+            
+            try {
+                const profileData = localStorage.getItem('jnjUserProfile');
+                if (profileData) {
+                    const profile = JSON.parse(profileData);
+                    // Check if this message is from the current user (match by username or displayName)
+                    if (user === profile.username || user === profile.displayName || user === currentUserName) {
+                        // Use username for display if available
+                        if (profile.username && profile.username.trim() !== '') {
+                            displayUsername = profile.username.trim();
+                        }
+                        // Get avatar from profile
+                        if (profile.avatarImage) {
+                            userAvatarImage = profile.avatarImage;
+                        } else if (profile.avatar) {
+                            userAvatar = profile.avatar;
+                        }
+                        // Get title from profile if not already set
+                        if (!userTitle && profile.equippedTitle) {
+                            userTitle = profile.equippedTitle;
                         }
                     }
-                } catch (e) {
-                    // Ignore errors
                 }
+            } catch (e) {
+                // Ignore errors
             }
             
             // Create avatar HTML
@@ -1002,10 +1121,13 @@
                 avatarHtml = `<span class="message-avatar" style="font-size: 20px; margin-right: 8px;">${userAvatar}</span>`;
             }
             
+            // Title display (golden color)
+            const titleHtml = userTitle ? ` <span style="color: #FFD700; font-weight: bold; font-size: 0.9em;">[${getTitleName(userTitle)}]</span>` : '';
+            
             messageDiv.innerHTML = `
                 <div class="message-header" style="display: flex; align-items: center; gap: 8px;">
                     ${avatarHtml}
-                    <span class="message-user">${escapeHtml(displayUsername)}</span>
+                    <span class="message-user">${escapeHtml(displayUsername)}${titleHtml}</span>
                     <span class="message-time" style="margin-left: auto;">${timeString}</span>
                 </div>
                 <div class="message-content">
@@ -1254,11 +1376,12 @@
                 return;
             }
 
-            // Always get the latest username, userId, and avatar from profile FIRST
+            // Always get the latest username, userId, avatar, and title from profile FIRST
             let messageUsername = currentUserName;
             let messageUserId = null;
             let messageAvatar = '👤';
             let messageAvatarImage = null;
+            let messageTitle = null;
             try {
                 const profileData = localStorage.getItem('jnjUserProfile');
                 if (profileData) {
@@ -1292,6 +1415,21 @@
                     } else if (profile.avatar) {
                         messageAvatar = profile.avatar;
                     }
+                    // Get title
+                    if (profile.equippedTitle) {
+                        messageTitle = profile.equippedTitle;
+                    }
+                    
+                    // Track message count and check for title unlocks
+                    const messageCount = parseInt(localStorage.getItem('jnjMessageCount') || '0') + 1;
+                    localStorage.setItem('jnjMessageCount', messageCount.toString());
+                    
+                    // Check for title unlocks
+                    const newlyUnlocked = checkTitleUnlocks(profile);
+                    if (newlyUnlocked.length > 0) {
+                        console.log('Unlocked titles:', newlyUnlocked);
+                        // Title unlock notification could go here
+                    }
                 }
             } catch (e) {
                 // Ignore errors, use currentUserName
@@ -1323,12 +1461,12 @@
             
             if (db) {
                 // Save to Firestore first
-                saveMessage(messageUsername, message || '', timestamp, imageData, gifData, messageAvatar, messageAvatarImage, messageUserId);
+                saveMessage(messageUsername, message || '', timestamp, imageData, gifData, messageAvatar, messageAvatarImage, messageUserId, messageTitle);
                 
                 // Add to display immediately for better UX
-                addMessageToChat(messageUsername, message || '', timestamp, false, imageData, gifData, messageAvatar, messageAvatarImage, null, messageUserId);
+                addMessageToChat(messageUsername, message || '', timestamp, false, imageData, gifData, messageAvatar, messageAvatarImage, null, messageUserId, messageTitle);
             } else {
-                addMessageToChat(messageUsername, message || '', timestamp, true, imageData, gifData, messageAvatar, messageAvatarImage, null, messageUserId);
+                addMessageToChat(messageUsername, message || '', timestamp, true, imageData, gifData, messageAvatar, messageAvatarImage, null, messageUserId, messageTitle);
             }
             messageInput.value = '';
             messageInput.focus();
