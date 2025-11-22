@@ -463,34 +463,31 @@
                 equippedTitleDiv.innerHTML = '<span style="color: rgba(255, 255, 255, 0.5);">No title equipped</span>';
             }
             
-            // Show all titles
-            Object.keys(TITLES).forEach(titleId => {
+            // Show only unlocked titles
+            unlockedTitles.forEach(titleId => {
                 const title = TITLES[titleId];
-                const isUnlocked = unlockedTitles.includes(titleId);
+                if (!title) return;
+                
                 const isEquipped = equippedTitle === titleId;
                 
                 const titleDiv = document.createElement('div');
                 titleDiv.style.cssText = `
                     padding: 12px;
-                    background: ${isUnlocked ? (isEquipped ? 'rgba(255, 215, 0, 0.2)' : 'rgba(102, 126, 234, 0.1)') : 'rgba(0, 0, 0, 0.3)'};
-                    border: 2px solid ${isUnlocked ? (isEquipped ? 'rgba(255, 215, 0, 0.5)' : 'rgba(102, 126, 234, 0.3)') : 'rgba(255, 255, 255, 0.1)'};
+                    background: ${isEquipped ? 'rgba(255, 215, 0, 0.2)' : 'rgba(102, 126, 234, 0.1)'};
+                    border: 2px solid ${isEquipped ? 'rgba(255, 215, 0, 0.5)' : 'rgba(102, 126, 234, 0.3)'};
                     border-radius: 8px;
-                    cursor: ${isUnlocked ? 'pointer' : 'not-allowed'};
-                    opacity: ${isUnlocked ? '1' : '0.5'};
+                    cursor: pointer;
                     transition: all 0.2s ease;
                 `;
                 
                 titleDiv.innerHTML = `
-                    <div style="font-weight: bold; color: ${isUnlocked ? '#FFD700' : 'rgba(255, 255, 255, 0.5)'}; margin-bottom: 5px;">${title.name}</div>
+                    <div style="font-weight: bold; color: #FFD700; margin-bottom: 5px;">${title.name}</div>
                     <div style="font-size: 12px; color: rgba(255, 255, 255, 0.6);">${title.description}</div>
-                    ${!isUnlocked ? '<div style="font-size: 11px; color: rgba(255, 255, 255, 0.4); margin-top: 5px;">🔒 Locked</div>' : ''}
-                    ${isUnlocked && !isEquipped ? '<div style="font-size: 11px; color: rgba(255, 215, 0, 0.8); margin-top: 5px;">Click to equip</div>' : ''}
-                    ${isEquipped ? '<div style="font-size: 11px; color: #FFD700; margin-top: 5px;">✓ Equipped</div>' : ''}
+                    ${isEquipped ? '<div style="font-size: 11px; color: #FFD700; margin-top: 5px;">✓ Equipped</div>' : '<div style="font-size: 11px; color: rgba(255, 215, 0, 0.8); margin-top: 5px;">Click to equip</div>'}
                 `;
                 
-                if (isUnlocked && !isEquipped) {
+                if (!isEquipped) {
                     titleDiv.addEventListener('click', () => equipTitle(titleId));
-                    titleDiv.style.cursor = 'pointer';
                     titleDiv.addEventListener('mouseenter', () => {
                         titleDiv.style.transform = 'scale(1.05)';
                         titleDiv.style.background = 'rgba(102, 126, 234, 0.2)';
@@ -503,6 +500,11 @@
                 
                 titlesList.appendChild(titleDiv);
             });
+            
+            // Show message if no titles unlocked
+            if (unlockedTitles.length === 0) {
+                titlesList.innerHTML = '<div style="text-align: center; color: rgba(255, 255, 255, 0.5); padding: 20px;">No titles unlocked yet. Keep chatting to unlock titles!</div>';
+            }
         }
         
         // Equip a title

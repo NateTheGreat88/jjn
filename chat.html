@@ -647,6 +647,10 @@
                                 if (data.deleted === true) {
                                     return;
                                 }
+                                
+                                // Mark as loaded IMMEDIATELY to prevent duplicate
+                                loadedMessageIds.add(messageId);
+                                
                                 console.log('New message received:', { 
                                     user: data.user, 
                                     message: data.message,
@@ -655,17 +659,16 @@
                                     gifUrl: data.gif,
                                     fullData: data
                                 });
+                                
                                 // Double-check room code match
                                 if (roomCode) {
                                     if (data.roomCode === roomCode) {
                                         addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId, data.title, data);
-                                        loadedMessageIds.add(messageId);
                                     }
                                 } else {
                                     // Only show messages without roomCode in public chat
                                     if (!data.roomCode) {
                                         addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId, data.title, data);
-                                        loadedMessageIds.add(messageId);
                                     }
                                 }
                             } else if (change.type === 'modified') {
@@ -934,9 +937,11 @@
                     fullMessageData: messageData
                 });
                 
-                db.collection(collection).add(messageData)
+                return db.collection(collection).add(messageData)
                 .then((docRef) => {
                     console.log('Message saved successfully to', collection, 'with ID:', docRef.id);
+                    // Mark as loaded immediately to prevent duplicate from listener
+                    loadedMessageIds.add(docRef.id);
                     // Verify what was actually saved by reading it back
                     docRef.get().then((doc) => {
                         const savedData = doc.data();
@@ -946,11 +951,8 @@
                             savedKeys: Object.keys(savedData)
                         });
                     });
-                    // Update the message element with the actual document ID
-                    const messageElement = chatMessages.querySelector(`[data-message-id="temp-${timestamp}"]`);
-                    if (messageElement) {
-                        messageElement.setAttribute('data-message-id', docRef.id);
-                    }
+                    // Return the message ID
+                    return docRef.id;
                 })
                 .catch((error) => {
                     console.error('Error saving message to Firestore:', error);
@@ -958,6 +960,7 @@
                     console.error('Message data that failed:', messageData);
                     // Fallback to localStorage
                     saveMessageToLocalStorage(user, message, timestamp, imageData, gifData, avatar, avatarImage, userId, title);
+                    return null;
                 });
             } else {
                 // Fallback to localStorage
@@ -1014,17 +1017,40 @@
             }
 
             // Check if message already exists (prevent duplicates)
+            // First check by messageId if we have it
+            if (messageId && loadedMessageIds.has(messageId)) {
+                // Check if message is already in DOM
+                const existingMsg = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
+                if (existingMsg) {
+                    return; // Message already exists, don't add duplicate
+                }
+            }
+            
+            // Also check by timestamp + user + content (for cases where messageId might not match)
             const existingMessages = chatMessages.querySelectorAll('.message:not(.welcome-message)');
             for (let msg of existingMessages) {
                 const msgTime = msg.getAttribute('data-timestamp');
-                const msgUser = msg.querySelector('.message-user').textContent;
+                const msgUserSpan = msg.querySelector('.message-user');
+                if (!msgUserSpan) continue;
+                
+                // Get username without title (title is in a separate span)
+                let msgUser = msgUserSpan.textContent.trim();
+                // Remove title if present (format: "Username [Title]")
+                const titleMatch = msgUser.match(/^(.+?)\s*\[.+\]$/);
+                if (titleMatch) {
+                    msgUser = titleMatch[1].trim();
+                }
+                
                 const msgContent = msg.querySelector('.message-content p')?.textContent || '';
                 const msgImage = msg.querySelector('.message-image');
                 const msgGif = msg.querySelector('.message-gif');
                 const hasImage = msgImage !== null;
                 const hasGif = msgGif !== null;
+                
                 // Check if this is the same message (same timestamp, user, content, and media)
-                if (msgTime == timestamp && msgUser === user && msgContent === message) {
+                // Allow 1 second tolerance for timestamp (in case of slight timing differences)
+                const timeDiff = Math.abs(parseInt(msgTime) - timestamp);
+                if (timeDiff < 1000 && msgUser === user && msgContent === message) {
                     // If both have the same media state (both have image, both have gif, both have neither)
                     if (hasImage === !!imageData && hasGif === !!gifData) {
                         return; // Message already exists, don't add duplicate
@@ -1459,12 +1485,28 @@
             
             console.log('Sending message:', { user: messageUsername, message: message, hasImage: !!imageData, hasGif: !!gifData, gifUrl: gifData, avatar: messageAvatar, avatarImage: !!messageAvatarImage });
             
+            // Create a temporary ID based on timestamp to track this message
+            const tempMessageId = `temp-${timestamp}-${messageUsername}`;
+            
             if (db) {
-                // Save to Firestore first
-                saveMessage(messageUsername, message || '', timestamp, imageData, gifData, messageAvatar, messageAvatarImage, messageUserId, messageTitle);
+                // Add to display immediately for better UX (before saving)
+                addMessageToChat(messageUsername, message || '', timestamp, false, imageData, gifData, messageAvatar, messageAvatarImage, tempMessageId, messageUserId, messageTitle);
                 
-                // Add to display immediately for better UX
-                addMessageToChat(messageUsername, message || '', timestamp, false, imageData, gifData, messageAvatar, messageAvatarImage, null, messageUserId, messageTitle);
+                // Save to Firestore, get the real message ID
+                saveMessage(messageUsername, message || '', timestamp, imageData, gifData, messageAvatar, messageAvatarImage, messageUserId, messageTitle).then((messageId) => {
+                    if (messageId) {
+                        // Mark as loaded to prevent duplicate from listener
+                        loadedMessageIds.add(messageId);
+                        // Update the message element with the real ID
+                        const messageElement = chatMessages.querySelector(`[data-message-id="${tempMessageId}"]`);
+                        if (messageElement) {
+                            messageElement.setAttribute('data-message-id', messageId);
+                        }
+                    }
+                }).catch((error) => {
+                    // If save fails, the message is already shown
+                    console.error('Error saving message:', error);
+                });
             } else {
                 addMessageToChat(messageUsername, message || '', timestamp, true, imageData, gifData, messageAvatar, messageAvatarImage, null, messageUserId, messageTitle);
             }
