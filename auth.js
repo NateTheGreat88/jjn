@@ -167,6 +167,104 @@
         }
     }
     
+    // Sign in with Google
+    async function signInWithGoogle() {
+        try {
+            // Ensure auth is initialized
+            if (!auth) {
+                if (!initAuth()) {
+                    return { 
+                        success: false, 
+                        error: 'Firebase Authentication is not enabled. Please enable Google sign-in in Firebase Console.' 
+                    };
+                }
+            }
+            
+            if (!auth) {
+                return { 
+                    success: false, 
+                    error: 'Firebase Authentication is not available. Please enable it in Firebase Console.' 
+                };
+            }
+            
+            const provider = new firebase.auth.GoogleAuthProvider();
+            // Request additional scopes if needed
+            provider.addScope('profile');
+            provider.addScope('email');
+            
+            const userCredential = await auth.signInWithPopup(provider);
+            const user = userCredential.user;
+            
+            // Check if this is a new user
+            const isNewUser = userCredential.additionalUserInfo?.isNewUser || false;
+            
+            if (isNewUser) {
+                // Create user document in Firestore for new users
+                const userData = {
+                    email: user.email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    secrets: {},
+                    profile: {
+                        displayName: user.displayName || '',
+                        username: '',
+                        bio: '',
+                        themeColor: '#667eea',
+                        avatar: '👤',
+                        avatarImage: null
+                    },
+                    isDev: false
+                };
+                
+                // Sync existing localStorage data if any
+                const existingSecrets = localStorage.getItem('jnjSecretPages');
+                if (existingSecrets) {
+                    try {
+                        userData.secrets = JSON.parse(existingSecrets);
+                    } catch (e) {
+                        console.error('Error parsing existing secrets:', e);
+                    }
+                }
+                
+                const existingProfile = localStorage.getItem('jnjUserProfile');
+                if (existingProfile) {
+                    try {
+                        const profile = JSON.parse(existingProfile);
+                        if (profile.profile) {
+                            userData.profile = { ...userData.profile, ...profile.profile };
+                        }
+                        if (profile.isDev !== undefined) {
+                            userData.isDev = profile.isDev;
+                        }
+                    } catch (e) {
+                        console.error('Error parsing existing profile:', e);
+                    }
+                }
+                
+                await db.collection('users').doc(user.uid).set(userData);
+                syncToLocalStorage(userData);
+            } else {
+                // Load existing user data
+                await loadUserData(user.uid);
+            }
+            
+            return { success: true, user };
+        } catch (error) {
+            console.error('Google sign-in error:', error);
+            let errorMessage = error.message || 'Failed to sign in with Google';
+            
+            // Provide helpful error messages
+            if (error.code === 'auth/popup-closed-by-user') {
+                errorMessage = 'Sign-in popup was closed. Please try again.';
+            } else if (error.code === 'auth/popup-blocked') {
+                errorMessage = 'Popup was blocked. Please allow popups for this site.';
+            } else if (error.code === 'auth/configuration-not-found') {
+                errorMessage = 'Google sign-in is not enabled. Please enable it in Firebase Console.';
+            }
+            
+            return { success: false, error: errorMessage };
+        }
+    }
+    
     // Sign in existing user
     async function signIn(email, password) {
         try {
@@ -366,6 +464,7 @@
     window.authSystem = {
         signUp,
         signIn,
+        signInWithGoogle,
         signOut,
         getUser,
         isAuthenticated,
