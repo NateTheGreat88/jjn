@@ -20,7 +20,13 @@
     <script src="auth.js" defer></script>
 </head>
 <body>
-    <div class="container">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Loading...</p>
+    </div>
+    
+    <div class="container" id="mainContainer" style="opacity: 0; pointer-events: none;">
         <div class="top-controls">
             <div class="search-wrapper">
                 <input 
@@ -624,6 +630,7 @@
                     if (result.success) {
                         successDiv.textContent = 'Account created successfully!';
                         successDiv.classList.add('show');
+                        hideLoadingScreen();
                         setTimeout(() => {
                             authOverlay.style.display = 'none';
                             document.body.classList.add('authenticated');
@@ -644,15 +651,42 @@
                 }
             });
             
+            // Hide loading screen and show content
+            function hideLoadingScreen() {
+                const loadingScreen = document.getElementById('loadingScreen');
+                const mainContainer = document.getElementById('mainContainer');
+                
+                if (loadingScreen) {
+                    loadingScreen.classList.add('hidden');
+                    // Remove from DOM after animation
+                    setTimeout(() => {
+                        loadingScreen.remove();
+                    }, 300);
+                }
+                
+                // Show main content
+                if (mainContainer) {
+                    mainContainer.style.opacity = '1';
+                    mainContainer.style.pointerEvents = 'auto';
+                }
+            }
+            
             // Check auth state and show/hide modal
             function checkAuthState() {
                 if (window.authSystem && window.authSystem.isAuthenticated()) {
+                    // User is authenticated - hide overlay, show content
                     authOverlay.style.display = 'none';
                     document.body.classList.add('authenticated');
+                    hideLoadingScreen();
                 } else {
-                    // Show modal if auth system is available
+                    // User is not authenticated
                     if (window.authSystem) {
-                        authOverlay.style.display = 'flex';
+                        // Auth system loaded, show sign-in modal
+                        hideLoadingScreen();
+                        // Small delay to ensure loading screen is gone before showing modal
+                        setTimeout(() => {
+                            authOverlay.style.display = 'flex';
+                        }, 100);
                     } else {
                         // Wait a bit more for auth system to load
                         setTimeout(checkAuthState, 500);
