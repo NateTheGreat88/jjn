@@ -347,38 +347,65 @@
 
         // Load profile on page load
         async function loadProfile() {
+            // Wait for auth system to be ready
+            let attempts = 0;
+            while (!window.authSystem && attempts < 20) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            
             // Try to load from Firestore if authenticated
             if (window.authSystem && window.authSystem.isAuthenticated()) {
                 try {
                     const user = window.authSystem.getUser();
-                    const userData = await window.authSystem.loadUserData(user.uid);
-                    if (userData && userData.profile) {
-                        const profile = {
-                            ...userData.profile,
-                            isDev: userData.isDev || false,
-                            userId: user.uid
-                        };
-                        
-                        document.getElementById('displayName').value = profile.displayName || '';
-                        document.getElementById('username').value = profile.username || '';
-                        document.getElementById('bio').value = profile.bio || '';
-                        document.getElementById('themeColor').value = profile.themeColor || '#667eea';
-                        selectedEmoji = profile.avatar || '👤';
-                        selectedImage = profile.avatarImage || null;
-                        
-                        updateAvatarPreview();
-                        updateColorPreview();
-                        updateBioCount();
-                        
-                        // Show dev star if user is a dev
-                        const devStarBadge = document.getElementById('devStarBadge');
-                        if (devStarBadge && profile.isDev === true) {
-                            devStarBadge.style.display = 'inline-block';
+                    if (user && user.uid) {
+                        const userData = await window.authSystem.loadUserData(user.uid);
+                        if (userData && userData.profile) {
+                            const profile = {
+                                ...userData.profile,
+                                isDev: userData.isDev || false,
+                                userId: user.uid
+                            };
+                            
+                            // Preserve joinDate if it exists
+                            const existing = localStorage.getItem(PROFILE_STORAGE_KEY);
+                            if (existing) {
+                                try {
+                                    const existingProfile = JSON.parse(existing);
+                                    if (existingProfile.joinDate) {
+                                        profile.joinDate = existingProfile.joinDate;
+                                    }
+                                } catch (e) {
+                                    // Ignore
+                                }
+                            }
+                            
+                            if (!profile.joinDate) {
+                                profile.joinDate = new Date().toISOString();
+                            }
+                            
+                            document.getElementById('displayName').value = profile.displayName || '';
+                            document.getElementById('username').value = profile.username || '';
+                            document.getElementById('bio').value = profile.bio || '';
+                            document.getElementById('themeColor').value = profile.themeColor || '#667eea';
+                            selectedEmoji = profile.avatar || '👤';
+                            selectedImage = profile.avatarImage || null;
+                            
+                            updateAvatarPreview();
+                            updateColorPreview();
+                            updateBioCount();
+                            
+                            // Show dev star if user is a dev
+                            const devStarBadge = document.getElementById('devStarBadge');
+                            if (devStarBadge && profile.isDev === true) {
+                                devStarBadge.style.display = 'inline-block';
+                            }
+                            
+                            // Save to localStorage for compatibility
+                            localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+                            console.log('Profile loaded from Firestore');
+                            return;
                         }
-                        
-                        // Save to localStorage for compatibility
-                        localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
-                        return;
                     }
                 } catch (e) {
                     console.error('Error loading profile from Firestore:', e);
@@ -391,11 +418,14 @@
                 try {
                     const profile = JSON.parse(saved);
                     
-                    // Generate userId for old profiles that don't have one
-                    if (!profile.userId) {
+                    // If authenticated, use the user's UID as userId
+                    if (window.authSystem && window.authSystem.isAuthenticated()) {
+                        const user = window.authSystem.getUser();
+                        if (user && user.uid) {
+                            profile.userId = user.uid;
+                        }
+                    } else if (!profile.userId) {
                         profile.userId = generateUserId();
-                        localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
-                        console.log('Generated userId for old profile:', profile.userId);
                     }
                     
                     document.getElementById('displayName').value = profile.displayName || '';
@@ -414,6 +444,9 @@
                     if (devStarBadge && profile.isDev === true) {
                         devStarBadge.style.display = 'inline-block';
                     }
+                    
+                    // Save back to localStorage with updated userId
+                    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
                 } catch (e) {
                     console.error('Error loading profile:', e);
                 }
@@ -421,7 +454,9 @@
                 // Set default join date and userId
                 const profile = { 
                     joinDate: new Date().toISOString(),
-                    userId: generateUserId()
+                    userId: (window.authSystem && window.authSystem.isAuthenticated() && window.authSystem.getUser()) 
+                        ? window.authSystem.getUser().uid 
+                        : generateUserId()
                 };
                 localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
             }
@@ -461,7 +496,23 @@
                 profile.userId = generateUserId();
             }
 
+            // Save to localStorage first
             localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+            
+            // Save to Firestore if authenticated
+            if (window.authSystem && window.authSystem.isAuthenticated()) {
+                try {
+                    const result = await window.authSystem.saveUserData({ profile: profile });
+                    if (result.success) {
+                        console.log('Profile saved to Firestore');
+                    } else {
+                        console.error('Error saving profile to Firestore:', result.error);
+                    }
+                } catch (e) {
+                    console.error('Error saving profile to Firestore:', e);
+                }
+            }
+            
             showSaveIndicator();
             
             // Update profile button on homepage
@@ -709,12 +760,25 @@
         });
         
         // Load profile on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            loadProfile();
-            // Check auth state after a delay to ensure auth.js is loaded
-            setTimeout(() => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Wait for auth system to be ready
+            let attempts = 0;
+            while (!window.authSystem && attempts < 30) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            
+            // Load profile (will try Firestore first if authenticated)
+            await loadProfile();
+            
+            // Check auth state and update sign out button
+            updateSignOutButton();
+            
+            // Listen for auth state changes
+            window.addEventListener('authStateChanged', async (e) => {
+                await loadProfile();
                 updateSignOutButton();
-            }, 500);
+            });
         });
     </script>
 </body>

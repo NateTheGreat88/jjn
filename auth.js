@@ -370,7 +370,8 @@
         getUser,
         isAuthenticated,
         saveUserData,
-        loadUserData
+        loadUserData,
+        getCurrentUser: () => currentUser
     };
 })();
 
