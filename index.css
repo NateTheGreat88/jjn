@@ -450,74 +450,7 @@ h1 {
     color: #999;
 }
 
-/* Light Mode */
-@media (prefers-color-scheme: light) {
-    body:not(.force-dark) {
-        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
-        color: #1e293b;
-    }
-    
-    .search-input {
-        background: rgba(0, 0, 0, 0.05);
-        border: 1px solid rgba(0, 0, 0, 0.1);
-        color: #1e293b;
-    }
-    
-    .about-button {
-        background: rgba(0, 0, 0, 0.05);
-        border: 1px solid rgba(0, 0, 0, 0.1);
-        color: #1e293b;
-    }
-    
-    .about-button:hover {
-        background: rgba(0, 0, 0, 0.1);
-        border-color: rgba(0, 0, 0, 0.2);
-    }
-    
-    h1 {
-        color: #1e293b;
-        text-shadow: none;
-    }
-    
-    .subtitle {
-        color: #64748b;
-    }
-    
-    .song-card {
-        background: rgba(255, 255, 255, 0.9);
-        border: 1px solid rgba(0, 0, 0, 0.1);
-    }
-    
-    .song-info h2 {
-        color: #1e293b;
-    }
-    
-    .song-info p {
-        color: #64748b;
-    }
-    
-    .intro-section {
-        background: rgba(0, 0, 0, 0.03);
-        border: 1px solid rgba(0, 0, 0, 0.1);
-    }
-    
-    .intro-text {
-        color: #1e293b;
-    }
-    
-    .feature-item {
-        background: rgba(255, 255, 255, 0.9);
-        border: 1px solid rgba(0, 0, 0, 0.1);
-    }
-    
-    .feature-item h3 {
-        color: #1e293b;
-    }
-    
-    .feature-item p {
-        color: #64748b;
-    }
-}
+/* Light Mode - Disabled - Always use dark mode */
 
 /* Mobile Responsive */
 @media (max-width: 600px) {
