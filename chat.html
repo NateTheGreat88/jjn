@@ -1098,8 +1098,12 @@
             // Censor the message before displaying (in case it wasn't censored when saved)
             let censoredMessage = censorMessage(message);
             
-            // Convert emoji codes in message to actual emojis (basic support)
-            let messageHtml = censoredMessage ? escapeHtml(censoredMessage) : '';
+            // Convert URLs to clickable links
+            let messageHtml = '';
+            if (censoredMessage) {
+                // Convert URLs to links first (linkify handles escaping)
+                messageHtml = linkify(censoredMessage);
+            }
             // Emojis are already Unicode, so they should display fine
             
             // Use avatar from message data (saved with message), or fallback to profile if it's the current user
@@ -1236,6 +1240,35 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+        
+        // Convert URLs in text to clickable links
+        function linkify(text) {
+            if (!text) return text;
+            
+            // URL regex pattern - matches http://, https://, www., and common TLDs
+            const urlPattern = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9-]+\.[a-zA-Z]{2,}[^\s]*)/gi;
+            
+            return text.replace(urlPattern, (url) => {
+                // Add http:// if it starts with www. or doesn't have a protocol
+                let href = url;
+                if (url.toLowerCase().startsWith('www.')) {
+                    href = 'http://' + url;
+                } else if (!url.toLowerCase().startsWith('http://') && !url.toLowerCase().startsWith('https://')) {
+                    // If it looks like a domain but doesn't have www or protocol, add http://
+                    if (url.match(/^[a-zA-Z0-9-]+\.[a-zA-Z]{2,}/)) {
+                        href = 'http://' + url;
+                    } else {
+                        return url; // Not a valid URL, return as-is
+                    }
+                }
+                
+                // Escape the URL for use in HTML attribute
+                const escapedUrl = escapeHtml(href);
+                const escapedDisplay = escapeHtml(url);
+                
+                return `<a href="${escapedUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a9eff; text-decoration: underline;">${escapedDisplay}</a>`;
+            });
         }
 
         // Scroll to bottom of chat

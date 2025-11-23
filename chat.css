@@ -472,6 +472,17 @@ body.page-exit {
     line-height: 1.5;
 }
 
+.message-content a {
+    color: #4a9eff;
+    text-decoration: underline;
+    word-break: break-all;
+}
+
+.message-content a:hover {
+    color: #6bb3ff;
+    text-decoration: underline;
+}
+
 .welcome-message .message-content {
     background: rgba(74, 158, 255, 0.1);
     border-left-color: #4a9eff;
