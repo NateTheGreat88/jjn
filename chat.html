@@ -1163,6 +1163,12 @@
                 </div>
             `;
             
+            // Check if this message is from the current user and add class for gray styling
+            const isOwnMessage = (user === currentUserName || displayUsername === currentUserName);
+            if (isOwnMessage) {
+                messageDiv.classList.add('own-message');
+            }
+            
             // Add click handler for image expansion
             if (imageData) {
                 const imageId = 'img-' + timestamp;
