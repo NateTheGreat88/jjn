@@ -529,6 +529,19 @@
             // Generate a unique ID using timestamp and random string
             return 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
         }
+        
+        // Generate or get numeric user ID (immutable, dev-only visible)
+        function getOrCreateNumericUserId(profile) {
+            // If user already has a numeric ID, return it (immutable)
+            if (profile.userNumericId) {
+                return profile.userNumericId;
+            }
+            
+            // Generate a new numeric ID based on timestamp (ensures uniqueness)
+            // Use timestamp in milliseconds, but make it shorter (last 10 digits)
+            const numericId = parseInt(Date.now().toString().slice(-10)) + Math.floor(Math.random() * 1000);
+            return numericId;
+        }
 
         // Load profile on page load
         async function loadProfile() {
@@ -636,6 +649,12 @@
                     equippedTitle = profile.equippedTitle || null;
                     unlockedTitles = profile.unlockedTitles || [];
                     
+                    // Ensure numeric user ID exists (immutable once created)
+                    if (!profile.userNumericId) {
+                        profile.userNumericId = getOrCreateNumericUserId(profile);
+                        localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+                    }
+                    
                     // Check for new title unlocks
                     const newlyUnlocked = checkTitleUnlocks(profile);
                     if (newlyUnlocked.length > 0) {
@@ -665,7 +684,8 @@
                     joinDate: new Date().toISOString(),
                     userId: (window.authSystem && window.authSystem.isAuthenticated() && window.authSystem.getUser()) 
                         ? window.authSystem.getUser().uid 
-                        : generateUserId()
+                        : generateUserId(),
+                    userNumericId: getOrCreateNumericUserId({})
                 };
                 localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
             }

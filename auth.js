@@ -128,18 +128,26 @@
             if (existingProfile) {
                 try {
                     const profile = JSON.parse(existingProfile);
+                    // Generate numeric user ID if it doesn't exist
+                    let numericId = profile.userNumericId;
+                    if (!numericId) {
+                        numericId = parseInt(Date.now().toString().slice(-10)) + Math.floor(Math.random() * 1000);
+                    }
                     userData.profile = {
                         displayName: profile.displayName || '',
                         username: profile.username || '',
                         bio: profile.bio || '',
                         themeColor: profile.themeColor || '#667eea',
                         avatar: profile.avatar || '👤',
-                        avatarImage: profile.avatarImage || null
+                        avatarImage: profile.avatarImage || null,
+                        userNumericId: numericId
                     };
                     userData.isDev = profile.isDev || false;
                 } catch (e) {
                     console.error('Error parsing existing profile:', e);
                 }
+            } else {
+                // numericId is already set in the initial userData.profile above
             }
             
             await db.collection('users').doc(user.uid).set(userData);
