@@ -427,6 +427,15 @@
                     }
                     return false;
                 }
+            },
+            'kind-word-user': {
+                name: 'Kind Word User',
+                description: 'Spread kindness',
+                unlockCondition: (profile) => {
+                    // Unlock after sending 25 "kind word" messages (handled in chat)
+                    const kindWordCount = localStorage.getItem('jnjKindWordCount') || 0;
+                    return parseInt(kindWordCount) >= 25;
+                }
             }
         };
         

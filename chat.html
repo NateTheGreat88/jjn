@@ -325,6 +325,15 @@
                 }
             }
             
+            // Check kind-word-user (25 "kind word" messages)
+            if (!unlockedTitles.includes('kind-word-user')) {
+                const kindWordCount = parseInt(localStorage.getItem('jnjKindWordCount') || '0');
+                if (kindWordCount >= 25) {
+                    unlockedTitles.push('kind-word-user');
+                    newlyUnlocked.push('kind-word-user');
+                }
+            }
+            
             if (newlyUnlocked.length > 0) {
                 profile.unlockedTitles = unlockedTitles;
                 localStorage.setItem('jnjUserProfile', JSON.stringify(profile));
@@ -1502,6 +1511,26 @@
             
             // Censor the message before sending
             message = censorMessage(message);
+            
+            // Track "kind word" messages for title unlock
+            if (message && message.toLowerCase().includes('kind word')) {
+                const kindWordCount = parseInt(localStorage.getItem('jnjKindWordCount') || '0') + 1;
+                localStorage.setItem('jnjKindWordCount', kindWordCount.toString());
+                
+                // Check for title unlock after updating count
+                try {
+                    const profileData = localStorage.getItem('jnjUserProfile');
+                    if (profileData) {
+                        const profile = JSON.parse(profileData);
+                        const newlyUnlocked = checkTitleUnlocks(profile);
+                        if (newlyUnlocked.length > 0) {
+                            console.log('Unlocked titles:', newlyUnlocked);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error checking title unlocks:', e);
+                }
+            }
 
             const timestamp = Date.now();
             const imageData = selectedImage;
