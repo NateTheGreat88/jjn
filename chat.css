@@ -467,25 +467,6 @@ body.page-exit {
     word-wrap: break-word;
 }
 
-/* Own messages - gray styling */
-.message.own-message .message-content {
-    background: rgba(255, 255, 255, 0.02);
-    color: rgba(224, 224, 224, 0.6);
-    border-left: 3px solid rgba(128, 128, 128, 0.3);
-}
-
-.message.own-message .message-header {
-    opacity: 0.7;
-}
-
-.message.own-message .message-user {
-    color: rgba(224, 224, 224, 0.6);
-}
-
-.message.own-message .message-time {
-    color: rgba(224, 224, 224, 0.5);
-}
-
 .message-content p {
     margin: 0;
     line-height: 1.5;
