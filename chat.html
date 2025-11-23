@@ -498,7 +498,7 @@
                         // Only show the most recent messages
                         const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                         recentMessages.forEach(msg => {
-                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id, msg.userId, msg.title, msg, msg.userNumericId);
+                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id, msg.userId, msg.title, msg);
                         });
                         scrollToBottom();
                     }
@@ -521,7 +521,7 @@
                         const filteredMessages = messages.filter(msg => !msg.deleted && !msg.roomCode);
                         const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                         recentMessages.forEach(msg => {
-                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id, msg.userId, msg.title, msg, msg.userNumericId);
+                            addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id, msg.userId, msg.title, msg);
                         });
                         scrollToBottom();
                     }
@@ -543,7 +543,7 @@
                     const filteredMessages = messages.filter(msg => !msg.deleted && !msg.roomCode);
                     const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                     recentMessages.forEach(msg => {
-                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, null, null, msg.id, msg.userId, null, null, msg.userNumericId);
+                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, null, null, msg.id, msg.userId);
                     });
                     scrollToBottom();
                 }
@@ -627,7 +627,7 @@
                         // Display messages in reverse order (oldest first)
                         recentMessages.reverse().forEach(msg => {
                             if (!loadedMessageIds.has(msg.id)) {
-                                addMessageToChat(msg.user, msg.message || '', msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id, msg.userId, null, null, msg.userNumericId);
+                                addMessageToChat(msg.user, msg.message || '', msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id, msg.userId);
                                 loadedMessageIds.add(msg.id);
                             }
                         });
@@ -663,12 +663,12 @@
                                 // Double-check room code match
                                 if (roomCode) {
                                     if (data.roomCode === roomCode) {
-                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId, data.title, data, data.userNumericId);
+                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId, data.title, data);
                                     }
                                 } else {
                                     // Only show messages without roomCode in public chat
                                     if (!data.roomCode) {
-                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId, data.title, data, data.userNumericId);
+                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId, data.title, data);
                                     }
                                 }
                             } else if (change.type === 'modified') {
@@ -703,7 +703,7 @@
                                     
                                     if (shouldShow && !loadedMessageIds.has(messageId)) {
                                         // Message was modified but not deleted, and we haven't loaded it yet
-                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId, data.title, data, data.userNumericId);
+                                        addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId, data.title, data);
                                         loadedMessageIds.add(messageId);
                                     }
                                 }
@@ -780,7 +780,7 @@
                                 recentMessages.reverse();
                                 recentMessages.forEach(msg => {
                                     if (!loadedMessageIds.has(msg.id)) {
-                                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id, msg.userId, msg.title, msg, msg.userNumericId);
+                                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image, msg.gif, msg.avatar, msg.avatarImage, msg.id, msg.userId, msg.title, msg);
                                         loadedMessageIds.add(msg.id);
                                     }
                                 });
@@ -799,7 +799,7 @@
                                                 }
                                                 console.log('Fallback listener - New message:', { user: data.user, hasGif: !!data.gif, gifUrl: data.gif, fullData: data });
                                                 if (data.roomCode === roomCode) {
-                                                    addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, change.doc.id, data.userId, null, null, data.userNumericId);
+                                                    addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, change.doc.id, data.userId);
                                                     loadedMessageIds.add(change.doc.id);
                                                 }
                                             } else if (change.type === 'modified') {
@@ -825,7 +825,7 @@
                                                     }
                                                 } else if (shouldShow && !loadedMessageIds.has(messageId)) {
                                                     // Message was modified but not deleted, and we haven't loaded it yet
-                                                    addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId, data.title, data, data.userNumericId);
+                                                    addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId, data.title, data);
                                                     loadedMessageIds.add(messageId);
                                                 }
                                             } else if (change.type === 'removed') {
@@ -849,7 +849,7 @@
                                 let filteredMessages = messages.filter(msg => msg.roomCode === roomCode);
                                 const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                                 recentMessages.forEach(msg => {
-                                    addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image || null, msg.gif || null, msg.avatar, msg.avatarImage, msg.id, null, null, null, msg.userNumericId);
+                                    addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image || null, msg.gif || null, msg.avatar, msg.avatarImage, msg.id);
                                 });
                                 scrollToBottom();
                             });
@@ -868,14 +868,14 @@
                     // Only show the most recent messages
                     const recentMessages = filteredMessages.slice(-MAX_VISIBLE_MESSAGES);
                     recentMessages.forEach(msg => {
-                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image || null, msg.gif || null, msg.avatar, msg.avatarImage, msg.id, null, null, null, msg.userNumericId);
+                        addMessageToChat(msg.user, msg.message, msg.timestamp, false, msg.image || null, msg.gif || null, msg.avatar, msg.avatarImage, msg.id);
                     });
                     scrollToBottom();
                 });
         }
 
         // Save message to Firestore or localStorage fallback
-        function saveMessage(user, message, timestamp, imageData = null, gifData = null, avatar = null, avatarImage = null, userId = null, title = null, userNumericId = null) {
+        function saveMessage(user, message, timestamp, imageData = null, gifData = null, avatar = null, avatarImage = null, userId = null, title = null) {
             const messageData = {
                 user: user,
                 message: message,
@@ -885,11 +885,6 @@
             // Add userId if provided
             if (userId) {
                 messageData.userId = userId;
-            }
-            
-            // Add numeric user ID if provided (for dev display)
-            if (userNumericId) {
-                messageData.userNumericId = userNumericId;
             }
             
             if (imageData) {
@@ -974,7 +969,7 @@
         }
 
         // Fallback: Save messages to localStorage
-        function saveMessageToLocalStorage(user, message, timestamp, imageData = null, gifData = null, avatar = null, avatarImage = null, userId = null, title = null, userNumericId = null) {
+        function saveMessageToLocalStorage(user, message, timestamp, imageData = null, gifData = null, avatar = null, avatarImage = null, userId = null, title = null) {
             const messages = JSON.parse(localStorage.getItem('jjnChatMessages') || '[]');
             const messageObj = { user, message, timestamp };
             if (imageData) {
@@ -997,10 +992,6 @@
             if (title) {
                 messageObj.title = title;
             }
-            // Save numeric user ID if provided
-            if (userNumericId) {
-                messageObj.userNumericId = userNumericId;
-            }
             // Add room code if in a private room
             if (currentRoomCode) {
                 messageObj.roomCode = currentRoomCode;
@@ -1014,7 +1005,7 @@
         }
 
         // Add message to chat display
-        function addMessageToChat(user, message, timestamp, shouldSave = true, imageData = null, gifData = null, avatar = null, avatarImage = null, messageId = null, userId = null, title = null, messageData = null, userNumericId = null) {
+        function addMessageToChat(user, message, timestamp, shouldSave = true, imageData = null, gifData = null, avatar = null, avatarImage = null, messageId = null, userId = null, title = null, messageData = null) {
             // Remove welcome message if it exists
             const welcomeMsg = chatMessages.querySelector('.welcome-message');
             if (welcomeMsg) {
@@ -1111,24 +1102,13 @@
             let displayUsername = user; // Default to the user value
             let userTitle = null; // Title to display
             
-            // Get user's profile to check for title and numeric ID
-            // First, try to get title and numeric ID from messageData (saved with message)
-            let messageUserNumericId = null;
-            if (messageData) {
-                if (messageData.title) {
-                    userTitle = messageData.title;
-                }
-                if (messageData.userNumericId) {
-                    messageUserNumericId = messageData.userNumericId;
-                }
+            // Get user's profile to check for title
+            // First, try to get title from messageData (saved with message)
+            if (messageData && messageData.title) {
+                userTitle = messageData.title;
             } else if (title) {
                 // Title passed as parameter
                 userTitle = title;
-            }
-            
-            // Use numeric ID from parameter if provided
-            if (userNumericId) {
-                messageUserNumericId = userNumericId;
             }
             
             try {
@@ -1150,10 +1130,6 @@
                         // Get title from profile if not already set
                         if (!userTitle && profile.equippedTitle) {
                             userTitle = profile.equippedTitle;
-                        }
-                        // Get numeric ID from profile if not already set
-                        if (!messageUserNumericId && profile.userNumericId) {
-                            messageUserNumericId = profile.userNumericId;
                         }
                     }
                 }
@@ -1228,39 +1204,7 @@
             if (isDev()) {
                 messageDiv.addEventListener('click', handleMessageClick);
                 messageDiv.style.cursor = 'pointer';
-                // Show numeric user ID on hover for devs
-                if (messageUserNumericId) {
-                    messageDiv.setAttribute('data-user-numeric-id', messageUserNumericId);
-                    messageDiv.title = `Click to moderate (Dev only)\nUser ID: ${messageUserNumericId}`;
-                    
-                    // Add hover event to show numeric ID
-                    messageDiv.addEventListener('mouseenter', function() {
-                        if (isDev() && messageUserNumericId) {
-                            const userSpan = messageDiv.querySelector('.message-user');
-                            if (userSpan && !userSpan.querySelector('.dev-user-id')) {
-                                const idSpan = document.createElement('span');
-                                idSpan.className = 'dev-user-id';
-                                idSpan.textContent = ` [ID: ${messageUserNumericId}]`;
-                                idSpan.style.cssText = 'color: rgba(255, 255, 255, 0.4); font-size: 0.85em; font-weight: normal; margin-left: 4px;';
-                                userSpan.appendChild(idSpan);
-                            }
-                        }
-                    });
-                    
-                    messageDiv.addEventListener('mouseleave', function() {
-                        if (isDev()) {
-                            const userSpan = messageDiv.querySelector('.message-user');
-                            if (userSpan) {
-                                const idSpan = userSpan.querySelector('.dev-user-id');
-                                if (idSpan) {
-                                    idSpan.remove();
-                                }
-                            }
-                        }
-                    });
-                } else {
-                    messageDiv.title = 'Click to moderate (Dev only)';
-                }
+                messageDiv.title = 'Click to moderate (Dev only)';
             }
             
             // Remove old messages if we exceed the limit
@@ -1482,9 +1426,6 @@
                     
                     // Get userId (required for banning)
                     messageUserId = profile.userId || null;
-                    // Get numeric user ID (for dev display)
-                    const messageUserNumericId = profile.userNumericId || null;
-                    
                     // Use username if available, otherwise use displayName
                     if (profile.username && profile.username.trim() !== '') {
                         messageUsername = profile.username.trim();
@@ -1567,7 +1508,7 @@
                     console.error('Error saving message:', error);
                 });
             } else {
-                addMessageToChat(messageUsername, message || '', timestamp, true, imageData, gifData, messageAvatar, messageAvatarImage, null, messageUserId, messageTitle, null, messageUserNumericId);
+                addMessageToChat(messageUsername, message || '', timestamp, true, imageData, gifData, messageAvatar, messageAvatarImage, null, messageUserId, messageTitle);
             }
             messageInput.value = '';
             messageInput.focus();
