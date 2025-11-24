@@ -63,6 +63,60 @@
             page: 'secret-tripleclick.html',
             hint: 'Triple-click the "About Us" button...',
             unlocked: false
+        },
+        'scroll': {
+            name: 'Scroll Secret',
+            page: 'secret-scroll.html',
+            hint: 'Scroll to the very bottom of the page...',
+            unlocked: false
+        },
+        'profile': {
+            name: 'Profile Secret',
+            page: 'secret-profile.html',
+            hint: 'Click the Profile button 10 times...',
+            unlocked: false
+        },
+        'spacebar': {
+            name: 'Spacebar Secret',
+            page: 'secret-spacebar.html',
+            hint: 'Press spacebar 20 times...',
+            unlocked: false
+        },
+        'minigames': {
+            name: 'Minigames Secret',
+            page: 'secret-minigames.html',
+            hint: 'Visit the minigames page...',
+            unlocked: false
+        },
+        'backwards': {
+            name: 'Backwards Secret',
+            page: 'secret-backwards.html',
+            hint: 'Type "backwards" backwards in search...',
+            unlocked: false
+        },
+        'longpress': {
+            name: 'Long Press Secret',
+            page: 'secret-longpress.html',
+            hint: 'Hold down the subtitle for 3 seconds...',
+            unlocked: false
+        },
+        'arrowkeys': {
+            name: 'Arrow Keys Secret',
+            page: 'secret-arrowkeys.html',
+            hint: 'Press all arrow keys in sequence...',
+            unlocked: false
+        },
+        'title': {
+            name: 'Title Secret',
+            page: 'secret-title.html',
+            hint: 'Click the page title 15 times...',
+            unlocked: false
+        },
+        'esc': {
+            name: 'Escape Secret',
+            page: 'secret-esc.html',
+            hint: 'Press Escape 5 times quickly...',
+            unlocked: false
         }
     };
     
@@ -490,6 +544,238 @@
                     clickCount = 0;
                 }, 500);
             });
+        }
+    });
+    
+    // ==================== SCROLL SECRET ====================
+    let scrollCheckDone = false;
+    window.addEventListener('scroll', () => {
+        if (scrollCheckDone) return;
+        
+        const scrollHeight = document.documentElement.scrollHeight;
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const clientHeight = document.documentElement.clientHeight;
+        
+        // Check if scrolled to bottom (within 50px)
+        if (scrollTop + clientHeight >= scrollHeight - 50) {
+            scrollCheckDone = true;
+            if (unlockSecret('scroll')) {
+                // Redirect is handled in unlockSecret
+            } else if (isUnlocked('scroll')) {
+                // Already unlocked
+            }
+        }
+    });
+    
+    // ==================== PROFILE BUTTON CLICK SECRET ====================
+    document.addEventListener('DOMContentLoaded', () => {
+        const profileButton = document.getElementById('profileButton');
+        if (profileButton) {
+            let clickCount = 0;
+            let clickTimeout = null;
+            
+            profileButton.addEventListener('click', (e) => {
+                clickCount++;
+                
+                if (clickTimeout) {
+                    clearTimeout(clickTimeout);
+                }
+                
+                clickTimeout = setTimeout(() => {
+                    clickCount = 0;
+                }, 2000);
+                
+                if (clickCount === 10) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (unlockSecret('profile')) {
+                        // Redirect is handled in unlockSecret
+                    } else if (isUnlocked('profile')) {
+                        window.location.href = 'secrets.html';
+                    }
+                    clickCount = 0;
+                }
+            });
+        }
+    });
+    
+    // ==================== SPACEBAR SECRET ====================
+    let spacebarCount = 0;
+    let spacebarTimeout = null;
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && !e.target.matches('input, textarea')) {
+            e.preventDefault();
+            spacebarCount++;
+            
+            if (spacebarTimeout) {
+                clearTimeout(spacebarTimeout);
+            }
+            
+            spacebarTimeout = setTimeout(() => {
+                spacebarCount = 0;
+            }, 3000);
+            
+            if (spacebarCount === 20) {
+                if (unlockSecret('spacebar')) {
+                    // Redirect is handled in unlockSecret
+                } else if (isUnlocked('spacebar')) {
+                    window.location.href = 'secrets.html';
+                }
+                spacebarCount = 0;
+            }
+        }
+    });
+    
+    // ==================== MINIGAMES PAGE SECRET ====================
+    if (window.location.pathname.includes('minigames.html')) {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                if (unlockSecret('minigames')) {
+                    // Redirect is handled in unlockSecret
+                } else if (isUnlocked('minigames')) {
+                    // Already unlocked
+                }
+            }, 1000);
+        });
+    }
+    
+    // ==================== BACKWARDS SEARCH SECRET ====================
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const value = e.target.value.toLowerCase().trim();
+                if (value === 'sdrawkcab' || value === 'sdrawkcab ') {
+                    if (unlockSecret('backwards')) {
+                        // Redirect is handled in unlockSecret
+                    } else if (isUnlocked('backwards')) {
+                        window.location.href = 'secrets.html';
+                    }
+                }
+            });
+        }
+    });
+    
+    // ==================== LONG PRESS SUBTITLE SECRET ====================
+    document.addEventListener('DOMContentLoaded', () => {
+        const subtitle = document.querySelector('.subtitle');
+        if (subtitle) {
+            let pressStartTime = null;
+            let pressTimeout = null;
+            
+            subtitle.addEventListener('mousedown', (e) => {
+                pressStartTime = Date.now();
+                pressTimeout = setTimeout(() => {
+                    const pressDuration = Date.now() - pressStartTime;
+                    if (pressDuration >= 3000) {
+                        if (unlockSecret('longpress')) {
+                            // Redirect is handled in unlockSecret
+                        } else if (isUnlocked('longpress')) {
+                            window.location.href = 'secrets.html';
+                        }
+                    }
+                }, 3000);
+            });
+            
+            subtitle.addEventListener('mouseup', () => {
+                if (pressTimeout) {
+                    clearTimeout(pressTimeout);
+                    pressTimeout = null;
+                }
+                pressStartTime = null;
+            });
+            
+            subtitle.addEventListener('mouseleave', () => {
+                if (pressTimeout) {
+                    clearTimeout(pressTimeout);
+                    pressTimeout = null;
+                }
+                pressStartTime = null;
+            });
+        }
+    });
+    
+    // ==================== ARROW KEYS SEQUENCE SECRET ====================
+    let arrowKeysSequence = [];
+    document.addEventListener('keydown', (e) => {
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+            arrowKeysSequence.push(e.code);
+            if (arrowKeysSequence.length > 4) {
+                arrowKeysSequence.shift();
+            }
+            
+            // Check for sequence: Up, Down, Left, Right
+            if (arrowKeysSequence.length === 4 &&
+                arrowKeysSequence[0] === 'ArrowUp' &&
+                arrowKeysSequence[1] === 'ArrowDown' &&
+                arrowKeysSequence[2] === 'ArrowLeft' &&
+                arrowKeysSequence[3] === 'ArrowRight') {
+                if (unlockSecret('arrowkeys')) {
+                    // Redirect is handled in unlockSecret
+                } else if (isUnlocked('arrowkeys')) {
+                    window.location.href = 'secrets.html';
+                }
+                arrowKeysSequence = [];
+            }
+        } else {
+            // Reset if wrong key pressed
+            arrowKeysSequence = [];
+        }
+    });
+    
+    // ==================== TITLE CLICK SECRET ====================
+    document.addEventListener('DOMContentLoaded', () => {
+        const title = document.querySelector('header h1');
+        if (title) {
+            let clickCount = 0;
+            let clickTimeout = null;
+            
+            title.addEventListener('click', () => {
+                clickCount++;
+                
+                if (clickTimeout) {
+                    clearTimeout(clickTimeout);
+                }
+                
+                clickTimeout = setTimeout(() => {
+                    clickCount = 0;
+                }, 2000);
+                
+                if (clickCount === 15) {
+                    if (unlockSecret('title')) {
+                        // Redirect is handled in unlockSecret
+                    } else if (isUnlocked('title')) {
+                        window.location.href = 'secrets.html';
+                    }
+                    clickCount = 0;
+                }
+            });
+        }
+    });
+    
+    // ==================== ESCAPE KEY SECRET ====================
+    let escCount = 0;
+    let escTimeout = null;
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            escCount++;
+            
+            if (escTimeout) {
+                clearTimeout(escTimeout);
+            }
+            
+            escTimeout = setTimeout(() => {
+                escCount = 0;
+            }, 1000);
+            
+            if (escCount === 5) {
+                if (unlockSecret('esc')) {
+                    // Redirect is handled in unlockSecret
+                } else if (isUnlocked('esc')) {
+                    window.location.href = 'secrets.html';
+                }
+                escCount = 0;
+            }
         }
     });
 })();
