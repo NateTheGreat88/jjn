@@ -70,6 +70,38 @@
             <p class="subtitle">JNJ • Junhu Choi • Jaxon Croskey • Nathan DeLuca</p>
         </header>
 
+        <!-- Thanksgiving Event Countdown -->
+        <div id="thanksgivingTimer" class="event-timer">
+            <div class="timer-header">
+                <span class="timer-icon">🦃</span>
+                <h2 class="timer-title">Thanksgiving Event</h2>
+            </div>
+            <div class="timer-content">
+                <p class="timer-description">Starts Tuesday, November 25 at 8:00 AM MT</p>
+                <div class="countdown-display">
+                    <div class="countdown-item">
+                        <span class="countdown-value" id="days">00</span>
+                        <span class="countdown-label">Days</span>
+                    </div>
+                    <div class="countdown-separator">:</div>
+                    <div class="countdown-item">
+                        <span class="countdown-value" id="hours">00</span>
+                        <span class="countdown-label">Hours</span>
+                    </div>
+                    <div class="countdown-separator">:</div>
+                    <div class="countdown-item">
+                        <span class="countdown-value" id="minutes">00</span>
+                        <span class="countdown-label">Minutes</span>
+                    </div>
+                    <div class="countdown-separator">:</div>
+                    <div class="countdown-item">
+                        <span class="countdown-value" id="seconds">00</span>
+                        <span class="countdown-label">Seconds</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <section class="intro-section">
             <p class="intro-text">Welcome to our collaborative space! Explore our creative projects, tools, and creations.</p>
         </section>
@@ -205,6 +237,57 @@
     </div>
 
     <script>
+        // Thanksgiving Event Countdown Timer
+        function initThanksgivingTimer() {
+            const timerElement = document.getElementById('thanksgivingTimer');
+            if (!timerElement) return;
+            
+            // Event date: November 25, 2025 at 8:00 AM Mountain Time
+            // Mountain Time is UTC-7 (MST) in November
+            // So 8:00 AM MST = 3:00 PM UTC (15:00 UTC)
+            const eventDate = new Date('2025-11-25T15:00:00Z'); // 8 AM MST = 3 PM UTC
+            
+            function updateTimer() {
+                const now = new Date();
+                const timeLeft = eventDate - now;
+                
+                if (timeLeft <= 0) {
+                    // Event has started
+                    timerElement.innerHTML = `
+                        <div class="timer-header">
+                            <span class="timer-icon">🦃</span>
+                            <h2 class="timer-title">Thanksgiving Event</h2>
+                        </div>
+                        <div class="timer-content">
+                            <p class="timer-description" style="font-size: 18px; color: #FFD700;">The event has started! 🎉</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                
+                document.getElementById('days').textContent = String(days).padStart(2, '0');
+                document.getElementById('hours').textContent = String(hours).padStart(2, '0');
+                document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
+                document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
+            }
+            
+            // Update immediately and then every second
+            updateTimer();
+            setInterval(updateTimer, 1000);
+        }
+        
+        // Initialize timer when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initThanksgivingTimer);
+        } else {
+            initThanksgivingTimer();
+        }
+        
         // Search/Filter
         const searchInput = document.getElementById('searchInput');
         const songCards = document.querySelectorAll('.song-card');
