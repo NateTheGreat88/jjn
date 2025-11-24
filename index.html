@@ -483,6 +483,8 @@
             const authOverlay = document.createElement('div');
             authOverlay.className = 'auth-overlay';
             authOverlay.id = 'authOverlay';
+            // Explicitly hide overlay until auth state is determined
+            authOverlay.style.display = 'none';
             authOverlay.innerHTML = `
                 <div class="auth-modal">
                     <h2>Welcome to JNJ Website</h2>
@@ -672,35 +674,79 @@
             }
             
             // Check auth state and show/hide modal
-            function checkAuthState() {
-                if (window.authSystem && window.authSystem.isAuthenticated()) {
-                    // User is authenticated - hide overlay, show content
-                    authOverlay.style.display = 'none';
-                    document.body.classList.add('authenticated');
-                    hideLoadingScreen();
-                } else {
-                    // User is not authenticated
-                    if (window.authSystem) {
-                        // Auth system loaded, show sign-in modal
+            let authStateDetermined = false;
+            let authCheckTimeout = null;
+            
+            function checkAuthState(forceCheck = false) {
+                // Wait for auth system to be available
+                if (!window.authSystem) {
+                    // Wait a bit more for auth system to load
+                    if (authCheckTimeout) clearTimeout(authCheckTimeout);
+                    authCheckTimeout = setTimeout(checkAuthState, 200);
+                    return;
+                }
+                
+                // Check if user is authenticated
+                const isAuth = window.authSystem.isAuthenticated();
+                const currentUser = window.authSystem.getCurrentUser ? window.authSystem.getCurrentUser() : null;
+                
+                // If we have a user object (even if null), auth state is determined
+                // The authStateChanged event means Firebase has checked the auth state
+                if (authStateDetermined || currentUser !== undefined || forceCheck) {
+                    authStateDetermined = true;
+                    
+                    if (isAuth || currentUser) {
+                        // User is authenticated - hide overlay, show content
+                        authOverlay.style.display = 'none';
+                        document.body.classList.add('authenticated');
+                        // Hide loading screen after a tiny delay to ensure smooth transition
+                        setTimeout(() => {
+                            hideLoadingScreen();
+                        }, 50);
+                        if (authCheckTimeout) clearTimeout(authCheckTimeout);
+                    } else {
+                        // Auth state has been determined and user is not authenticated
+                        // Hide loading screen first, then show modal
                         hideLoadingScreen();
                         // Small delay to ensure loading screen is gone before showing modal
                         setTimeout(() => {
                             authOverlay.style.display = 'flex';
-                        }, 100);
-                    } else {
-                        // Wait a bit more for auth system to load
-                        setTimeout(checkAuthState, 500);
+                        }, 150);
+                        if (authCheckTimeout) clearTimeout(authCheckTimeout);
                     }
+                } else {
+                    // Wait a bit more for auth state to be determined
+                    // Keep loading screen visible
+                    if (authCheckTimeout) clearTimeout(authCheckTimeout);
+                    authCheckTimeout = setTimeout(() => checkAuthState(true), 300);
                 }
             }
             
-            // Listen for auth state changes
+            // Listen for auth state changes - this is the primary signal
             window.addEventListener('authStateChanged', (e) => {
-                checkAuthState();
+                authStateDetermined = true;
+                if (authCheckTimeout) clearTimeout(authCheckTimeout);
+                // Small delay to ensure the auth state is fully set
+                setTimeout(() => {
+                    checkAuthState(true);
+                }, 50);
             });
             
-            // Initial check - wait a bit longer to ensure auth.js is loaded
-            setTimeout(checkAuthState, 1000);
+            // Initial check - wait for auth.js to load and initialize
+            function waitForAuthSystem() {
+                if (window.authSystem) {
+                    // Auth system is loaded, but wait for authStateChanged event
+                    // If it doesn't fire within 2 seconds, force a check
+                    setTimeout(() => {
+                        if (!authStateDetermined) {
+                            checkAuthState(true);
+                        }
+                    }, 2000);
+                } else {
+                    setTimeout(waitForAuthSystem, 100);
+                }
+            }
+            waitForAuthSystem();
         }
         
         // Initialize auth modal when DOM is ready
