@@ -68,16 +68,20 @@
     
     // Load discovered secrets
     async function loadSecrets() {
+        console.log('Loading secrets...');
+        
         // Try to load from Firestore if authenticated
         if (window.authSystem && window.authSystem.isAuthenticated()) {
             try {
                 const userData = await window.authSystem.loadUserData(window.authSystem.getUser().uid);
                 if (userData && userData.secrets) {
+                    console.log('Loading secrets from Firestore:', userData.secrets);
                     Object.keys(secrets).forEach(key => {
                         if (userData.secrets[key]) {
                             secrets[key].unlocked = true;
                         }
                     });
+                    console.log('Secrets loaded from Firestore');
                     return;
                 }
             } catch (e) {
@@ -90,14 +94,18 @@
         if (saved) {
             try {
                 const data = JSON.parse(saved);
+                console.log('Loading secrets from localStorage:', data);
                 Object.keys(secrets).forEach(key => {
                     if (data[key]) {
                         secrets[key].unlocked = true;
                     }
                 });
+                console.log('Secrets loaded from localStorage');
             } catch (e) {
                 console.error('Error loading secrets:', e);
             }
+        } else {
+            console.log('No saved secrets found');
         }
     }
     
@@ -108,13 +116,17 @@
             data[key] = secrets[key].unlocked;
         });
         
+        console.log('Saving secrets:', data);
+        
         // Save to localStorage
         localStorage.setItem(SECRET_STORAGE_KEY, JSON.stringify(data));
+        console.log('Secrets saved to localStorage:', SECRET_STORAGE_KEY);
         
         // Also save to Firestore if authenticated
         if (window.authSystem && window.authSystem.isAuthenticated()) {
             try {
                 await window.authSystem.saveUserData({ secrets: data });
+                console.log('Secrets saved to Firestore');
             } catch (e) {
                 console.error('Error saving secrets to Firestore:', e);
             }
@@ -123,17 +135,29 @@
     
     // Unlock a secret
     async function unlockSecret(key) {
+        // Make sure secrets are loaded first
+        await loadSecrets();
+        
+        console.log('Attempting to unlock secret:', key, 'Current state:', secrets[key]);
+        
         if (secrets[key] && !secrets[key].unlocked) {
             secrets[key].unlocked = true;
+            console.log('Secret unlocked:', key);
             await saveSecrets();
+            console.log('Secrets saved');
             showSecretNotification(secrets[key].name);
             // Always redirect to secrets page when a secret is unlocked
             setTimeout(() => {
                 window.location.href = 'secrets.html';
             }, 2000);
             return true;
+        } else if (secrets[key] && secrets[key].unlocked) {
+            console.log('Secret already unlocked:', key);
+            return false;
+        } else {
+            console.log('Secret not found:', key);
+            return false;
         }
-        return false;
     }
     
     // Show notification when secret is discovered
@@ -173,9 +197,9 @@
     
     // Initialize
     // Wait for auth system to be ready
-    function initSecrets() {
+    async function initSecrets() {
         if (window.authSystem) {
-            loadSecrets();
+            await loadSecrets();
         } else {
             // Wait a bit and try again
             setTimeout(initSecrets, 100);
@@ -187,7 +211,12 @@
         loadSecrets();
     });
     
-    initSecrets();
+    // Start initialization
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSecrets);
+    } else {
+        initSecrets();
+    }
     
     // Export to window
     window.secretPages = {

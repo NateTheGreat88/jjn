@@ -3,10 +3,44 @@
     let canvas, ctx;
     let cursorParticles = []; // Particles that follow cursor
     let floatingParticles = []; // Particles that float independently
+    let simpleDots = []; // Simple dots for 'none' option
     let ripples = [];
     let mouseX = 0;
     let mouseY = 0;
     let time = 0;
+    let particleType = 'follow'; // 'follow', 'small', or 'none'
+    
+    // Get particle type from localStorage or profile
+    function getParticleType() {
+        // Check localStorage first
+        const stored = localStorage.getItem('particleType');
+        if (stored) {
+            return stored;
+        }
+        
+        // Check profile
+        try {
+            const profile = JSON.parse(localStorage.getItem('jnjUserProfile') || '{}');
+            if (profile.particleType) {
+                return profile.particleType;
+            }
+        } catch (e) {
+            // Ignore
+        }
+        
+        return 'follow'; // Default
+    }
+    
+    // Update particle type
+    function updateParticleType(newType) {
+        particleType = newType;
+        localStorage.setItem('particleType', newType);
+    }
+    
+    // Expose update function
+    window.animatedBackground = {
+        updateParticleType: updateParticleType
+    };
     
     // Create interactive background canvas
     function createInteractiveBackground() {
@@ -71,7 +105,7 @@
             });
         }
         
-        // Create independent floating particles
+        // Create independent floating particles (fewer for 'small' option)
         const numFloatingParticles = 50;
         for (let i = 0; i < numFloatingParticles; i++) {
             floatingParticles.push({
@@ -146,9 +180,28 @@
             }
         });
         
+        // Create simple dots for 'none' option
+        const numSimpleDots = 100;
+        for (let i = 0; i < numSimpleDots; i++) {
+            simpleDots.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                vx: (Math.random() - 0.5) * 0.3,
+                vy: (Math.random() - 0.5) * 0.3,
+                radius: 1.5,
+                opacity: Math.random() * 0.5 + 0.3
+            });
+        }
+        
+        // Initialize particle type
+        particleType = getParticleType();
+        
         // Animate
         function animate() {
             time += 0.01;
+            
+            // Update particle type from storage (in case it changed)
+            particleType = getParticleType();
             
             // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -210,10 +263,16 @@
             });
             
             // Update and draw independent floating particles
-            floatingParticles.forEach(particle => {
-                // Update position
-                particle.x += particle.vx;
-                particle.y += particle.vy;
+            // Show all for 'follow' and 'none', show fewer for 'small'
+            if (particleType === 'small' || particleType === 'follow' || particleType === 'none') {
+                const particlesToShow = particleType === 'small' 
+                    ? floatingParticles.slice(0, 15) // Only show 15 for 'small'
+                    : floatingParticles; // Show all for 'follow' and 'none'
+                    
+                particlesToShow.forEach(particle => {
+                    // Update position
+                    particle.x += particle.vx;
+                    particle.y += particle.vy;
                 
                 // Wrap around edges
                 if (particle.x < 0) particle.x = canvas.width;
@@ -221,31 +280,54 @@
                 if (particle.y < 0) particle.y = canvas.height;
                 if (particle.y > canvas.height) particle.y = 0;
                 
-                // Add some drift
-                particle.vx += (Math.random() - 0.5) * 0.01;
-                particle.vy += (Math.random() - 0.5) * 0.01;
-                
-                // Limit velocity
-                const maxVel = 1;
-                particle.vx = Math.max(-maxVel, Math.min(maxVel, particle.vx));
-                particle.vy = Math.max(-maxVel, Math.min(maxVel, particle.vy));
-                
-                // Update hue slowly
-                particle.hue = (particle.hue + particle.speed) % 360;
-                
-                // Draw floating particle
+                    // Add some drift
+                    particle.vx += (Math.random() - 0.5) * 0.01;
+                    particle.vy += (Math.random() - 0.5) * 0.01;
+                    
+                    // Limit velocity
+                    const maxVel = 1;
+                    particle.vx = Math.max(-maxVel, Math.min(maxVel, particle.vx));
+                    particle.vy = Math.max(-maxVel, Math.min(maxVel, particle.vy));
+                    
+                    // Update hue slowly
+                    particle.hue = (particle.hue + particle.speed) % 360;
+                    
+                    // Draw floating particle
                 const alpha = 0.3 + Math.sin(time + particle.x * 0.01) * 0.2;
                 ctx.fillStyle = `hsla(${particle.hue}, 70%, 60%, ${alpha})`;
-                ctx.shadowColor = `hsla(${particle.hue}, 70%, 60%, 0.6)`;
-                ctx.shadowBlur = 8;
-                ctx.beginPath();
-                ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.shadowBlur = 0;
-            });
+                    ctx.shadowColor = `hsla(${particle.hue}, 70%, 60%, 0.6)`;
+                    ctx.shadowBlur = 8;
+                    ctx.beginPath();
+                    ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                });
+            }
             
-            // Update and draw cursor-following particles
-            cursorParticles.forEach((particle, i) => {
+            // Draw simple dots for 'none' option (instead of cursor-following particles)
+            if (particleType === 'none') {
+                simpleDots.forEach(dot => {
+                    // Update position
+                    dot.x += dot.vx;
+                    dot.y += dot.vy;
+                    
+                    // Wrap around edges
+                    if (dot.x < 0) dot.x = canvas.width;
+                    if (dot.x > canvas.width) dot.x = 0;
+                    if (dot.y < 0) dot.y = canvas.height;
+                    if (dot.y > canvas.height) dot.y = 0;
+                    
+                    // Draw simple dot
+                    ctx.fillStyle = `rgba(255, 255, 255, ${dot.opacity})`;
+                    ctx.beginPath();
+                    ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+            
+            // Update and draw cursor-following particles (only if particleType is 'follow')
+            if (particleType === 'follow') {
+                cursorParticles.forEach((particle, i) => {
                 // Always drifting - particles are always shifting
                 particle.driftAngle += particle.driftSpeed;
                 
@@ -293,18 +375,22 @@
                 ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.shadowBlur = 0;
-            });
+                });
+            }
             
-            // Draw connecting lines between nearby particles (both types)
-            const allParticles = [...cursorParticles, ...floatingParticles];
-            allParticles.forEach((particle, i) => {
-                allParticles.slice(i + 1).forEach(otherParticle => {
+            // Draw connecting lines between nearby particles
+            if (particleType === 'follow' || particleType === 'small') {
+                const allParticles = particleType === 'follow' 
+                    ? [...cursorParticles, ...floatingParticles]
+                    : floatingParticles.slice(0, 15); // Only first 15 for 'small'
+                allParticles.forEach((particle, i) => {
+                    allParticles.slice(i + 1).forEach(otherParticle => {
                     const dx = particle.x - otherParticle.x;
                     const dy = particle.y - otherParticle.y;
                     const distance = Math.sqrt(dx * dx + dy * dy);
                     
                     if (distance < 150) {
-                        const alpha = (1 - distance / 150) * 0.15;
+                            const alpha = (1 - distance / 150) * 0.15;
                         ctx.strokeStyle = `rgba(74, 158, 255, ${alpha})`;
                         ctx.lineWidth = 1;
                         ctx.beginPath();
@@ -314,6 +400,27 @@
                     }
                 });
             });
+            } else if (particleType === 'none') {
+                // Draw connecting lines for dots and floating particles in 'none' mode
+                const allParticles = [...simpleDots, ...floatingParticles];
+                allParticles.forEach((particle, i) => {
+                    allParticles.slice(i + 1).forEach(otherParticle => {
+                        const dx = particle.x - otherParticle.x;
+                        const dy = particle.y - otherParticle.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < 100) {
+                            const alpha = (1 - distance / 100) * 0.1;
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.beginPath();
+                            ctx.moveTo(particle.x, particle.y);
+                            ctx.lineTo(otherParticle.x, otherParticle.y);
+                            ctx.stroke();
+                        }
+                    });
+                });
+            }
             
             requestAnimationFrame(animate);
         }
