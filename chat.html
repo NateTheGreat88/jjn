@@ -580,7 +580,11 @@
             // Note: We don't use orderBy here to avoid requiring a composite index
             // We'll sort in memory instead
             if (roomCode) {
-                query = query.where('roomCode', '==', roomCode);
+                query = query
+    .where('roomCode', '==', roomCode)
+    .orderBy('timestamp', 'desc')
+    .limit(MAX_VISIBLE_MESSAGES);
+
             } else {
                 query = query.orderBy('timestamp', 'desc').limit(MAX_VISIBLE_MESSAGES);
             }
