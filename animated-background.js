@@ -5,6 +5,7 @@
     let floatingParticles = []; // Particles that float independently
     let simpleDots = []; // Simple dots for 'none' option
     let ripples = [];
+    let piledLeaves = []; // Leaves that have piled up at the bottom
     let mouseX = 0;
     let mouseY = 0;
     let time = 0;
@@ -146,6 +147,7 @@
         
         // Create independent floating particles (fewer for 'small' option)
         const numFloatingParticles = 50;
+        piledLeaves = []; // Reset piled leaves array
         for (let i = 0; i < numFloatingParticles; i++) {
             floatingParticles.push({
                 x: Math.random() * canvas.width,
@@ -158,7 +160,8 @@
                 speed: Math.random() * 0.3 + 0.1,
                 rotation: Math.random() * Math.PI * 2, // Random initial rotation
                 rotationSpeed: (Math.random() - 0.5) * 0.03, // Rotation while falling
-                leafIndex: Math.floor(Math.random() * 3) // Random leaf image (0, 1, or 2)
+                leafIndex: Math.floor(Math.random() * 3), // Random leaf image (0, 1, or 2)
+                grounded: false // Track if leaf has reached the ground
             });
         }
         
@@ -315,32 +318,63 @@
                 const particlesToShow = particleType === 'small' 
                     ? floatingParticles.slice(0, 15) // Only show 15 for 'small'
                     : floatingParticles; // Show all for 'follow' and 'none'
+                
+                // Draw piled leaves first (so falling leaves appear on top)
+                if (particleType === 'leaves') {
+                    piledLeaves.forEach(particle => {
+                        const alpha = 0.4 + Math.sin(time + particle.x * 0.01) * 0.1;
+                        particle.rotation += particle.rotationSpeed * 0.1; // Slower rotation when grounded
+                        
+                        if (leafImagesLoaded && leafImages[particle.leafIndex]) {
+                            ctx.save();
+                            ctx.globalAlpha = alpha;
+                            ctx.translate(particle.x, particle.y);
+                            ctx.rotate(particle.rotation);
+                            ctx.drawImage(leafImages[particle.leafIndex], -particle.size / 2, -particle.size / 2, particle.size, particle.size);
+                            ctx.restore();
+                        }
+                    });
+                }
                     
+                const particlesToGround = []; // Collect particles that need to be grounded
+                
                 particlesToShow.forEach(particle => {
+                    if (particle.grounded) {
+                        // Skip grounded particles - they're drawn separately
+                        return;
+                    }
+                    
                     // Update position - falling motion
                     particle.x += particle.vx;
                     particle.y += particle.vy;
                 
-                // Wrap around edges - reset to top when falling off bottom
-                if (particle.x < -50) particle.x = canvas.width + 50;
-                if (particle.x > canvas.width + 50) particle.x = -50;
-                if (particle.y > canvas.height + 50) {
-                    particle.y = -50 - Math.random() * 100; // Reset to top with random offset
-                    particle.x = Math.random() * canvas.width; // Random horizontal position
-                }
+                    // Wrap around horizontal edges
+                    if (particle.x < -50) particle.x = canvas.width + 50;
+                    if (particle.x > canvas.width + 50) particle.x = -50;
+                    
+                    // Check if leaf has reached the bottom (for leaves mode, pile them up)
+                    if (particleType === 'leaves' && particle.y >= canvas.height - particle.size / 2) {
+                        particlesToGround.push(particle);
+                    } else if (particle.y > canvas.height + 50) {
+                        // For non-leaves mode, reset to top
+                        particle.y = -50 - Math.random() * 100;
+                        particle.x = Math.random() * canvas.width;
+                    }
                 
                     // Add slight horizontal drift while falling
-                    particle.vx += (Math.random() - 0.5) * 0.005;
-                    
-                    // Limit horizontal velocity but keep falling
-                    const maxVelX = 0.5;
-                    particle.vx = Math.max(-maxVelX, Math.min(maxVelX, particle.vx));
+                    if (!particle.grounded) {
+                        particle.vx += (Math.random() - 0.5) * 0.005;
+                        
+                        // Limit horizontal velocity but keep falling
+                        const maxVelX = 0.5;
+                        particle.vx = Math.max(-maxVelX, Math.min(maxVelX, particle.vx));
+                    }
                     
                     // Update hue slowly
                     particle.hue = (particle.hue + particle.speed) % 360;
                     
                     // Draw floating particle as leaf image
-                const alpha = 0.3 + Math.sin(time + particle.x * 0.01) * 0.2;
+                    const alpha = 0.3 + Math.sin(time + particle.x * 0.01) * 0.2;
                     particle.rotation += particle.rotationSpeed;
                     
                     if (leafImagesLoaded && leafImages[particle.leafIndex]) {
@@ -361,6 +395,61 @@
                         ctx.shadowBlur = 0;
                     }
                 });
+                
+                // Process particles that need to be grounded (after loop to avoid modification issues)
+                if (particleType === 'leaves') {
+                    particlesToGround.forEach(particle => {
+                        // Find the highest point in the pile near this leaf's x position
+                        const pileRadius = particle.size;
+                        let maxPileHeight = canvas.height;
+                        
+                        // Check all piled leaves to find the top of the pile at this x position
+                        piledLeaves.forEach(piledLeaf => {
+                            const distance = Math.abs(piledLeaf.x - particle.x);
+                            if (distance < pileRadius) {
+                                const leafTop = piledLeaf.y - piledLeaf.size / 2;
+                                if (leafTop < maxPileHeight) {
+                                    maxPileHeight = leafTop;
+                                }
+                            }
+                        });
+                        
+                        // Place leaf on top of the pile
+                        particle.y = maxPileHeight - particle.size / 2;
+                        particle.vy = 0;
+                        particle.vx = 0;
+                        particle.rotationSpeed = (Math.random() - 0.5) * 0.01; // Slower rotation when grounded
+                        particle.grounded = true;
+                        piledLeaves.push(particle);
+                        
+                        // Limit pile size to prevent memory issues (keep last 200 leaves)
+                        if (piledLeaves.length > 200) {
+                            piledLeaves.shift(); // Remove oldest leaves
+                        }
+                        
+                        // Remove from floating particles (it's now in the pile)
+                        const index = floatingParticles.indexOf(particle);
+                        if (index > -1) {
+                            floatingParticles.splice(index, 1);
+                        }
+                        
+                        // Create a new falling leaf to replace it
+                        floatingParticles.push({
+                            x: Math.random() * canvas.width,
+                            y: -50 - Math.random() * 100,
+                            vx: (Math.random() - 0.5) * 0.3,
+                            vy: Math.random() * 0.5 + 0.3,
+                            radius: Math.random() * 2.5 + 1,
+                            size: Math.random() * 20 + 15,
+                            hue: Math.random() * 360,
+                            speed: Math.random() * 0.3 + 0.1,
+                            rotation: Math.random() * Math.PI * 2,
+                            rotationSpeed: (Math.random() - 0.5) * 0.03,
+                            leafIndex: Math.floor(Math.random() * 3),
+                            grounded: false
+                        });
+                    });
+                }
             }
             
             // Draw simple dots for 'none' option (instead of cursor-following particles)
