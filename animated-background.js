@@ -310,8 +310,8 @@
             });
             
             // Update and draw independent floating particles
-            // Show all for 'follow' and 'none', show fewer for 'small'
-            if (particleType === 'small' || particleType === 'follow' || particleType === 'none') {
+            // Show all for 'follow', 'leaves', and 'none', show fewer for 'small'
+            if (particleType === 'small' || particleType === 'follow' || particleType === 'leaves' || particleType === 'none') {
                 const particlesToShow = particleType === 'small' 
                     ? floatingParticles.slice(0, 15) // Only show 15 for 'small'
                     : floatingParticles; // Show all for 'follow' and 'none'
@@ -406,8 +406,8 @@
                 });
             }
             
-            // Update and draw cursor-following particles (only if particleType is 'follow')
-            if (particleType === 'follow') {
+            // Update and draw cursor-following particles (only if particleType is 'follow' or 'leaves')
+            if (particleType === 'follow' || particleType === 'leaves') {
                 cursorParticles.forEach((particle, i) => {
                 // Always drifting - particles are always shifting
                 particle.driftAngle += particle.driftSpeed;
@@ -483,7 +483,7 @@
             }
             
             // Draw connecting lines between nearby particles
-            if (particleType === 'follow' || particleType === 'small') {
+            if (particleType === 'follow' || particleType === 'leaves' || particleType === 'small') {
                 const allParticles = particleType === 'follow' 
                     ? [...cursorParticles, ...floatingParticles]
                     : floatingParticles.slice(0, 15); // Only first 15 for 'small'

@@ -264,9 +264,11 @@
                 }
             }
 
-            // Check particles (leaves are always available, but we can mark if user has particles enabled)
-            // Since leaves are the visual for particles, we'll mark it as claimed if particles are enabled
-            if (particleType && particleType !== 'none') {
+            // Check particles - check if leaves are claimed
+            const claimedParticles = profile.claimedParticles || [];
+            const leavesClaimed = claimedParticles.includes('leaves') || particleType === 'leaves';
+            
+            if (leavesClaimed) {
                 markAsClaimed('particlesItem', 'particlesButton', 'particlesBadge');
             }
         }
@@ -438,14 +440,17 @@
         async function claimParticles() {
             try {
                 let profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
+                const claimedParticles = profile.claimedParticles || [];
                 
-                // Enable particles (leaves are the visual representation)
-                // Set to 'follow' to show the falling leaves
-                if (profile.particleType === 'none' || !profile.particleType) {
-                    profile.particleType = 'follow';
+                if (!claimedParticles.includes('leaves')) {
+                    // Claim falling leaves
+                    claimedParticles.push('leaves');
+                    profile.claimedParticles = claimedParticles;
+                    profile.particleType = 'leaves'; // Set to leaves mode
                     
                     // Save to localStorage
                     localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+                    localStorage.setItem('particleType', 'leaves');
                     
                     // Save to Firestore if authenticated
                     if (window.authSystem && window.authSystem.isAuthenticated()) {
@@ -453,7 +458,7 @@
                     }
                     
                     markAsClaimed('particlesItem', 'particlesButton', 'particlesBadge');
-                    showNotification('✓ Falling leaves enabled! Refresh to see them.');
+                    showNotification('✓ Falling leaves claimed! They will appear as a selectable option in your profile.');
                 }
             } catch (e) {
                 console.error('Error claiming particles:', e);
