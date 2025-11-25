@@ -9,6 +9,8 @@
     let mouseY = 0;
     let time = 0;
     let particleType = 'follow'; // 'follow', 'small', or 'none'
+    let leafImages = []; // Array to store loaded leaf images
+    let leafImagesLoaded = false;
     
     // Get particle type from localStorage or profile
     function getParticleType() {
@@ -41,6 +43,36 @@
     window.animatedBackground = {
         updateParticleType: updateParticleType
     };
+    
+    // Load leaf images
+    function loadLeafImages() {
+        return new Promise((resolve) => {
+            const leafPaths = ['leaf1.png', 'leaf2.png', 'leaf3.png'];
+            let loadedCount = 0;
+            
+            leafPaths.forEach((path, index) => {
+                const img = new Image();
+                img.onload = () => {
+                    loadedCount++;
+                    if (loadedCount === leafPaths.length) {
+                        leafImagesLoaded = true;
+                        resolve();
+                    }
+                };
+                img.onerror = () => {
+                    // If image fails to load, create a placeholder
+                    console.warn(`Failed to load ${path}, using placeholder`);
+                    loadedCount++;
+                    if (loadedCount === leafPaths.length) {
+                        leafImagesLoaded = true;
+                        resolve();
+                    }
+                };
+                img.src = path;
+                leafImages[index] = img;
+            });
+        });
+    }
     
     // Create interactive background canvas
     function createInteractiveBackground() {
@@ -75,6 +107,9 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
         
+        // Load leaf images before creating particles
+        loadLeafImages();
+        
         // Create particles that follow cursor - better formation
         const numCursorParticles = 60;
         let lastMouseX = canvas.width / 2;
@@ -94,14 +129,18 @@
                 targetX: 0,
                 targetY: 0,
                 radius: Math.random() * 2.5 + 1.5,
+                size: Math.random() * 20 + 15, // Size for leaf images (15-35px)
                 ease: Math.random() * 0.015 + 0.005, // Much slower - 0.005 to 0.02
                 hue: Math.random() * 360,
                 offsetX: offsetX, // Offset from cursor
                 offsetY: offsetY,
                 driftSpeed: (Math.random() - 0.5) * 0.02, // Slow drift
                 driftAngle: Math.random() * Math.PI * 2,
+                rotation: Math.random() * Math.PI * 2, // Random initial rotation
+                rotationSpeed: (Math.random() - 0.5) * 0.02, // Slow rotation
                 vx: 0, // Velocity for smoother physics
-                vy: 0
+                vy: 0,
+                leafIndex: Math.floor(Math.random() * 3) // Random leaf image (0, 1, or 2)
             });
         }
         
@@ -114,8 +153,12 @@
                 vx: (Math.random() - 0.5) * 0.5,
                 vy: (Math.random() - 0.5) * 0.5,
                 radius: Math.random() * 2.5 + 1,
+                size: Math.random() * 20 + 15, // Size for leaf images (15-35px)
                 hue: Math.random() * 360,
-                speed: Math.random() * 0.3 + 0.1
+                speed: Math.random() * 0.3 + 0.1,
+                rotation: Math.random() * Math.PI * 2, // Random initial rotation
+                rotationSpeed: (Math.random() - 0.5) * 0.02, // Slow rotation
+                leafIndex: Math.floor(Math.random() * 3) // Random leaf image (0, 1, or 2)
             });
         }
         
@@ -180,7 +223,7 @@
             }
         });
         
-        // Create simple dots for 'none' option
+        // Create simple dots for 'none' option (using leaves)
         const numSimpleDots = 100;
         for (let i = 0; i < numSimpleDots; i++) {
             simpleDots.push({
@@ -189,7 +232,11 @@
                 vx: (Math.random() - 0.5) * 0.3,
                 vy: (Math.random() - 0.5) * 0.3,
                 radius: 1.5,
-                opacity: Math.random() * 0.5 + 0.3
+                opacity: Math.random() * 0.5 + 0.3,
+                size: Math.random() * 20 + 15, // Size for leaf images (15-35px)
+                rotation: Math.random() * Math.PI * 2, // Random initial rotation
+                rotationSpeed: (Math.random() - 0.5) * 0.02, // Slow rotation
+                leafIndex: Math.floor(Math.random() * 3) // Random leaf image (0, 1, or 2)
             });
         }
         
@@ -292,15 +339,27 @@
                     // Update hue slowly
                     particle.hue = (particle.hue + particle.speed) % 360;
                     
-                    // Draw floating particle
+                    // Draw floating particle as leaf image
                 const alpha = 0.3 + Math.sin(time + particle.x * 0.01) * 0.2;
-                ctx.fillStyle = `hsla(${particle.hue}, 70%, 60%, ${alpha})`;
-                    ctx.shadowColor = `hsla(${particle.hue}, 70%, 60%, 0.6)`;
-                    ctx.shadowBlur = 8;
-                    ctx.beginPath();
-                    ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.shadowBlur = 0;
+                    particle.rotation += particle.rotationSpeed;
+                    
+                    if (leafImagesLoaded && leafImages[particle.leafIndex]) {
+                        ctx.save();
+                        ctx.globalAlpha = alpha;
+                        ctx.translate(particle.x, particle.y);
+                        ctx.rotate(particle.rotation);
+                        ctx.drawImage(leafImages[particle.leafIndex], -particle.size / 2, -particle.size / 2, particle.size, particle.size);
+                        ctx.restore();
+                    } else {
+                        // Fallback to circle if images not loaded
+                        ctx.fillStyle = `hsla(${particle.hue}, 70%, 60%, ${alpha})`;
+                        ctx.shadowColor = `hsla(${particle.hue}, 70%, 60%, 0.6)`;
+                        ctx.shadowBlur = 8;
+                        ctx.beginPath();
+                        ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                    }
                 });
             }
             
@@ -317,11 +376,24 @@
                     if (dot.y < 0) dot.y = canvas.height;
                     if (dot.y > canvas.height) dot.y = 0;
                     
-                    // Draw simple dot
-                    ctx.fillStyle = `rgba(255, 255, 255, ${dot.opacity})`;
-                    ctx.beginPath();
-                    ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
-                    ctx.fill();
+                    // Update rotation
+                    dot.rotation += dot.rotationSpeed;
+                    
+                    // Draw as leaf image
+                    if (leafImagesLoaded && leafImages[dot.leafIndex]) {
+                        ctx.save();
+                        ctx.globalAlpha = dot.opacity;
+                        ctx.translate(dot.x, dot.y);
+                        ctx.rotate(dot.rotation);
+                        ctx.drawImage(leafImages[dot.leafIndex], -dot.size / 2, -dot.size / 2, dot.size, dot.size);
+                        ctx.restore();
+                    } else {
+                        // Fallback to circle if images not loaded
+                        ctx.fillStyle = `rgba(255, 255, 255, ${dot.opacity})`;
+                        ctx.beginPath();
+                        ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
                 });
             }
             
@@ -367,14 +439,27 @@
                 const distAlpha = Math.max(0.25, 1 - (distFromCursor / maxDist));
                 const alpha = (0.5 + Math.sin(time + particle.x * 0.01) * 0.15) * distAlpha;
                 
-                // Draw particle with enhanced glow
-                ctx.fillStyle = `hsla(${particle.hue}, 75%, 65%, ${alpha})`;
-                ctx.shadowColor = `hsla(${particle.hue}, 75%, 65%, ${alpha * 1.5})`;
-                ctx.shadowBlur = 10 + Math.sin(time + i) * 2;
-                ctx.beginPath();
-                ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.shadowBlur = 0;
+                // Update rotation
+                particle.rotation += particle.rotationSpeed;
+                
+                // Draw particle as leaf image
+                if (leafImagesLoaded && leafImages[particle.leafIndex]) {
+                    ctx.save();
+                    ctx.globalAlpha = alpha;
+                    ctx.translate(particle.x, particle.y);
+                    ctx.rotate(particle.rotation);
+                    ctx.drawImage(leafImages[particle.leafIndex], -particle.size / 2, -particle.size / 2, particle.size, particle.size);
+                    ctx.restore();
+                } else {
+                    // Fallback to circle if images not loaded
+                    ctx.fillStyle = `hsla(${particle.hue}, 75%, 65%, ${alpha})`;
+                    ctx.shadowColor = `hsla(${particle.hue}, 75%, 65%, ${alpha * 1.5})`;
+                    ctx.shadowBlur = 10 + Math.sin(time + i) * 2;
+                    ctx.beginPath();
+                    ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
                 });
             }
             
