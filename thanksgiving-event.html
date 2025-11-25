@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanksgiving Event - JNJ Website</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="animated-background.css">
+    <script src="animated-background.js" defer></script>
+    <script src="page-transitions.js" defer></script>
+    <script src="firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="auth.js" defer></script>
+    <style>
+        .event-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .event-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .event-header img {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 20px;
+        }
+
+        .event-title {
+            font-size: 48px;
+            font-weight: bold;
+            color: #f59e0b;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .event-subtitle {
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 40px;
+        }
+
+        .claimable-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .claimable-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(245, 158, 11, 0.3);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .claimable-item:hover {
+            transform: translateY(-5px);
+            border-color: rgba(245, 158, 11, 0.6);
+            box-shadow: 0 10px 30px rgba(245, 158, 11, 0.3);
+        }
+
+        .claimable-item.claimed {
+            border-color: rgba(34, 197, 94, 0.6);
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .item-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .item-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #f59e0b;
+            margin-bottom: 10px;
+        }
+
+        .item-description {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 20px;
+            min-height: 40px;
+        }
+
+        .claim-button {
+            background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .claim-button:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(217, 119, 6, 0.6);
+        }
+
+        .claim-button:disabled {
+            background: rgba(34, 197, 94, 0.3);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .claimed-badge {
+            display: inline-block;
+            background: rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(-5px);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(34, 197, 94, 0.9);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-weight: bold;
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="mainContainer">
+        <div class="event-container">
+            <div class="event-header">
+                <img src="thanksgivingheader.png" alt="Thanksgiving Header">
+                <h1 class="event-title">🦃 Thanksgiving Event 🦃</h1>
+                <p class="event-subtitle">Claim your special Thanksgiving rewards!</p>
+            </div>
+
+            <div class="claimable-items">
+                <!-- Title: Turkey King -->
+                <div class="claimable-item" id="titleItem">
+                    <span class="item-icon">👑</span>
+                    <h2 class="item-title">Turkey King</h2>
+                    <p class="item-description">Unlock the exclusive "Turkey King" title for your profile!</p>
+                    <button class="claim-button" onclick="claimTitle()" id="titleButton">Claim Title</button>
+                    <div id="titleBadge" class="claimed-badge" style="display: none;">✓ Claimed</div>
+                </div>
+
+                <!-- Profile Emoji: Turkey -->
+                <div class="claimable-item" id="emojiItem">
+                    <span class="item-icon">🦃</span>
+                    <h2 class="item-title">Turkey Emoji</h2>
+                    <p class="item-description">Set the turkey emoji as your profile avatar!</p>
+                    <button class="claim-button" onclick="claimEmoji()" id="emojiButton">Claim Emoji</button>
+                    <div id="emojiBadge" class="claimed-badge" style="display: none;">✓ Claimed</div>
+                </div>
+
+                <!-- Background Particles: Leaves -->
+                <div class="claimable-item" id="particlesItem">
+                    <span class="item-icon">🍂</span>
+                    <h2 class="item-title">Falling Leaves</h2>
+                    <p class="item-description">Enable beautiful falling leaves as your background particles!</p>
+                    <button class="claim-button" onclick="claimParticles()" id="particlesButton">Claim Particles</button>
+                    <div id="particlesBadge" class="claimed-badge" style="display: none;">✓ Claimed</div>
+                </div>
+            </div>
+
+            <div style="text-align: center;">
+                <a href="index.html" class="back-button">← Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PROFILE_STORAGE_KEY = 'jnjUserProfile';
+
+        // Check claim status on load
+        function checkClaimStatus() {
+            const profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
+            const unlockedTitles = profile.unlockedTitles || [];
+            const equippedTitle = profile.equippedTitle;
+            const avatar = profile.avatar;
+            const particleType = profile.particleType;
+
+            // Check title
+            if (unlockedTitles.includes('turkey-king') || equippedTitle === 'turkey-king') {
+                markAsClaimed('titleItem', 'titleButton', 'titleBadge');
+            }
+
+            // Check emoji
+            if (avatar === '🦃') {
+                markAsClaimed('emojiItem', 'emojiButton', 'emojiBadge');
+            }
+
+            // Check particles (leaves are always available, but we can mark if user has particles enabled)
+            // Since leaves are the visual for particles, we'll mark it as claimed if particles are enabled
+            if (particleType && particleType !== 'none') {
+                markAsClaimed('particlesItem', 'particlesButton', 'particlesBadge');
+            }
+        }
+
+        function markAsClaimed(itemId, buttonId, badgeId) {
+            const item = document.getElementById(itemId);
+            const button = document.getElementById(buttonId);
+            const badge = document.getElementById(badgeId);
+            
+            if (item && button && badge) {
+                item.classList.add('claimed');
+                button.disabled = true;
+                button.textContent = 'Claimed';
+                badge.style.display = 'block';
+            }
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideIn 0.3s ease reverse';
+                setTimeout(() => notification.remove(), 300);
+            }, 2000);
+        }
+
+        async function claimTitle() {
+            try {
+                let profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
+                const unlockedTitles = profile.unlockedTitles || [];
+                
+                if (!unlockedTitles.includes('turkey-king')) {
+                    unlockedTitles.push('turkey-king');
+                    profile.unlockedTitles = unlockedTitles;
+                    profile.equippedTitle = 'turkey-king'; // Auto-equip
+                    
+                    // Save to localStorage
+                    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+                    
+                    // Save to Firestore if authenticated
+                    if (window.authSystem && window.authSystem.isAuthenticated()) {
+                        await window.authSystem.saveUserData({ profile: profile });
+                    }
+                    
+                    markAsClaimed('titleItem', 'titleButton', 'titleBadge');
+                    showNotification('✓ Turkey King title claimed and equipped!');
+                }
+            } catch (e) {
+                console.error('Error claiming title:', e);
+                showNotification('Error claiming title. Please try again.');
+            }
+        }
+
+        async function claimEmoji() {
+            try {
+                let profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
+                
+                if (profile.avatar !== '🦃') {
+                    profile.avatar = '🦃';
+                    profile.avatarImage = null; // Clear any image avatar
+                    
+                    // Save to localStorage
+                    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+                    
+                    // Save to Firestore if authenticated
+                    if (window.authSystem && window.authSystem.isAuthenticated()) {
+                        await window.authSystem.saveUserData({ profile: profile });
+                    }
+                    
+                    markAsClaimed('emojiItem', 'emojiButton', 'emojiBadge');
+                    showNotification('✓ Turkey emoji set as your avatar!');
+                }
+            } catch (e) {
+                console.error('Error claiming emoji:', e);
+                showNotification('Error claiming emoji. Please try again.');
+            }
+        }
+
+        async function claimParticles() {
+            try {
+                let profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
+                
+                // Enable particles (leaves are the visual representation)
+                // Set to 'follow' to show the falling leaves
+                if (profile.particleType === 'none' || !profile.particleType) {
+                    profile.particleType = 'follow';
+                    
+                    // Save to localStorage
+                    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+                    
+                    // Save to Firestore if authenticated
+                    if (window.authSystem && window.authSystem.isAuthenticated()) {
+                        await window.authSystem.saveUserData({ profile: profile });
+                    }
+                    
+                    markAsClaimed('particlesItem', 'particlesButton', 'particlesBadge');
+                    showNotification('✓ Falling leaves enabled! Refresh to see them.');
+                }
+            } catch (e) {
+                console.error('Error claiming particles:', e);
+                showNotification('Error claiming particles. Please try again.');
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkClaimStatus();
+        });
+
+        // Also check when auth system is ready
+        window.addEventListener('authStateChanged', () => {
+            setTimeout(checkClaimStatus, 500);
+        });
+    </script>
+</body>
+</html>
+

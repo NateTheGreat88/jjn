@@ -446,6 +446,15 @@
                     const kindWordCount = localStorage.getItem('jnjKindWordCount') || 0;
                     return parseInt(kindWordCount) >= 25;
                 }
+            },
+            'turkey-king': {
+                name: 'Turkey King',
+                description: 'Thanksgiving event exclusive',
+                unlockCondition: (profile) => {
+                    // Unlocked by claiming in Thanksgiving event page
+                    const unlockedTitles = profile.unlockedTitles || [];
+                    return unlockedTitles.includes('turkey-king');
+                }
             }
         };
         
