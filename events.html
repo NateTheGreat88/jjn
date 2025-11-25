@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Events - JNJ Website</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="animated-background.css">
+    <script src="animated-background.js" defer></script>
+    <script src="page-transitions.js" defer></script>
+    <script src="firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="auth.js" defer></script>
+    <style>
+        .events-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .events-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .events-title {
+            font-size: 48px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .events-subtitle {
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 40px;
+        }
+
+        .events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .event-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .event-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(102, 126, 234, 0.6);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .event-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .event-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .event-description {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 20px;
+        }
+
+        .event-date {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+            font-style: italic;
+        }
+
+        .no-events {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 18px;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(-5px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="mainContainer">
+        <div class="events-container">
+            <div class="events-header">
+                <h1 class="events-title">🎉 Events 🎉</h1>
+                <p class="events-subtitle">Access all the events you've participated in!</p>
+            </div>
+
+            <div class="events-grid" id="eventsGrid">
+                <!-- Events will be dynamically added here -->
+            </div>
+
+            <div id="noEvents" class="no-events" style="display: none;">
+                <p>You haven't participated in any events yet.</p>
+                <p>Check back when events are active!</p>
+            </div>
+
+            <div style="text-align: center;">
+                <a href="index.html" class="back-button">← Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PROFILE_STORAGE_KEY = 'jnjUserProfile';
+        
+        // Define available events
+        const AVAILABLE_EVENTS = {
+            'thanksgiving': {
+                name: 'Thanksgiving Event',
+                icon: '🦃',
+                description: 'Celebrate Thanksgiving with special rewards!',
+                url: 'thanksgiving-event.html',
+                date: 'November 2025'
+            }
+            // Add more events here as they're created
+        };
+
+        function loadEvents() {
+            try {
+                const profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
+                const visitedEvents = profile.visitedEvents || [];
+                
+                const eventsGrid = document.getElementById('eventsGrid');
+                const noEvents = document.getElementById('noEvents');
+                
+                if (visitedEvents.length === 0) {
+                    eventsGrid.style.display = 'none';
+                    noEvents.style.display = 'block';
+                    return;
+                }
+                
+                eventsGrid.innerHTML = '';
+                eventsGrid.style.display = 'grid';
+                noEvents.style.display = 'none';
+                
+                visitedEvents.forEach(eventId => {
+                    const event = AVAILABLE_EVENTS[eventId];
+                    if (event) {
+                        const eventCard = document.createElement('a');
+                        eventCard.href = event.url;
+                        eventCard.className = 'event-card';
+                        eventCard.innerHTML = `
+                            <span class="event-icon">${event.icon}</span>
+                            <h2 class="event-name">${event.name}</h2>
+                            <p class="event-description">${event.description}</p>
+                            <p class="event-date">${event.date}</p>
+                        `;
+                        eventsGrid.appendChild(eventCard);
+                    }
+                });
+            } catch (e) {
+                console.error('Error loading events:', e);
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadEvents();
+        });
+
+        // Also check when auth system is ready
+        window.addEventListener('authStateChanged', () => {
+            setTimeout(loadEvents, 500);
+        });
+    </script>
+</body>
+</html>
+

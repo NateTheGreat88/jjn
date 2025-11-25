@@ -62,6 +62,7 @@
                 <span class="search-icon">🔍</span>
             </div>
             <a href="profile.html" class="about-button" id="profileButton" style="margin-right: 10px;">👤 Profile</a>
+            <a href="events.html" class="about-button" id="eventsButton" style="margin-right: 10px; display: none;">🎉 Events</a>
             <a href="about.html" class="about-button">About Us</a>
         </div>
         
@@ -333,6 +334,28 @@
         // Show indicators on page load
         showRecentIndicators();
         
+        // Show Events button if user has visited events
+        function checkAndShowEventsButton() {
+            try {
+                const profile = JSON.parse(localStorage.getItem('jnjUserProfile') || '{}');
+                const visitedEvents = profile.visitedEvents || [];
+                const eventsButton = document.getElementById('eventsButton');
+                
+                if (!eventsButton) return;
+                
+                // Only show if user is authenticated and has visited at least one event
+                const isAuthenticated = window.authSystem && window.authSystem.isAuthenticated();
+                
+                if (isAuthenticated && visitedEvents.length > 0) {
+                    eventsButton.style.display = 'inline-block';
+                } else {
+                    eventsButton.style.display = 'none';
+                }
+            } catch (e) {
+                console.error('Error checking events button:', e);
+            }
+        }
+        
         // Show Secrets button if any secrets are unlocked
         function checkAndShowSecretsButton() {
             if (window.secretPages) {
@@ -364,11 +387,18 @@
         // Check on page load
         checkAndShowSecretsButton();
         checkGamesUnlocked();
+        checkAndShowEventsButton();
         
         // Also check when secretPages becomes available
         window.addEventListener('load', () => {
             checkAndShowSecretsButton();
             checkGamesUnlocked();
+            checkAndShowEventsButton();
+        });
+        
+        // Check events button when auth state changes
+        window.addEventListener('authStateChanged', () => {
+            setTimeout(checkAndShowEventsButton, 500);
         });
         
         // Cursor Trail Effect - Smooth line effect

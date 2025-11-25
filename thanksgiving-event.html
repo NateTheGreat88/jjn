@@ -832,14 +832,49 @@
         window.startGame = startGame;
         window.pauseGame = pauseGame;
 
+        // Mark this event as visited (only if user is authenticated)
+        function markEventAsVisited() {
+            try {
+                // Only mark as visited if user is authenticated
+                if (!window.authSystem || !window.authSystem.isAuthenticated()) {
+                    return;
+                }
+                
+                let profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
+                const visitedEvents = profile.visitedEvents || [];
+                
+                // Add thanksgiving event if not already in list
+                if (!visitedEvents.includes('thanksgiving')) {
+                    visitedEvents.push('thanksgiving');
+                    profile.visitedEvents = visitedEvents;
+                    
+                    // Save to localStorage
+                    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+                    
+                    // Save to Firestore
+                    if (window.authSystem && window.authSystem.isAuthenticated()) {
+                        window.authSystem.saveUserData({ profile: profile }).catch(e => {
+                            console.error('Error saving event visit:', e);
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error('Error marking event as visited:', e);
+            }
+        }
+
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
             checkClaimStatus();
+            markEventAsVisited();
         });
 
         // Also check when auth system is ready
         window.addEventListener('authStateChanged', () => {
-            setTimeout(checkClaimStatus, 500);
+            setTimeout(() => {
+                checkClaimStatus();
+                markEventAsVisited();
+            }, 500);
         });
     </script>
 </body>
