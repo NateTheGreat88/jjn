@@ -456,6 +456,15 @@
                     const unlockedTitles = profile.unlockedTitles || [];
                     return unlockedTitles.includes('turkey-king');
                 }
+            },
+            'lebron': {
+                name: 'Lebron',
+                description: 'The King',
+                unlockCondition: (profile) => {
+                    // Unlock if display name is "Lebron" (case-insensitive)
+                    const displayName = (profile.displayName || '').trim();
+                    return displayName.toLowerCase() === 'lebron';
+                }
             }
         };
         
