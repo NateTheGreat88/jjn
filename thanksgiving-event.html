@@ -222,6 +222,36 @@
                 </div>
             </div>
 
+            <!-- Minigame Section -->
+            <div class="minigame-section">
+                <h2 class="minigame-title">🎮 Catch the Turkey! 🦃</h2>
+                <p class="game-instructions">
+                    Move your mouse to control the basket. Catch as many turkeys as you can!<br>
+                    Avoid missing too many or the game ends!
+                </p>
+                
+                <div class="game-stats">
+                    <div class="stat-item">
+                        Score: <span class="stat-value" id="gameScore">0</span>
+                    </div>
+                    <div class="stat-item">
+                        Caught: <span class="stat-value" id="gameCaught">0</span>
+                    </div>
+                    <div class="stat-item">
+                        Missed: <span class="stat-value" id="gameMissed">0</span>
+                    </div>
+                </div>
+
+                <div class="minigame-container" id="gameContainer">
+                    <div class="game-basket" id="gameBasket">🧺</div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <button class="game-button" id="startGameBtn" onclick="startGame()">Start Game</button>
+                    <button class="game-button" id="pauseGameBtn" onclick="pauseGame()" style="display: none;">Pause</button>
+                </div>
+            </div>
+
             <div style="text-align: center;">
                 <a href="index.html" class="back-button">← Back to Home</a>
             </div>
@@ -332,6 +362,7 @@
 
         async function claimTitle() {
             try {
+                console.log('claimTitle called');
                 let profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
                 const unlockedTitles = profile.unlockedTitles || [];
                 
@@ -350,6 +381,8 @@
                     
                     markAsClaimed('titleItem', 'titleButton', 'titleBadge');
                     showNotification('✓ Turkey King title claimed and equipped!');
+                } else {
+                    showNotification('Title already claimed!');
                 }
             } catch (e) {
                 console.error('Error claiming title:', e);
@@ -465,6 +498,210 @@
                 showNotification('Error claiming particles. Please try again.');
             }
         }
+
+        // Minigame Variables
+        let gameRunning = false;
+        let gamePaused = false;
+        let gameScore = 0;
+        let gameCaught = 0;
+        let gameMissed = 0;
+        let turkeys = [];
+        let gameAnimationId = null;
+        let turkeySpawnInterval = null;
+        let mouseMoveHandler = null;
+        const MAX_MISSED = 5;
+
+        function startGame() {
+            console.log('startGame called', { gameRunning, gamePaused });
+            if (gameRunning && !gamePaused) return;
+            
+            if (gamePaused) {
+                gamePaused = false;
+                gameLoop();
+                document.getElementById('pauseGameBtn').textContent = 'Pause';
+                return;
+            }
+
+            // Reset game
+            gameRunning = true;
+            gamePaused = false;
+            gameScore = 0;
+            gameCaught = 0;
+            gameMissed = 0;
+            turkeys = [];
+            
+            // Clear container
+            const container = document.getElementById('gameContainer');
+            if (!container) {
+                console.error('Game container not found');
+                return;
+            }
+            const basket = document.getElementById('gameBasket');
+            if (!basket) {
+                console.error('Game basket not found');
+                return;
+            }
+            container.innerHTML = '';
+            container.appendChild(basket);
+            
+            // Update UI
+            updateGameStats();
+            const startBtn = document.getElementById('startGameBtn');
+            const pauseBtn = document.getElementById('pauseGameBtn');
+            if (startBtn) startBtn.style.display = 'none';
+            if (pauseBtn) pauseBtn.style.display = 'inline-block';
+            
+            // Start spawning turkeys
+            if (turkeySpawnInterval) clearInterval(turkeySpawnInterval);
+            turkeySpawnInterval = setInterval(() => {
+                if (!gamePaused && gameRunning) {
+                    spawnTurkey();
+                }
+            }, 1500);
+            
+            // Add mouse movement handler
+            if (mouseMoveHandler) {
+                container.removeEventListener('mousemove', mouseMoveHandler);
+            }
+            mouseMoveHandler = (e) => {
+                const containerRect = container.getBoundingClientRect();
+                const mouseX = e.clientX - containerRect.left;
+                const basket = document.getElementById('gameBasket');
+                if (basket) {
+                    basket.style.left = Math.max(0, Math.min(container.offsetWidth - 60, mouseX - 30)) + 'px';
+                }
+            };
+            container.addEventListener('mousemove', mouseMoveHandler);
+            
+            // Start game loop
+            gameLoop();
+        }
+
+        function pauseGame() {
+            if (!gameRunning) return;
+            
+            gamePaused = !gamePaused;
+            
+            if (gamePaused) {
+                if (gameAnimationId) {
+                    cancelAnimationFrame(gameAnimationId);
+                }
+                document.getElementById('pauseGameBtn').textContent = 'Resume';
+            } else {
+                gameLoop();
+                document.getElementById('pauseGameBtn').textContent = 'Pause';
+            }
+        }
+
+        function spawnTurkey() {
+            const container = document.getElementById('gameContainer');
+            const turkey = document.createElement('div');
+            turkey.className = 'game-turkey';
+            turkey.textContent = '🦃';
+            turkey.style.left = Math.random() * (container.offsetWidth - 50) + 'px';
+            turkey.style.top = '-50px';
+            container.appendChild(turkey);
+            
+            turkeys.push({
+                element: turkey,
+                x: parseFloat(turkey.style.left),
+                y: -50,
+                speed: 2 + Math.random() * 2
+            });
+        }
+
+        function gameLoop() {
+            if (!gameRunning || gamePaused) return;
+            
+            const container = document.getElementById('gameContainer');
+            const basket = document.getElementById('gameBasket');
+            const basketRect = basket.getBoundingClientRect();
+            
+            // Update turkeys
+            for (let i = turkeys.length - 1; i >= 0; i--) {
+                const turkey = turkeys[i];
+                turkey.y += turkey.speed;
+                turkey.element.style.top = turkey.y + 'px';
+                
+                // Check collision with basket
+                const turkeyRect = turkey.element.getBoundingClientRect();
+                if (turkeyRect.bottom >= basketRect.top && 
+                    turkeyRect.top <= basketRect.bottom &&
+                    turkeyRect.left < basketRect.right &&
+                    turkeyRect.right > basketRect.left) {
+                    // Caught!
+                    gameCaught++;
+                    gameScore += 10;
+                    turkey.element.remove();
+                    turkeys.splice(i, 1);
+                    updateGameStats();
+                    continue;
+                }
+                
+                // Check if missed (fell off screen)
+                if (turkey.y > container.offsetHeight) {
+                    gameMissed++;
+                    turkey.element.remove();
+                    turkeys.splice(i, 1);
+                    updateGameStats();
+                    
+                    // Check game over
+                    if (gameMissed >= MAX_MISSED) {
+                        endGame();
+                        return;
+                    }
+                }
+            }
+            
+            if (gameRunning && !gamePaused) {
+                gameAnimationId = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        function updateGameStats() {
+            document.getElementById('gameScore').textContent = gameScore;
+            document.getElementById('gameCaught').textContent = gameCaught;
+            document.getElementById('gameMissed').textContent = gameMissed;
+        }
+
+        function endGame() {
+            gameRunning = false;
+            gamePaused = false;
+            
+            if (gameAnimationId) {
+                cancelAnimationFrame(gameAnimationId);
+            }
+            if (turkeySpawnInterval) {
+                clearInterval(turkeySpawnInterval);
+            }
+            
+            // Remove mouse handler
+            const container = document.getElementById('gameContainer');
+            if (mouseMoveHandler) {
+                container.removeEventListener('mousemove', mouseMoveHandler);
+                mouseMoveHandler = null;
+            }
+            
+            // Clear all turkeys
+            turkeys.forEach(turkey => turkey.element.remove());
+            turkeys = [];
+            
+            // Update UI
+            document.getElementById('startGameBtn').style.display = 'inline-block';
+            document.getElementById('pauseGameBtn').style.display = 'none';
+            
+            // Show game over message
+            showNotification(`🎮 Game Over! Final Score: ${gameScore} (Caught: ${gameCaught})`);
+        }
+
+        // Make functions globally accessible
+        window.claimTitle = claimTitle;
+        window.claimEmoji = claimEmoji;
+        window.claimParticles = claimParticles;
+        window.equipEmoji = equipEmoji;
+        window.unequipEmoji = unequipEmoji;
+        window.startGame = startGame;
+        window.pauseGame = pauseGame;
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
