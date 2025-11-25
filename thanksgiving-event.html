@@ -182,6 +182,111 @@
                 opacity: 1;
             }
         }
+
+        /* Minigame Styles */
+        .minigame-section {
+            margin: 60px 0;
+            padding: 30px;
+            background: linear-gradient(135deg, rgba(139, 69, 19, 0.3) 0%, rgba(160, 82, 45, 0.2) 100%);
+            border: 3px solid rgba(245, 158, 11, 0.4);
+            border-radius: 20px;
+            text-align: center;
+        }
+
+        .minigame-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #f59e0b;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .minigame-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            height: 400px;
+            margin: 20px auto;
+            background: linear-gradient(180deg, rgba(26, 26, 46, 0.8) 0%, rgba(15, 52, 96, 0.8) 100%);
+            border: 3px solid rgba(245, 158, 11, 0.5);
+            border-radius: 15px;
+            overflow: hidden;
+            cursor: none;
+        }
+
+        .game-basket {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 60px;
+            transition: left 0.1s linear;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .game-turkey {
+            position: absolute;
+            font-size: 40px;
+            transition: top 0.05s linear;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .game-stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        .stat-item {
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .stat-value {
+            color: #f59e0b;
+            font-size: 24px;
+        }
+
+        .game-button {
+            background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .game-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(217, 119, 6, 0.6);
+        }
+
+        .game-button:disabled {
+            background: rgba(156, 163, 175, 0.5);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .game-instructions {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
     </style>
 </head>
 <body>
@@ -551,14 +656,6 @@
             if (startBtn) startBtn.style.display = 'none';
             if (pauseBtn) pauseBtn.style.display = 'inline-block';
             
-            // Start spawning turkeys
-            if (turkeySpawnInterval) clearInterval(turkeySpawnInterval);
-            turkeySpawnInterval = setInterval(() => {
-                if (!gamePaused && gameRunning) {
-                    spawnTurkey();
-                }
-            }, 1500);
-            
             // Add mouse movement handler
             if (mouseMoveHandler) {
                 container.removeEventListener('mousemove', mouseMoveHandler);
@@ -572,6 +669,15 @@
                 }
             };
             container.addEventListener('mousemove', mouseMoveHandler);
+            
+            // Start spawning turkeys immediately and then periodically
+            spawnTurkey(); // Spawn first turkey immediately
+            if (turkeySpawnInterval) clearInterval(turkeySpawnInterval);
+            turkeySpawnInterval = setInterval(() => {
+                if (!gamePaused && gameRunning) {
+                    spawnTurkey();
+                }
+            }, 1500);
             
             // Start game loop
             gameLoop();
@@ -594,32 +700,54 @@
         }
 
         function spawnTurkey() {
+            if (!gameRunning || gamePaused) return;
+            
             const container = document.getElementById('gameContainer');
+            if (!container) return;
+            
             const turkey = document.createElement('div');
             turkey.className = 'game-turkey';
             turkey.textContent = '🦃';
-            turkey.style.left = Math.random() * (container.offsetWidth - 50) + 'px';
+            const leftPos = Math.random() * (container.offsetWidth - 50);
+            turkey.style.left = leftPos + 'px';
             turkey.style.top = '-50px';
+            turkey.style.position = 'absolute';
             container.appendChild(turkey);
             
             turkeys.push({
                 element: turkey,
-                x: parseFloat(turkey.style.left),
+                x: leftPos,
                 y: -50,
                 speed: 2 + Math.random() * 2
             });
         }
 
         function gameLoop() {
-            if (!gameRunning || gamePaused) return;
+            if (!gameRunning || gamePaused) {
+                if (gameAnimationId) {
+                    cancelAnimationFrame(gameAnimationId);
+                    gameAnimationId = null;
+                }
+                return;
+            }
             
             const container = document.getElementById('gameContainer');
             const basket = document.getElementById('gameBasket');
+            if (!container || !basket) {
+                endGame();
+                return;
+            }
+            
             const basketRect = basket.getBoundingClientRect();
             
             // Update turkeys
             for (let i = turkeys.length - 1; i >= 0; i--) {
                 const turkey = turkeys[i];
+                if (!turkey.element.parentNode) {
+                    turkeys.splice(i, 1);
+                    continue;
+                }
+                
                 turkey.y += turkey.speed;
                 turkey.element.style.top = turkey.y + 'px';
                 
@@ -653,6 +781,7 @@
                 }
             }
             
+            // Continue the loop
             if (gameRunning && !gamePaused) {
                 gameAnimationId = requestAnimationFrame(gameLoop);
             }
