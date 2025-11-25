@@ -283,7 +283,7 @@
                 </div>
                 <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
                     <button class="profile-button secondary" onclick="toggleAvatarSelector()" style="margin-bottom: 15px; flex: 1; min-width: 150px;">Choose Emoji</button>
-                    <label for="avatarImageInput" class="profile-button secondary" style="margin-bottom: 15px; flex: 1; min-width: 150px; cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center;">
+                    <label for="avatarImageInput" id="uploadImageLabel" class="profile-button secondary" style="margin-bottom: 15px; flex: 1; min-width: 150px; cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center;">
                         📷 Upload Image
                         <input type="file" id="avatarImageInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
                     </label>
@@ -628,6 +628,7 @@
                             updateBioCount();
                             renderTitles();
                             checkLeavesClaimed(profile);
+                            checkUploadButtonVisibility(profile);
                             
                             // Show dev star if user is a dev
                             const devStarBadge = document.getElementById('devStarBadge');
@@ -685,6 +686,7 @@
                     updateBioCount();
                     renderTitles();
                     checkLeavesClaimed(profile);
+                    checkUploadButtonVisibility(profile);
                     
                     // Show dev star if user is a dev
                     const devStarBadge = document.getElementById('devStarBadge');
@@ -853,6 +855,14 @@
         
         // Handle image upload
         function handleImageUpload(event) {
+            // Check if user is a dev
+            const profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
+            if (profile.isDev !== true) {
+                alert('Only developers can upload profile pictures.');
+                event.target.value = '';
+                return;
+            }
+            
             const file = event.target.files[0];
             if (!file) return;
             
@@ -881,6 +891,18 @@
                 event.target.value = '';
             };
             reader.readAsDataURL(file);
+        }
+        
+        // Check dev status and show/hide upload button
+        function checkUploadButtonVisibility(profile) {
+            const uploadLabel = document.getElementById('uploadImageLabel');
+            if (uploadLabel) {
+                if (profile.isDev === true) {
+                    uploadLabel.style.display = 'flex';
+                } else {
+                    uploadLabel.style.display = 'none';
+                }
+            }
         }
         
         // Clear avatar
@@ -1045,9 +1067,10 @@
             // Load profile (will try Firestore first if authenticated)
             await loadProfile();
             
-            // Check leaves option after profile loads
+            // Check leaves option and upload button visibility after profile loads
             const profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
             checkLeavesClaimed(profile);
+            checkUploadButtonVisibility(profile);
             
             // Check auth state and update sign out button
             updateSignOutButton();
