@@ -131,6 +131,16 @@
             margin-top: 10px;
         }
 
+        .claimed-badge.equipped {
+            background: rgba(34, 197, 94, 0.4);
+            color: #22c55e;
+        }
+
+        .claimed-badge.not-equipped {
+            background: rgba(245, 158, 11, 0.3);
+            color: #f59e0b;
+        }
+
         .back-button {
             display: inline-block;
             margin-top: 30px;
@@ -228,15 +238,30 @@
             const equippedTitle = profile.equippedTitle;
             const avatar = profile.avatar;
             const particleType = profile.particleType;
+            const claimedEmojis = profile.claimedEmojis || [];
 
             // Check title
             if (unlockedTitles.includes('turkey-king') || equippedTitle === 'turkey-king') {
                 markAsClaimed('titleItem', 'titleButton', 'titleBadge');
             }
 
-            // Check emoji
-            if (avatar === '🦃') {
-                markAsClaimed('emojiItem', 'emojiButton', 'emojiBadge');
+            // Check emoji - check if claimed and if equipped
+            const turkeyClaimed = claimedEmojis.includes('🦃');
+            const turkeyEquipped = avatar === '🦃';
+            
+            // If equipped but not in claimed list, add it to claimed list
+            if (turkeyEquipped && !turkeyClaimed) {
+                claimedEmojis.push('🦃');
+                profile.claimedEmojis = claimedEmojis;
+                localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+            }
+            
+            if (turkeyClaimed || turkeyEquipped) {
+                if (turkeyEquipped) {
+                    markAsEquipped('emojiItem', 'emojiButton', 'emojiBadge');
+                } else {
+                    markAsClaimedButNotEquipped('emojiItem', 'emojiButton', 'emojiBadge');
+                }
             }
 
             // Check particles (leaves are always available, but we can mark if user has particles enabled)
@@ -255,6 +280,38 @@
                 item.classList.add('claimed');
                 button.disabled = true;
                 button.textContent = 'Claimed';
+                badge.style.display = 'block';
+            }
+        }
+
+        function markAsClaimedButNotEquipped(itemId, buttonId, badgeId) {
+            const item = document.getElementById(itemId);
+            const button = document.getElementById(buttonId);
+            const badge = document.getElementById(badgeId);
+            
+            if (item && button && badge) {
+                item.classList.add('claimed');
+                button.disabled = false;
+                button.textContent = 'Equip Turkey';
+                button.onclick = () => equipEmoji();
+                badge.textContent = '✓ Claimed (Not Equipped)';
+                badge.className = 'claimed-badge not-equipped';
+                badge.style.display = 'block';
+            }
+        }
+
+        function markAsEquipped(itemId, buttonId, badgeId) {
+            const item = document.getElementById(itemId);
+            const button = document.getElementById(buttonId);
+            const badge = document.getElementById(badgeId);
+            
+            if (item && button && badge) {
+                item.classList.add('claimed');
+                button.disabled = false;
+                button.textContent = 'Unequip Turkey';
+                button.onclick = () => unequipEmoji();
+                badge.textContent = '✓ Equipped';
+                badge.className = 'claimed-badge equipped';
                 badge.style.display = 'block';
             }
         }
@@ -301,8 +358,12 @@
         async function claimEmoji() {
             try {
                 let profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
+                const claimedEmojis = profile.claimedEmojis || [];
                 
-                if (profile.avatar !== '🦃') {
+                if (!claimedEmojis.includes('🦃')) {
+                    // First time claiming - unlock it and equip it
+                    claimedEmojis.push('🦃');
+                    profile.claimedEmojis = claimedEmojis;
                     profile.avatar = '🦃';
                     profile.avatarImage = null; // Clear any image avatar
                     
@@ -314,12 +375,63 @@
                         await window.authSystem.saveUserData({ profile: profile });
                     }
                     
-                    markAsClaimed('emojiItem', 'emojiButton', 'emojiBadge');
-                    showNotification('✓ Turkey emoji set as your avatar!');
+                    markAsEquipped('emojiItem', 'emojiButton', 'emojiBadge');
+                    showNotification('✓ Turkey emoji claimed and equipped!');
                 }
             } catch (e) {
                 console.error('Error claiming emoji:', e);
                 showNotification('Error claiming emoji. Please try again.');
+            }
+        }
+
+        async function equipEmoji() {
+            try {
+                let profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
+                
+                profile.avatar = '🦃';
+                profile.avatarImage = null; // Clear any image avatar
+                
+                // Save to localStorage
+                localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+                
+                // Save to Firestore if authenticated
+                if (window.authSystem && window.authSystem.isAuthenticated()) {
+                    await window.authSystem.saveUserData({ profile: profile });
+                }
+                
+                markAsEquipped('emojiItem', 'emojiButton', 'emojiBadge');
+                showNotification('✓ Turkey emoji equipped!');
+            } catch (e) {
+                console.error('Error equipping emoji:', e);
+                showNotification('Error equipping emoji. Please try again.');
+            }
+        }
+
+        async function unequipEmoji() {
+            try {
+                let profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
+                
+                // Set to default emoji if no other avatar is set
+                if (!profile.avatarImage) {
+                    profile.avatar = '👤';
+                } else {
+                    // Keep the image avatar, just clear the emoji
+                    profile.avatar = null;
+                }
+                
+                // Save to localStorage
+                localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+                
+                // Save to Firestore if authenticated
+                if (window.authSystem && window.authSystem.isAuthenticated()) {
+                    await window.authSystem.saveUserData({ profile: profile });
+                }
+                
+                markAsClaimedButNotEquipped('emojiItem', 'emojiButton', 'emojiBadge');
+                showNotification('✓ Turkey emoji unequipped.');
+            } catch (e) {
+                console.error('Error unequipping emoji:', e);
+                showNotification('Error unequipping emoji. Please try again.');
             }
         }
 
