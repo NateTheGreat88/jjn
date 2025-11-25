@@ -1423,18 +1423,70 @@
         function censorMessage(message) {
             if (!message || typeof message !== 'string') return message;
             
-            let censoredMessage = message;
             const replacement = 'kind word';
+            let censoredMessage = message;
+            let foundEmbedded = false;
             
-            // Create regex patterns for each bad word (case-insensitive, word boundaries)
+            // First, check for bad words as standalone words (with word boundaries)
             badWords.forEach(badWord => {
                 // Escape special regex characters
                 const escapedWord = badWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 // Match whole words only (case-insensitive)
                 const regex = new RegExp(`\\b${escapedWord}\\b`, 'gi');
-                censoredMessage = censoredMessage.replace(regex, replacement);
+                if (regex.test(message)) {
+                    // Replace standalone bad word
+                    censoredMessage = censoredMessage.replace(regex, replacement);
+                }
             });
             
+            // Then, check if any bad word appears embedded in a larger word
+            // This catches attempts to bypass the filter like "Fuckervgbhbvg"
+            // Split message into words to check each word individually
+            const words = message.split(/\s+/);
+            const messageLower = message.toLowerCase();
+            
+            for (let i = 0; i < badWords.length; i++) {
+                const badWord = badWords[i].toLowerCase();
+                
+                // Check each word in the message
+                for (let j = 0; j < words.length; j++) {
+                    const word = words[j].toLowerCase();
+                    // Remove punctuation for checking
+                    const cleanWord = word.replace(/[^\w]/g, '');
+                    
+                    // Check if bad word appears in this word
+                    if (cleanWord.includes(badWord)) {
+                        // Check if it's a standalone word
+                        const escapedWord = badWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        const standaloneRegex = new RegExp(`\\b${escapedWord}\\b`, 'gi');
+                        const isStandalone = standaloneRegex.test(words[j]);
+                        
+                        if (!isStandalone) {
+                            // Bad word is embedded in a larger word
+                            // Only replace entire message if the word is clearly a bypass attempt
+                            // (word is significantly longer than the bad word, or has random characters)
+                            const badWordLength = badWord.length;
+                            const wordLength = cleanWord.length;
+                            
+                            // If the word is much longer than the bad word, it's likely a bypass attempt
+                            // Or if it contains the bad word but isn't a common word
+                            if (wordLength > badWordLength + 2) {
+                                foundEmbedded = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                if (foundEmbedded) break;
+            }
+            
+            // If embedded bad word found, replace entire message
+            if (foundEmbedded) {
+                return replacement;
+            }
+            
+            // Return censored message (with standalone bad words replaced)
             return censoredMessage;
         }
 
