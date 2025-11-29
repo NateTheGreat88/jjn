@@ -8,9 +8,11 @@
     <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="secret-pages.css">
     <link rel="stylesheet" href="animated-background.css">
+    <link rel="stylesheet" href="background-music.css">
     <script src="page-transitions.js" defer></script>
     <script src="secret-pages.js" defer></script>
     <script src="animated-background.js" defer></script>
+    <script src="background-music.js" defer></script>
     <!-- Firebase SDK for Authentication -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -216,6 +218,18 @@
                     <span class="recent-indicator" title="Discovered">🔓</span>
                 </a>
             </div>
+            <div class="song-card" data-title="merch" data-description="merchandise store shop cd music">
+                <a href="merch.html" class="song-link">
+                    <div class="song-button">
+                        <div class="song-image" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); display: flex; align-items: center; justify-content: center; font-size: 48px; color: white;">🛍️</div>
+                        <div class="song-info">
+                            <h2>JNJ Merch</h2>
+                            <p>Exclusive merchandise and products</p>
+                        </div>
+                    </div>
+                    <span class="recent-indicator" title="Recently visited">⭐</span>
+                </a>
+            </div>
         </main>
 
         <footer class="footer">
@@ -307,6 +321,7 @@
                 'profile.html': 'profile',
                 'secrets.html': 'secrets',
                 'changelog.html': 'changelog',
+                'merch.html': 'merch',
             };
             
             songCards.forEach(card => {

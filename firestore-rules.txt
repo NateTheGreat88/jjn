@@ -25,6 +25,13 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
+    // Purchases - allow anyone to create purchases, but only admins can read
+    match /purchases/{purchaseId} {
+      allow create: if true;
+      allow read: if false; // Only admins should read (configure as needed)
+      allow update, delete: if false;
+    }
+    
   }
 }
 

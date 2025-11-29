@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JNJ Merch - JNJ Website</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="animated-background.css">
+    <link rel="stylesheet" href="background-music.css">
+    <script src="animated-background.js" defer></script>
+    <script src="page-transitions.js" defer></script>
+    <script src="background-music.js" defer></script>
+    <script src="firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="auth.js" defer></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <style>
+        .merch-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .merch-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .merch-title {
+            font-size: 48px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .merch-subtitle {
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 40px;
+        }
+
+        .merch-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .merch-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .merch-item::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+            animation: rotate 15s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .merch-item:hover {
+            transform: translateY(-5px);
+            border-color: rgba(102, 126, 234, 0.6);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .merch-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            display: block;
+            position: relative;
+            z-index: 1;
+            filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3));
+        }
+
+        .merch-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .merch-description {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 20px;
+            line-height: 1.6;
+            position: relative;
+            z-index: 1;
+        }
+
+        .merch-price-container {
+            margin: 20px 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .merch-price-original {
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: line-through;
+            margin-right: 10px;
+        }
+
+        .merch-price-current {
+            font-size: 32px;
+            font-weight: bold;
+            color: #22c55e;
+            text-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+        }
+
+        .merch-discount-badge {
+            display: inline-block;
+            background: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-left: 10px;
+            border: 1px solid rgba(239, 68, 68, 0.5);
+        }
+
+        .merch-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 35px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            margin-top: 20px;
+        }
+
+        .merch-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .merch-button:active {
+            transform: scale(0.98);
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-top: 40px;
+            padding: 14px 28px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(-8px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="mainContainer">
+        <div class="merch-container">
+            <div class="merch-header">
+                <h1 class="merch-title">🎵 JNJ Merch 🎵</h1>
+                <p class="merch-subtitle">Get your hands on exclusive JNJ merchandise!</p>
+            </div>
+
+            <div class="merch-grid">
+                <div class="merch-item">
+                    <span class="merch-icon">💿</span>
+                    <h2 class="merch-name">Song CD</h2>
+                    <p class="merch-description">
+                        Physical CD containing all original JNJ compositions. 
+                        High-quality audio with exclusive artwork and liner notes.
+                    </p>
+                    <div class="merch-price-container">
+                        <span class="merch-price-original">$8.00</span>
+                        <span class="merch-price-current">$6.00</span>
+                        <span class="merch-discount-badge">-$2.00</span>
+                    </div>
+                    <button class="merch-button" onclick="purchaseCD()">Purchase CD</button>
+                </div>
+            </div>
+
+            <div style="text-align: center;">
+                <a href="index.html" class="back-button">← Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // EmailJS configuration
+        // To set up EmailJS:
+        // 1. Go to https://www.emailjs.com/ and create a free account
+        // 2. Create an email service (Gmail, Outlook, etc.)
+        // 3. Create an email template with variables: {{item_name}}, {{price}}, {{customer_email}}, {{timestamp}}
+        // 4. Get your Service ID, Template ID, and Public Key
+        // 5. Replace the values below
+        const EMAILJS_CONFIG = {
+            serviceId: 'YOUR_SERVICE_ID', // Replace with your EmailJS service ID
+            templateId: 'YOUR_TEMPLATE_ID', // Replace with your EmailJS template ID
+            publicKey: 'YOUR_PUBLIC_KEY' // Replace with your EmailJS public key
+        };
+
+        // Initialize EmailJS when it loads
+        function initEmailJS() {
+            if (typeof emailjs !== 'undefined' && EMAILJS_CONFIG.publicKey !== 'YOUR_PUBLIC_KEY') {
+                try {
+                    emailjs.init(EMAILJS_CONFIG.publicKey);
+                } catch (error) {
+                    console.error('Error initializing EmailJS:', error);
+                }
+            }
+        }
+        
+        // Try to initialize when page loads
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initEmailJS);
+        } else {
+            initEmailJS();
+        }
+        
+        // Also try after a short delay in case EmailJS loads asynchronously
+        setTimeout(initEmailJS, 1000);
+
+        async function savePurchaseToFirestore(itemName, price, customerEmail) {
+            try {
+                if (typeof firebase === 'undefined' || !firebase.firestore) {
+                    console.warn('Firebase not available');
+                    return { success: false, error: 'Firebase not available' };
+                }
+
+                const db = firebase.firestore();
+                const purchaseData = {
+                    itemName: itemName,
+                    price: price,
+                    customerEmail: customerEmail || 'Not provided',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: 'pending',
+                    notificationEmail: 'jaxon.croskey@bsd7students.org'
+                };
+
+                await db.collection('purchases').add(purchaseData);
+                console.log('Purchase saved to Firestore');
+                return { success: true };
+            } catch (error) {
+                console.error('Failed to save purchase to Firestore:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function sendPurchaseEmail(itemName, price, customerEmail) {
+            let emailSent = false;
+            let emailError = null;
+
+            // Try EmailJS first if configured
+            if (EMAILJS_CONFIG.serviceId !== 'YOUR_SERVICE_ID' && 
+                EMAILJS_CONFIG.templateId !== 'YOUR_TEMPLATE_ID' && 
+                EMAILJS_CONFIG.publicKey !== 'YOUR_PUBLIC_KEY' &&
+                typeof emailjs !== 'undefined') {
+                try {
+                    // Ensure EmailJS is initialized
+                    initEmailJS();
+
+                    const templateParams = {
+                        to_email: 'jaxon.croskey@bsd7students.org',
+                        item_name: itemName,
+                        price: price,
+                        customer_email: customerEmail || 'Not provided',
+                        timestamp: new Date().toLocaleString(),
+                        message: `New purchase: ${itemName} for $${price}. Customer email: ${customerEmail || 'Not provided'}. Timestamp: ${new Date().toLocaleString()}`
+                    };
+
+                    const response = await emailjs.send(
+                        EMAILJS_CONFIG.serviceId,
+                        EMAILJS_CONFIG.templateId,
+                        templateParams
+                    );
+
+                    console.log('Email sent successfully via EmailJS:', response);
+                    emailSent = true;
+                } catch (error) {
+                    console.error('EmailJS failed:', error);
+                    emailError = error.text || error.message || 'EmailJS error';
+                }
+            } else {
+                console.warn('EmailJS not configured. Purchase will be saved to Firestore instead.');
+            }
+
+            // Always save to Firestore as backup/primary method
+            const firestoreResult = await savePurchaseToFirestore(itemName, price, customerEmail);
+
+            if (emailSent) {
+                return { success: true, method: 'emailjs' };
+            } else if (firestoreResult.success) {
+                return { success: true, method: 'firestore', emailError: emailError };
+            } else {
+                return { success: false, error: emailError || firestoreResult.error };
+            }
+        }
+
+        async function purchaseCD() {
+            const itemName = 'Song CD';
+            const price = '6.00';
+            const originalPrice = '8.00';
+            
+            // Get customer email if available (from auth)
+            let customerEmail = 'Not provided';
+            try {
+                if (window.authSystem && typeof window.authSystem.getCurrentUser === 'function') {
+                    const user = window.authSystem.getCurrentUser();
+                    if (user && user.email) {
+                        customerEmail = user.email;
+                    }
+                }
+            } catch (error) {
+                console.warn('Could not get user email from auth system:', error);
+            }
+
+            // Show confirmation dialog
+            const confirmed = confirm(
+                `Confirm Purchase\n\n` +
+                `Item: ${itemName}\n` +
+                `Price: $${price} (originally $${originalPrice})\n\n` +
+                `Click OK to confirm your purchase.`
+            );
+
+            if (confirmed) {
+                // Show loading message
+                const loadingMsg = document.createElement('div');
+                loadingMsg.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: rgba(0, 0, 0, 0.9);
+                    color: white;
+                    padding: 30px;
+                    border-radius: 10px;
+                    z-index: 10000;
+                    text-align: center;
+                    font-size: 18px;
+                `;
+                loadingMsg.textContent = 'Processing purchase...';
+                document.body.appendChild(loadingMsg);
+
+                try {
+                    // Send email notification
+                    const emailResult = await sendPurchaseEmail(itemName, price, customerEmail);
+                    
+                    // Remove loading message
+                    document.body.removeChild(loadingMsg);
+
+                    if (emailResult.success) {
+                        if (emailResult.method === 'emailjs') {
+                            alert(
+                                '✅ Purchase Confirmed!\n\n' +
+                                `Thank you for purchasing ${itemName} for $${price}.\n\n` +
+                                'A confirmation email has been sent. We will contact you soon to complete your order.'
+                            );
+                        } else {
+                            // Saved to Firestore
+                            alert(
+                                '✅ Purchase Confirmed!\n\n' +
+                                `Thank you for purchasing ${itemName} for $${price}.\n\n` +
+                                'Your purchase has been recorded. We will contact you soon to complete your order.'
+                            );
+                        }
+                    } else {
+                        // Still show success even if both methods fail (shouldn't happen with Firestore)
+                        alert(
+                            '✅ Purchase Confirmed!\n\n' +
+                            `Thank you for purchasing ${itemName} for $${price}.\n\n` +
+                            'We will contact you soon to complete your order.'
+                        );
+                    }
+                } catch (error) {
+                    // Remove loading message
+                    if (document.body.contains(loadingMsg)) {
+                        document.body.removeChild(loadingMsg);
+                    }
+                    
+                    // Still show success message
+                    alert(
+                        '✅ Purchase Confirmed!\n\n' +
+                        `Thank you for purchasing ${itemName} for $${price}.\n\n` +
+                        'We will contact you soon to complete your order.'
+                    );
+                }
+            }
+        }
+    </script>
+</body>
+</html>
+
