@@ -324,8 +324,8 @@
         // Show indicators on page load
         showRecentIndicators();
         
-        // Show Events button if user has visited events
-        function checkAndShowEventsButton() {
+        // Show Events button if user has visited events or account created before tomorrow
+        async function checkAndShowEventsButton() {
             try {
                 const profile = JSON.parse(localStorage.getItem('jnjUserProfile') || '{}');
                 const visitedEvents = profile.visitedEvents || [];
@@ -333,10 +333,71 @@
                 
                 if (!eventsButton) return;
                 
-                // Only show if user is authenticated and has visited at least one event
-                const isAuthenticated = window.authSystem && window.authSystem.isAuthenticated();
+                let shouldShow = false;
                 
-                if (isAuthenticated && visitedEvents.length > 0) {
+                // Check if user has Thanksgiving event unlocked
+                if (visitedEvents.includes('thanksgiving')) {
+                    shouldShow = true;
+                } else {
+                    // Check if account was created before tomorrow
+                    let accountCreatedBeforeTomorrow = false;
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    tomorrow.setHours(0, 0, 0, 0);
+                    
+                    // Try to get account creation date from Firestore if authenticated
+                    if (window.authSystem && window.authSystem.isAuthenticated()) {
+                        try {
+                            const user = window.authSystem.getUser();
+                            if (user && user.uid) {
+                                // First try Firebase Auth metadata
+                                if (user.metadata && user.metadata.creationTime) {
+                                    const createdAtDate = new Date(user.metadata.creationTime);
+                                    if (createdAtDate < tomorrow) {
+                                        accountCreatedBeforeTomorrow = true;
+                                    }
+                                } else {
+                                    // Fallback to Firestore createdAt
+                                    const userData = await window.authSystem.loadUserData(user.uid);
+                                    if (userData && userData.createdAt) {
+                                        let createdAtDate;
+                                        if (userData.createdAt.toDate) {
+                                            createdAtDate = userData.createdAt.toDate();
+                                        } else if (userData.createdAt.seconds) {
+                                            createdAtDate = new Date(userData.createdAt.seconds * 1000);
+                                        } else {
+                                            createdAtDate = new Date(userData.createdAt);
+                                        }
+                                        
+                                        if (createdAtDate < tomorrow) {
+                                            accountCreatedBeforeTomorrow = true;
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (e) {
+                            console.error('Error checking account creation date:', e);
+                        }
+                    }
+                    
+                    // Fallback to localStorage joinDate
+                    if (!accountCreatedBeforeTomorrow && profile.joinDate) {
+                        try {
+                            const joinDate = new Date(profile.joinDate);
+                            if (joinDate < tomorrow) {
+                                accountCreatedBeforeTomorrow = true;
+                            }
+                        } catch (e) {
+                            console.error('Error parsing joinDate:', e);
+                        }
+                    }
+                    
+                    if (accountCreatedBeforeTomorrow) {
+                        shouldShow = true;
+                    }
+                }
+                
+                if (shouldShow) {
                     eventsButton.style.display = 'inline-block';
                 } else {
                     eventsButton.style.display = 'none';

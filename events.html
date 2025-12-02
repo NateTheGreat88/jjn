@@ -163,9 +163,10 @@
                 const profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
                 let visitedEvents = profile.visitedEvents || [];
                 
-                // Check if account was created before 12/2/2025
+                // Check if account was created before today
                 let accountCreatedBeforeCutoff = false;
-                const cutoffDate = new Date('2025-12-02T23:59:59');
+                const cutoffDate = new Date();
+                cutoffDate.setHours(23, 59, 59, 999); // End of today
                 
                 // Try to get account creation date from Firestore if authenticated
                 if (window.authSystem && window.authSystem.isAuthenticated()) {
@@ -212,6 +213,11 @@
                     } catch (e) {
                         console.error('Error parsing joinDate:', e);
                     }
+                }
+                
+                // If account was created before today, add Thanksgiving event if not already in list
+                if (accountCreatedBeforeCutoff && !visitedEvents.includes('thanksgiving')) {
+                    visitedEvents.push('thanksgiving');
                 }
                 
                 // Filter events: only show Thanksgiving if account was created before cutoff AND they participated
