@@ -158,15 +158,74 @@
             // Add more events here as they're created
         };
 
-        function loadEvents() {
+        async function loadEvents() {
             try {
                 const profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
-                const visitedEvents = profile.visitedEvents || [];
+                let visitedEvents = profile.visitedEvents || [];
+                
+                // Check if account was created before 12/2/2025
+                let accountCreatedBeforeCutoff = false;
+                const cutoffDate = new Date('2025-12-02T23:59:59');
+                
+                // Try to get account creation date from Firestore if authenticated
+                if (window.authSystem && window.authSystem.isAuthenticated()) {
+                    try {
+                        const user = window.authSystem.getUser();
+                        if (user && user.uid) {
+                            // First try Firebase Auth metadata
+                            if (user.metadata && user.metadata.creationTime) {
+                                const createdAtDate = new Date(user.metadata.creationTime);
+                                if (createdAtDate < cutoffDate) {
+                                    accountCreatedBeforeCutoff = true;
+                                }
+                            } else {
+                                // Fallback to Firestore createdAt
+                                const userData = await window.authSystem.loadUserData(user.uid);
+                                if (userData && userData.createdAt) {
+                                    let createdAtDate;
+                                    if (userData.createdAt.toDate) {
+                                        createdAtDate = userData.createdAt.toDate();
+                                    } else if (userData.createdAt.seconds) {
+                                        createdAtDate = new Date(userData.createdAt.seconds * 1000);
+                                    } else {
+                                        createdAtDate = new Date(userData.createdAt);
+                                    }
+                                    
+                                    if (createdAtDate < cutoffDate) {
+                                        accountCreatedBeforeCutoff = true;
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error checking account creation date:', e);
+                    }
+                }
+                
+                // Fallback to localStorage joinDate
+                if (!accountCreatedBeforeCutoff && profile.joinDate) {
+                    try {
+                        const joinDate = new Date(profile.joinDate);
+                        if (joinDate < cutoffDate) {
+                            accountCreatedBeforeCutoff = true;
+                        }
+                    } catch (e) {
+                        console.error('Error parsing joinDate:', e);
+                    }
+                }
+                
+                // Filter events: only show Thanksgiving if account was created before cutoff AND they participated
+                const eventsToShow = visitedEvents.filter(eventId => {
+                    if (eventId === 'thanksgiving') {
+                        return accountCreatedBeforeCutoff;
+                    }
+                    return true;
+                });
                 
                 const eventsGrid = document.getElementById('eventsGrid');
                 const noEvents = document.getElementById('noEvents');
                 
-                if (visitedEvents.length === 0) {
+                if (eventsToShow.length === 0) {
                     eventsGrid.style.display = 'none';
                     noEvents.style.display = 'block';
                     return;
@@ -176,7 +235,7 @@
                 eventsGrid.style.display = 'grid';
                 noEvents.style.display = 'none';
                 
-                visitedEvents.forEach(eventId => {
+                eventsToShow.forEach(eventId => {
                     const event = AVAILABLE_EVENTS[eventId];
                     if (event) {
                         const eventCard = document.createElement('a');

@@ -13,18 +13,52 @@
     let leafImages = []; // Array to store loaded leaf images
     let leafImagesLoaded = false;
     
+    // Reset leaves to follow (Thanksgiving event is over) - run immediately
+    (function resetLeavesOnLoad() {
+        try {
+            const stored = localStorage.getItem('particleType');
+            if (stored === 'leaves') {
+                localStorage.setItem('particleType', 'follow');
+            }
+            
+            const profile = JSON.parse(localStorage.getItem('jnjUserProfile') || '{}');
+            if (profile.particleType === 'leaves') {
+                profile.particleType = 'follow';
+                localStorage.setItem('jnjUserProfile', JSON.stringify(profile));
+            }
+        } catch (e) {
+            // Ignore
+        }
+    })();
+    
     // Get particle type from localStorage or profile
     function getParticleType() {
-        // Check localStorage first
+        // Always reset leaves if found (Thanksgiving event is over)
         const stored = localStorage.getItem('particleType');
-        if (stored) {
-            return stored;
+        if (stored === 'leaves') {
+            localStorage.setItem('particleType', 'follow');
+        }
+        
+        try {
+            const profile = JSON.parse(localStorage.getItem('jnjUserProfile') || '{}');
+            if (profile.particleType === 'leaves') {
+                profile.particleType = 'follow';
+                localStorage.setItem('jnjUserProfile', JSON.stringify(profile));
+            }
+        } catch (e) {
+            // Ignore
+        }
+        
+        // Check localStorage first
+        const storedAfterReset = localStorage.getItem('particleType');
+        if (storedAfterReset && storedAfterReset !== 'leaves') {
+            return storedAfterReset;
         }
         
         // Check profile
         try {
             const profile = JSON.parse(localStorage.getItem('jnjUserProfile') || '{}');
-            if (profile.particleType) {
+            if (profile.particleType && profile.particleType !== 'leaves') {
                 return profile.particleType;
             }
         } catch (e) {
@@ -36,6 +70,10 @@
     
     // Update particle type
     function updateParticleType(newType) {
+        // Prevent setting to leaves (Thanksgiving event is over)
+        if (newType === 'leaves') {
+            newType = 'follow';
+        }
         particleType = newType;
         localStorage.setItem('particleType', newType);
     }
@@ -251,7 +289,13 @@
             time += 0.01;
             
             // Update particle type from storage (in case it changed)
-            particleType = getParticleType();
+            // Always reset leaves to follow
+            const newParticleType = getParticleType();
+            if (newParticleType === 'leaves' || particleType === 'leaves') {
+                particleType = 'follow';
+            } else {
+                particleType = newParticleType;
+            }
             
             // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -313,28 +357,15 @@
             });
             
             // Update and draw independent floating particles
-            // Show all for 'follow', 'leaves', and 'none', show fewer for 'small'
-            if (particleType === 'small' || particleType === 'follow' || particleType === 'leaves' || particleType === 'none') {
+            // Show all for 'follow' and 'none', show fewer for 'small'
+            // Note: 'leaves' is disabled (Thanksgiving event is over)
+            if (particleType === 'small' || particleType === 'follow' || particleType === 'none') {
                 const particlesToShow = particleType === 'small' 
                     ? floatingParticles.slice(0, 15) // Only show 15 for 'small'
                     : floatingParticles; // Show all for 'follow' and 'none'
                 
-                // Draw piled leaves first (so falling leaves appear on top)
-                if (particleType === 'leaves') {
-                    piledLeaves.forEach(particle => {
-                        const alpha = 0.4 + Math.sin(time + particle.x * 0.01) * 0.1;
-                        particle.rotation += particle.rotationSpeed * 0.1; // Slower rotation when grounded
-                        
-                        if (leafImagesLoaded && leafImages[particle.leafIndex]) {
-                            ctx.save();
-                            ctx.globalAlpha = alpha;
-                            ctx.translate(particle.x, particle.y);
-                            ctx.rotate(particle.rotation);
-                            ctx.drawImage(leafImages[particle.leafIndex], -particle.size / 2, -particle.size / 2, particle.size, particle.size);
-                            ctx.restore();
-                        }
-                    });
-                }
+                // Note: 'leaves' mode is disabled (Thanksgiving event is over)
+                // Piled leaves drawing code removed
                     
                 const particlesToGround = []; // Collect particles that need to be grounded
                 
@@ -353,7 +384,8 @@
                     if (particle.x > canvas.width + 50) particle.x = -50;
                     
                     // Check if leaf has reached the bottom (for leaves mode, pile them up)
-                    if (particleType === 'leaves' && particle.y >= canvas.height - particle.size / 2) {
+                    // Note: 'leaves' mode is disabled (Thanksgiving event is over)
+                    if (false && particleType === 'leaves' && particle.y >= canvas.height - particle.size / 2) {
                         particlesToGround.push(particle);
                     } else if (particle.y > canvas.height + 50) {
                         // For non-leaves mode, reset to top
@@ -373,31 +405,21 @@
                     // Update hue slowly
                     particle.hue = (particle.hue + particle.speed) % 360;
                     
-                    // Draw floating particle as leaf image
+                    // Draw floating particle as regular particle (no leaves)
                     const alpha = 0.3 + Math.sin(time + particle.x * 0.01) * 0.2;
-                    particle.rotation += particle.rotationSpeed;
                     
-                    if (leafImagesLoaded && leafImages[particle.leafIndex]) {
-                        ctx.save();
-                        ctx.globalAlpha = alpha;
-                        ctx.translate(particle.x, particle.y);
-                        ctx.rotate(particle.rotation);
-                        ctx.drawImage(leafImages[particle.leafIndex], -particle.size / 2, -particle.size / 2, particle.size, particle.size);
-                        ctx.restore();
-                    } else {
-                        // Fallback to circle if images not loaded
-                        ctx.fillStyle = `hsla(${particle.hue}, 70%, 60%, ${alpha})`;
-                        ctx.shadowColor = `hsla(${particle.hue}, 70%, 60%, 0.6)`;
-                        ctx.shadowBlur = 8;
-                        ctx.beginPath();
-                        ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.shadowBlur = 0;
-                    }
+                    ctx.fillStyle = `hsla(${particle.hue}, 70%, 60%, ${alpha})`;
+                    ctx.shadowColor = `hsla(${particle.hue}, 70%, 60%, 0.6)`;
+                    ctx.shadowBlur = 8;
+                    ctx.beginPath();
+                    ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
                 });
                 
                 // Process particles that need to be grounded (after loop to avoid modification issues)
-                if (particleType === 'leaves') {
+                // Note: 'leaves' mode is disabled (Thanksgiving event is over)
+                if (false && particleType === 'leaves') {
                     particlesToGround.forEach(particle => {
                         // Find the highest point in the pile near this leaf's x position
                         const pileRadius = particle.size;
@@ -477,26 +499,17 @@
                     // Update rotation
                     dot.rotation += dot.rotationSpeed;
                     
-                    // Draw as leaf image
-                    if (leafImagesLoaded && leafImages[dot.leafIndex]) {
-                        ctx.save();
-                        ctx.globalAlpha = dot.opacity;
-                        ctx.translate(dot.x, dot.y);
-                        ctx.rotate(dot.rotation);
-                        ctx.drawImage(leafImages[dot.leafIndex], -dot.size / 2, -dot.size / 2, dot.size, dot.size);
-                        ctx.restore();
-                    } else {
-                        // Fallback to circle if images not loaded
-                        ctx.fillStyle = `rgba(255, 255, 255, ${dot.opacity})`;
-                        ctx.beginPath();
-                        ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
+                    // Draw as regular particle (no leaves)
+                    ctx.fillStyle = `rgba(255, 255, 255, ${dot.opacity})`;
+                    ctx.beginPath();
+                    ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
+                    ctx.fill();
                 });
             }
             
-            // Update and draw cursor-following particles (only if particleType is 'follow' or 'leaves')
-            if (particleType === 'follow' || particleType === 'leaves') {
+            // Update and draw cursor-following particles (only if particleType is 'follow')
+            // Note: 'leaves' mode is disabled (Thanksgiving event is over)
+            if (particleType === 'follow') {
                 cursorParticles.forEach((particle, i) => {
                 // Always drifting - particles are always shifting
                 particle.driftAngle += particle.driftSpeed;
@@ -550,29 +563,20 @@
                 // Update rotation
                 particle.rotation += particle.rotationSpeed;
                 
-                // Draw particle as leaf image
-                if (leafImagesLoaded && leafImages[particle.leafIndex]) {
-                    ctx.save();
-                    ctx.globalAlpha = alpha;
-                    ctx.translate(particle.x, particle.y);
-                    ctx.rotate(particle.rotation);
-                    ctx.drawImage(leafImages[particle.leafIndex], -particle.size / 2, -particle.size / 2, particle.size, particle.size);
-                    ctx.restore();
-                } else {
-                    // Fallback to circle if images not loaded
-                    ctx.fillStyle = `hsla(${particle.hue}, 75%, 65%, ${alpha})`;
-                    ctx.shadowColor = `hsla(${particle.hue}, 75%, 65%, ${alpha * 1.5})`;
-                    ctx.shadowBlur = 10 + Math.sin(time + i) * 2;
-                    ctx.beginPath();
-                    ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.shadowBlur = 0;
-                }
+                // Draw particle as regular particle (no leaves)
+                ctx.fillStyle = `hsla(${particle.hue}, 75%, 65%, ${alpha})`;
+                ctx.shadowColor = `hsla(${particle.hue}, 75%, 65%, ${alpha * 1.5})`;
+                ctx.shadowBlur = 10 + Math.sin(time + i) * 2;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
                 });
             }
             
             // Draw connecting lines between nearby particles
-            if (particleType === 'follow' || particleType === 'leaves' || particleType === 'small') {
+            // Note: 'leaves' mode is disabled (Thanksgiving event is over)
+            if (particleType === 'follow' || particleType === 'small') {
                 const allParticles = particleType === 'follow' 
                     ? [...cursorParticles, ...floatingParticles]
                     : floatingParticles.slice(0, 15); // Only first 15 for 'small'

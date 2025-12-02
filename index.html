@@ -69,34 +69,9 @@
         </div>
         
         <header>
-            <img src="thanksgivingheader.png" alt="Thanksgiving Header" style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+            <h1>JNJ WEBSITE</h1>
+            <p class="subtitle">Welcome to our collaborative space! Explore our creative projects, tools, and creations.</p>
         </header>
-
-        <!-- Thanksgiving Event Button -->
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="thanksgiving-event.html" style="text-decoration: none; display: inline-block;">
-                <button class="thanksgiving-event-button" style="
-                    background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
-                    color: white;
-                    border: none;
-                    padding: 20px 60px;
-                    font-size: 28px;
-                    font-weight: bold;
-                    border-radius: 12px;
-                    cursor: pointer;
-                    box-shadow: 0 4px 15px rgba(217, 119, 6, 0.4);
-                    transition: all 0.3s ease;
-                    text-transform: uppercase;
-                    letter-spacing: 2px;
-                " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(217, 119, 6, 0.6)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(217, 119, 6, 0.4)';">
-                    Thanksgiving Event
-                </button>
-            </a>
-        </div>
-
-        <section class="intro-section">
-            <p class="intro-text">Welcome to our collaborative space! Explore our creative projects, tools, and creations.</p>
-        </section>
 
         <section class="features-section">
             <div class="feature-item">
@@ -843,6 +818,39 @@
             document.addEventListener('DOMContentLoaded', initAuthModal);
         } else {
             initAuthModal();
+        }
+        
+        // Reset leaves particle type to follow (event is over)
+        function resetLeavesParticleType() {
+            try {
+                const stored = localStorage.getItem('particleType');
+                if (stored === 'leaves') {
+                    localStorage.setItem('particleType', 'follow');
+                }
+                
+                const profile = JSON.parse(localStorage.getItem('jnjUserProfile') || '{}');
+                if (profile.particleType === 'leaves') {
+                    profile.particleType = 'follow';
+                    localStorage.setItem('jnjUserProfile', JSON.stringify(profile));
+                }
+                
+                // Update animated background if it's loaded
+                if (window.animatedBackground && typeof window.animatedBackground.updateParticleType === 'function') {
+                    window.animatedBackground.updateParticleType('follow');
+                }
+            } catch (e) {
+                console.error('Error resetting particle type:', e);
+            }
+        }
+        
+        // Reset immediately and also after a delay to catch animated background
+        resetLeavesParticleType();
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(resetLeavesParticleType, 500);
+            });
+        } else {
+            setTimeout(resetLeavesParticleType, 500);
         }
         
     </script>
