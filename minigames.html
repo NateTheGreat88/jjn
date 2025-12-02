@@ -114,21 +114,6 @@
                     <h3>Minesweeper</h3>
                     <p>Find all the mines</p>
                 </div>
-                <div class="game-card" data-game="sudoku">
-                    <div class="game-card-icon">🔢</div>
-                    <h3>Sudoku</h3>
-                    <p>Number puzzle game</p>
-                </div>
-                <div class="game-card" data-game="towerdefense">
-                    <div class="game-card-icon">🏰</div>
-                    <h3>Tower Defense</h3>
-                    <p>Defend your base</p>
-                </div>
-                <div class="game-card" data-game="match3">
-                    <div class="game-card-icon">💎</div>
-                    <h3>Match-3</h3>
-                    <p>Match gems to score</p>
-                </div>
                 <div class="game-card" data-game="doodlejump">
                     <div class="game-card-icon">🦘</div>
                     <h3>Doodle Jump</h3>
@@ -138,11 +123,6 @@
                     <div class="game-card-icon">⌨️</div>
                     <h3>Typing Test</h3>
                     <p>Test your typing speed</p>
-                </div>
-                <div class="game-card" data-game="chess">
-                    <div class="game-card-icon">♟️</div>
-                    <h3>Chess</h3>
-                    <p>Classic strategy game</p>
                 </div>
                 <div class="game-card" data-game="hangman">
                     <div class="game-card-icon">🎯</div>
@@ -567,77 +547,6 @@
             </div>
         </div>
 
-        <!-- Sudoku Game -->
-        <div id="sudokuGame" class="game-screen" style="display: none;">
-            <div class="game-header">
-                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
-                <h2>🔢 Sudoku</h2>
-                <div class="game-stats">
-                    <div>Time: <span id="sudokuTime">0</span>s</div>
-                    <div>Mistakes: <span id="sudokuMistakes">0</span></div>
-                    <div>Best Time: <span id="sudokuBest">-</span></div>
-                </div>
-            </div>
-            <div class="sudoku-container">
-                <div id="sudokuBoard" class="sudoku-board"></div>
-                <div class="sudoku-controls-panel">
-                    <div class="number-pad" id="sudokuNumberPad"></div>
-                    <button class="game-button" onclick="sudokuGame.restart()">New Puzzle</button>
-                    <button class="game-button" onclick="sudokuGame.checkSolution()">Check</button>
-                    <button class="game-button" onclick="sudokuGame.solve()">Solve</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tower Defense Game -->
-        <div id="towerdefenseGame" class="game-screen" style="display: none;">
-            <div class="game-header">
-                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
-                <h2>🏰 Tower Defense</h2>
-                <div class="game-stats">
-                    <div>Wave: <span id="tdWave">1</span></div>
-                    <div>Lives: <span id="tdLives">20</span></div>
-                    <div>Gold: <span id="tdGold">100</span></div>
-                    <div>Score: <span id="tdScore">0</span></div>
-                </div>
-            </div>
-            <div class="towerdefense-container">
-                <canvas id="tdCanvas" width="800" height="600"></canvas>
-                <div class="td-sidebar">
-                    <h3>Towers</h3>
-                    <div id="tdTowers" class="td-towers"></div>
-                    <h3>Upgrades</h3>
-                    <div id="tdUpgrades" class="td-upgrades"></div>
-                </div>
-            </div>
-            <div class="game-controls">
-                <p>Click to place towers. Defend against waves of enemies!</p>
-                <button class="game-button" onclick="towerdefenseGame.restart()">Restart</button>
-                <button class="game-button" onclick="towerdefenseGame.pause()">Pause</button>
-            </div>
-        </div>
-
-        <!-- Match-3 Game -->
-        <div id="match3Game" class="game-screen" style="display: none;">
-            <div class="game-header">
-                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
-                <h2>💎 Match-3</h2>
-                <div class="game-stats">
-                    <div>Score: <span id="match3Score">0</span></div>
-                    <div>Moves: <span id="match3Moves">30</span></div>
-                    <div>Target: <span id="match3Target">1000</span></div>
-                    <div>High Score: <span id="match3HighScore">0</span></div>
-                </div>
-            </div>
-            <div class="match3-container">
-                <div id="match3Board" class="match3-board"></div>
-            </div>
-            <div class="game-controls">
-                <p>Swap gems to match 3 or more. Match more for combos!</p>
-                <button class="game-button" onclick="match3Game.restart()">New Game</button>
-            </div>
-        </div>
-
         <!-- Doodle Jump Game -->
         <div id="doodlejumpGame" class="game-screen" style="display: none;">
             <div class="game-header">
@@ -679,26 +588,6 @@
                 <p>Type the text above as fast and accurately as you can!</p>
                 <button class="game-button" onclick="typingGame.start()">Start</button>
                 <button class="game-button" onclick="typingGame.restart()">New Text</button>
-            </div>
-        </div>
-
-        <!-- Chess Game -->
-        <div id="chessGame" class="game-screen" style="display: none;">
-            <div class="game-header">
-                <button class="back-to-menu-btn" onclick="showMenu()">← Back to Menu</button>
-                <h2>♟️ Chess</h2>
-                <div class="game-stats">
-                    <div id="chessStatus">White to move</div>
-                    <div>Moves: <span id="chessMoves">0</span></div>
-                </div>
-            </div>
-            <div class="chess-container">
-                <div id="chessBoard" class="chess-board"></div>
-                <div class="chess-sidebar">
-                    <div id="chessCaptured" class="chess-captured"></div>
-                    <button class="game-button" onclick="chessGame.restart()">New Game</button>
-                    <button class="game-button" onclick="chessGame.undo()">Undo</button>
-                </div>
             </div>
         </div>
 

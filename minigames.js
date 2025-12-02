@@ -31,12 +31,8 @@ function showMenu() {
     if (pacmanGame) pacmanGame.stop();
     if (froggerGame) froggerGame.stop();
     if (minesweeperGame) minesweeperGame.stop();
-    if (sudokuGame) sudokuGame.stop();
-    if (towerdefenseGame) towerdefenseGame.stop();
-    if (match3Game) match3Game.stop();
     if (doodlejumpGame) doodlejumpGame.stop();
     if (typingGame) typingGame.stop();
-    if (chessGame) chessGame.stop();
     if (hangmanGame) hangmanGame.stop();
     if (connect4Game) connect4Game.stop();
     if (solitaireGame) solitaireGame.stop();
@@ -62,12 +58,8 @@ function showMenu() {
     document.getElementById('pacmanGame').style.display = 'none';
     document.getElementById('froggerGame').style.display = 'none';
     document.getElementById('minesweeperGame').style.display = 'none';
-    document.getElementById('sudokuGame').style.display = 'none';
-    document.getElementById('towerdefenseGame').style.display = 'none';
-    document.getElementById('match3Game').style.display = 'none';
     document.getElementById('doodlejumpGame').style.display = 'none';
     document.getElementById('typingGame').style.display = 'none';
-    document.getElementById('chessGame').style.display = 'none';
     document.getElementById('hangmanGame').style.display = 'none';
     document.getElementById('asteroidsGame').style.display = 'none';
 }
@@ -104,12 +96,8 @@ function showGame(gameName) {
     document.getElementById('pacmanGame').style.display = 'none';
     document.getElementById('froggerGame').style.display = 'none';
     document.getElementById('minesweeperGame').style.display = 'none';
-    document.getElementById('sudokuGame').style.display = 'none';
-    document.getElementById('towerdefenseGame').style.display = 'none';
-    document.getElementById('match3Game').style.display = 'none';
     document.getElementById('doodlejumpGame').style.display = 'none';
     document.getElementById('typingGame').style.display = 'none';
-    document.getElementById('chessGame').style.display = 'none';
     document.getElementById('hangmanGame').style.display = 'none';
     document.getElementById('connect4Game').style.display = 'none';
     document.getElementById('solitaireGame').style.display = 'none';
@@ -137,12 +125,8 @@ function showGame(gameName) {
     if (gameName === 'pacman' && pacmanGame) pacmanGame.init();
     if (gameName === 'frogger' && froggerGame) froggerGame.init();
     if (gameName === 'minesweeper' && minesweeperGame) minesweeperGame.init();
-    if (gameName === 'sudoku' && sudokuGame) sudokuGame.init();
-    if (gameName === 'towerdefense' && towerdefenseGame) towerdefenseGame.init();
-    if (gameName === 'match3' && match3Game) match3Game.init();
     if (gameName === 'doodlejump' && doodlejumpGame) doodlejumpGame.init();
     if (gameName === 'typing' && typingGame) typingGame.init();
-    if (gameName === 'chess' && chessGame) chessGame.init();
     if (gameName === 'hangman' && hangmanGame) hangmanGame.init();
     if (gameName === 'connect4' && connect4Game) connect4Game.init();
     if (gameName === 'solitaire' && solitaireGame) solitaireGame.init();
@@ -5623,11 +5607,7 @@ const fruitslicerGame = {
     }
 };
 
-// Placeholder stubs for complex games
-const sudokuGame = { init() {}, restart() {}, checkSolution() { alert('Feature coming soon!'); }, solve() { alert('Feature coming soon!'); }, stop() {} };
-const towerdefenseGame = { init() { alert('Tower Defense coming soon!'); }, restart() {}, pause() {}, stop() {} };
-const match3Game = { init() { alert('Match-3 coming soon!'); }, restart() {}, stop() {} };
-const chessGame = { init() { alert('Chess coming soon!'); }, restart() {}, undo() {}, stop() {} };
+// Placeholder stubs removed - games are now fully implemented or removed
 
 // Initialize games when page loads
 document.addEventListener('DOMContentLoaded', () => {
