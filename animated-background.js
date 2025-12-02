@@ -164,7 +164,7 @@
             
             cursorParticles.push({
                 x: Math.random() * canvas.width,
-                y: Math.random() * -canvas.height - 100, // Start above screen
+                y: Math.random() * canvas.height, // Start at random position on screen
                 targetX: 0,
                 targetY: 0,
                 radius: Math.random() * 2.5 + 1.5,
@@ -176,9 +176,9 @@
                 driftSpeed: (Math.random() - 0.5) * 0.02, // Slow drift
                 driftAngle: Math.random() * Math.PI * 2,
                 rotation: Math.random() * Math.PI * 2, // Random initial rotation
-                rotationSpeed: (Math.random() - 0.5) * 0.03, // Rotation while falling
+                rotationSpeed: (Math.random() - 0.5) * 0.01, // Slow rotation
                 vx: 0, // Velocity for smoother physics
-                vy: Math.random() * 0.5 + 0.3, // Initial falling speed
+                vy: 0, // No falling - floating particles
                 leafIndex: Math.floor(Math.random() * 3) // Random leaf image (0, 1, or 2)
             });
         }
@@ -189,15 +189,15 @@
         for (let i = 0; i < numFloatingParticles; i++) {
             floatingParticles.push({
                 x: Math.random() * canvas.width,
-                y: Math.random() * -canvas.height - 100, // Start above screen
-                vx: (Math.random() - 0.5) * 0.3, // Horizontal drift
-                vy: Math.random() * 0.5 + 0.3, // Falling speed (0.3 to 0.8)
+                y: Math.random() * canvas.height, // Start at random position on screen
+                vx: (Math.random() - 0.5) * 0.2, // Horizontal drift
+                vy: (Math.random() - 0.5) * 0.2, // Vertical drift (floating, not falling)
                 radius: Math.random() * 2.5 + 1,
                 size: Math.random() * 20 + 15, // Size for leaf images (15-35px)
                 hue: Math.random() * 360,
                 speed: Math.random() * 0.3 + 0.1,
                 rotation: Math.random() * Math.PI * 2, // Random initial rotation
-                rotationSpeed: (Math.random() - 0.5) * 0.03, // Rotation while falling
+                rotationSpeed: (Math.random() - 0.5) * 0.01, // Slow rotation
                 leafIndex: Math.floor(Math.random() * 3), // Random leaf image (0, 1, or 2)
                 grounded: false // Track if leaf has reached the ground
             });
@@ -264,19 +264,19 @@
             }
         });
         
-        // Create simple dots for 'none' option (using leaves)
+        // Create simple dots for 'none' option
         const numSimpleDots = 100;
         for (let i = 0; i < numSimpleDots; i++) {
             simpleDots.push({
                 x: Math.random() * canvas.width,
-                y: Math.random() * -canvas.height - 100, // Start above screen
-                vx: (Math.random() - 0.5) * 0.3, // Horizontal drift
-                vy: Math.random() * 0.5 + 0.3, // Falling speed (0.3 to 0.8)
+                y: Math.random() * canvas.height, // Start at random position on screen
+                vx: (Math.random() - 0.5) * 0.2, // Horizontal drift
+                vy: (Math.random() - 0.5) * 0.2, // Vertical drift (floating, not falling)
                 radius: 1.5,
                 opacity: Math.random() * 0.5 + 0.3,
                 size: Math.random() * 20 + 15, // Size for leaf images (15-35px)
                 rotation: Math.random() * Math.PI * 2, // Random initial rotation
-                rotationSpeed: (Math.random() - 0.5) * 0.03, // Rotation while falling
+                rotationSpeed: (Math.random() - 0.5) * 0.01, // Slow rotation
                 leafIndex: Math.floor(Math.random() * 3) // Random leaf image (0, 1, or 2)
             });
         }
@@ -375,31 +375,25 @@
                         return;
                     }
                     
-                    // Update position - falling motion
+                    // Update position - floating motion
                     particle.x += particle.vx;
                     particle.y += particle.vy;
                 
-                    // Wrap around horizontal edges
+                    // Wrap around all edges (floating particles)
                     if (particle.x < -50) particle.x = canvas.width + 50;
                     if (particle.x > canvas.width + 50) particle.x = -50;
-                    
-                    // Check if leaf has reached the bottom (for leaves mode, pile them up)
-                    // Note: 'leaves' mode is disabled (Thanksgiving event is over)
-                    if (false && particleType === 'leaves' && particle.y >= canvas.height - particle.size / 2) {
-                        particlesToGround.push(particle);
-                    } else if (particle.y > canvas.height + 50) {
-                        // For non-leaves mode, reset to top
-                        particle.y = -50 - Math.random() * 100;
-                        particle.x = Math.random() * canvas.width;
-                    }
+                    if (particle.y < -50) particle.y = canvas.height + 50;
+                    if (particle.y > canvas.height + 50) particle.y = -50;
                 
-                    // Add slight horizontal drift while falling
+                    // Add slight random drift (floating motion)
                     if (!particle.grounded) {
-                        particle.vx += (Math.random() - 0.5) * 0.005;
+                        particle.vx += (Math.random() - 0.5) * 0.002;
+                        particle.vy += (Math.random() - 0.5) * 0.002;
                         
-                        // Limit horizontal velocity but keep falling
-                        const maxVelX = 0.5;
-                        particle.vx = Math.max(-maxVelX, Math.min(maxVelX, particle.vx));
+                        // Limit velocity for smooth floating
+                        const maxVel = 0.3;
+                        particle.vx = Math.max(-maxVel, Math.min(maxVel, particle.vx));
+                        particle.vy = Math.max(-maxVel, Math.min(maxVel, particle.vy));
                     }
                     
                     // Update hue slowly
@@ -481,20 +475,20 @@
                     dot.x += dot.vx;
                     dot.y += dot.vy;
                     
-                    // Wrap around edges - reset to top when falling off bottom
+                    // Wrap around all edges (floating particles)
                     if (dot.x < -50) dot.x = canvas.width + 50;
                     if (dot.x > canvas.width + 50) dot.x = -50;
-                    if (dot.y > canvas.height + 50) {
-                        dot.y = -50 - Math.random() * 100; // Reset to top with random offset
-                        dot.x = Math.random() * canvas.width; // Random horizontal position
-                    }
+                    if (dot.y < -50) dot.y = canvas.height + 50;
+                    if (dot.y > canvas.height + 50) dot.y = -50;
                     
-                    // Add slight horizontal drift while falling
-                    dot.vx += (Math.random() - 0.5) * 0.005;
+                    // Add slight random drift (floating motion)
+                    dot.vx += (Math.random() - 0.5) * 0.002;
+                    dot.vy += (Math.random() - 0.5) * 0.002;
                     
-                    // Limit horizontal velocity but keep falling
-                    const maxVelX = 0.5;
-                    dot.vx = Math.max(-maxVelX, Math.min(maxVelX, dot.vx));
+                    // Limit velocity for smooth floating
+                    const maxVel = 0.3;
+                    dot.vx = Math.max(-maxVel, Math.min(maxVel, dot.vx));
+                    dot.vy = Math.max(-maxVel, Math.min(maxVel, dot.vy));
                     
                     // Update rotation
                     dot.rotation += dot.rotationSpeed;
@@ -534,19 +528,15 @@
                 particle.vx += (targetVx - particle.vx) * 0.08; // Much slower response
                 particle.vy += (targetVy - particle.vy) * 0.08;
                 
-                // Add falling component to the vertical velocity
-                particle.vy += 0.1; // Constant falling acceleration
-                
                 // Apply velocity with damping
                 particle.x += particle.vx;
                 particle.y += particle.vy;
                 
-                // Reset to top if falling off bottom
-                if (particle.y > canvas.height + 50) {
-                    particle.y = -50 - Math.random() * 100;
-                    particle.x = Math.random() * canvas.width;
-                    particle.vy = Math.random() * 0.5 + 0.3; // Reset falling speed
-                }
+                // Wrap around edges (floating particles)
+                if (particle.x < -50) particle.x = canvas.width + 50;
+                if (particle.x > canvas.width + 50) particle.x = -50;
+                if (particle.y < -50) particle.y = canvas.height + 50;
+                if (particle.y > canvas.height + 50) particle.y = -50;
                 
                 // Update hue with variation
                 particle.hue = (particle.hue + 0.2 + Math.sin(time + i) * 0.15) % 360;
