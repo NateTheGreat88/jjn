@@ -32,6 +32,25 @@ service cloud.firestore {
       allow update, delete: if false;
     }
     
+    // CD Orders - allow anyone to create, read recent orders (for public display), and update if admin
+    match /cd_orders/{orderId} {
+      allow create: if true;
+      allow read: if true; // Public display of recent orders
+      allow update: if request.auth != null; // Authenticated users (admins) can update (mark shipped)
+      allow delete: if false; // No deletion allowed
+    }
+    
+    // CD Reviews - allow anyone to create and read, users can delete their own, admins can delete any
+    match /cd_reviews/{reviewId} {
+      allow create: if true;
+      allow read: if true; // Public display of reviews
+      allow update: if false; // No updates allowed
+      allow delete: if request.auth != null && (
+        resource.data.userId == request.auth.uid || // User can delete their own review
+        true // Admins can delete any (you may want to add admin check here)
+      );
+    }
+    
   }
 }
 

@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="htmlTitle">DIFTEN CD Pre-Order & Reviews</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="animated-background.css">
+    <script src="animated-background.js" defer></script>
+    <script src="page-transitions.js" defer></script>
+    <script src="background-music.js" defer></script>
+    <script src="firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+        .order-card {
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 10;
+        }
+        .sale-price {
+            font-size: 2.5rem;
+            line-height: 1;
+        }
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 5px rgba(0, 255, 255, 0.4); }
+            50% { text-shadow: 0 0 15px rgba(0, 255, 255, 0.9); }
+        }
+        .sale-glow {
+            animation: glow 3s infinite alternate;
+        }
+        @keyframes cyan-glitch {
+            0%, 100% { background-position: 0% 50%; }
+            25% { background-position: 100% 50%; background-image: linear-gradient(90deg, #00FFC7, #00FF80, #00FFFF, #00C7FF); }
+            50% { background-position: 0% 50%; background-image: linear-gradient(90deg, #00FF80, #00FFFF, #00C7FF, #00FFC7); }
+            75% { background-position: 100% 50%; background-image: linear-gradient(90deg, #00FFFF, #00C7FF, #00FFC7, #00FF80); }
+        }
+        .glitch-text {
+            background-image: linear-gradient(90deg, #00FFFF, #00FFC7, #00FF00, #00C7FF);
+            background-size: 400% 100%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-fill-color: transparent;
+            animation: cyan-glitch 4s ease infinite;
+        }
+        @keyframes flash-border {
+            0%, 100% {
+                border-color: rgba(0, 255, 255, 0.4);
+                box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+            }
+            50% {
+                border-color: #00FFFF;
+                box-shadow: 0 0 25px #00FFFF;
+            }
+        }
+        .sale-border-flash {
+            border: 2px solid;
+            animation: flash-border 1.5s ease-in-out infinite alternate;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+        }
+        #leaf-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .leaf {
+            position: absolute;
+            top: -10vh;
+            font-size: 2rem;
+            color: #00FFFF;
+            opacity: 0.8;
+            will-change: transform, top;
+        }
+        @keyframes fall {
+            to {
+                top: 100vh;
+            }
+        }
+        @keyframes shake {
+            0% { transform: translateX(0) rotate(0deg); }
+            25% { transform: translateX(10px) rotate(15deg); }
+            50% { transform: translateX(-10px) rotate(-5deg); }
+            75% { transform: translateX(5px) rotate(20deg); }
+            100% { transform: translateX(0) rotate(0deg); }
+        }
+        .shipped-order {
+            text-decoration: line-through;
+            opacity: 0.6;
+            background-color: #1f2937 !important;
+        }
+        .rating {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+            cursor: pointer;
+        }
+        .rating input {
+            display: none;
+        }
+        .rating label {
+            font-size: 2rem;
+            color: #4B5563;
+            padding: 0 0.1rem;
+            transition: color 0.2s;
+        }
+        .rating:not(:checked) > label:hover,
+        .rating:not(:checked) > label:hover ~ label {
+            color: #00FFFF;
+        }
+        .rating > input:checked ~ label {
+            color: #FFD700;
+        }
+    </style>
+    <script>
+        const ADMIN_PASSWORD = 'dev3diften2025';
+        const REVIEW_EXPIRATION_MS = 60 * 60 * 1000; // 60 minutes
+        const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+        
+        let db;
+        let auth;
+        let userId = 'anonymous';
+        let isAdminMode = false;
+        let currentReviewRating = 0;
+        
+        const ORDER_COLLECTION_PATH = 'cd_orders';
+        const REVIEW_COLLECTION_PATH = 'cd_reviews';
+        
+        async function initApp() {
+            // Wait for Firebase to be available
+            let attempts = 0;
+            while (typeof firebase === 'undefined' && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            
+            if (typeof firebase === 'undefined') {
+                console.error("Firebase not loaded after waiting");
+                return;
+            }
+            
+            try {
+                // Initialize Firebase app if not already initialized
+                if (!firebase.apps || firebase.apps.length === 0) {
+                    if (typeof firebaseConfig !== 'undefined') {
+                        firebase.initializeApp(firebaseConfig);
+                    } else {
+                        console.error("firebaseConfig not defined");
+                        return;
+                    }
+                }
+                
+                db = firebase.firestore();
+                auth = firebase.auth();
+                
+                // Sign in anonymously
+                await auth.signInAnonymously();
+                
+                auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("User authenticated. UID:", userId);
+                        
+                        const userIdElement = document.getElementById('userIdDisplay');
+                        if (userIdElement) {
+                            userIdElement.textContent = 'User ID: ' + userId;
+                            userIdElement.classList.remove('hidden');
+                        }
+                        
+                        setupOrderListener();
+                        setupReviewListener();
+                        
+                        setInterval(deleteOldReviews, CLEANUP_INTERVAL_MS);
+                        deleteOldReviews();
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                userId = crypto.randomUUID();
+            }
+        }
+        
+        function toggleContentEditing(state) {
+            const editableSelectors = [
+                '#mainTitle',
+                '#subTitle',
+                '#cdDetailsTitle',
+                '#salePrice',
+                '#salePriceRegular',
+                '#saleAnnouncement',
+                '#footerText',
+                '.js-editable-content',
+            ];
+            
+            editableSelectors.forEach(selector => {
+                document.querySelectorAll(selector).forEach(element => {
+                    element.contentEditable = state ? "true" : "false";
+                    element.classList.toggle('border-2', state);
+                    element.classList.toggle('border-red-500', state);
+                });
+            });
+            
+            const htmlTitle = document.getElementById('htmlTitle');
+            if (htmlTitle) {
+                htmlTitle.textContent = state ? "ADMIN EDIT MODE (Changes LOST on refresh)" : "DIFTEN CD Pre-Order & Reviews";
+            }
+        }
+        
+        async function deleteOldReviews() {
+            if (!db || !userId) return;
+            
+            const cutoff = Date.now() - REVIEW_EXPIRATION_MS;
+            
+            try {
+                const snapshot = await db.collection(REVIEW_COLLECTION_PATH)
+                    .where('timestamp', '<', cutoff)
+                    .get();
+                
+                if (snapshot.empty) {
+                    console.log("Review Cleanup: No old reviews found.");
+                    return;
+                }
+                
+                const deletePromises = [];
+                snapshot.forEach((docRef) => {
+                    deletePromises.push(docRef.ref.delete());
+                });
+                
+                await Promise.all(deletePromises);
+                console.log(`Review Cleanup: Deleted ${deletePromises.length} review(s).`);
+            } catch (error) {
+                console.error("Review Cleanup Error:", error);
+            }
+        }
+        
+        window.deleteReview = async function(reviewId) {
+            if (!isAdminMode) {
+                console.error("Permission denied: Not in Admin Mode.");
+                return;
+            }
+            if (!db || !reviewId) return;
+            
+            try {
+                await db.collection(REVIEW_COLLECTION_PATH).doc(reviewId).delete();
+                console.log(`Review ${reviewId} deleted by admin.`);
+            } catch (error) {
+                console.error("Error deleting review:", error);
+            }
+        }
+        
+        function setupOrderListener() {
+            if (!db) return;
+            
+            const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+            
+            db.collection(ORDER_COLLECTION_PATH)
+                .where('timestamp', '>=', oneWeekAgo)
+                .orderBy('timestamp', 'desc')
+                .limit(10)
+                .onSnapshot((snapshot) => {
+                    let orders = [];
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        orders.push({
+                            id: doc.id,
+                            ...data,
+                            timestamp: data.timestamp
+                        });
+                    });
+                    
+                    displayOrders(orders);
+                }, (error) => {
+                    console.error("Error listening to orders:", error);
+                });
+        }
+        
+        function displayOrders(orders) {
+            const list = document.getElementById('recentOrdersList');
+            if (!list) return;
+            
+            list.innerHTML = '';
+            
+            if (orders.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-400 mt-4">No recent orders in the last week. Be the first!</p>';
+                return;
+            }
+            
+            orders.forEach(order => {
+                const timestampString = order.timestamp
+                    ? new Date(order.timestamp).toLocaleTimeString()
+                    : 'N/A';
+                
+                const listItem = document.createElement('li');
+                listItem.className = `p-3 bg-gray-700 rounded-lg mb-2 shadow-md flex items-center justify-between ${order.shipped ? 'shipped-order' : ''}`;
+                
+                let contentHTML = `
+                    <div>
+                        <p class="text-lg font-semibold text-white">${order.customerName} (${order.quantity}x)</p>
+                        <p class="text-sm text-gray-300">Email: ${order.email}</p>
+                        <p class="text-xs text-gray-500">Ordered at: ${timestampString} (ID: ${order.userId ? order.userId.substring(0, 8) + '...' : 'N/A'})</p>
+                        ${order.shipped ? '<p class="text-xs font-bold text-green-400 mt-1">SHIPPED / FULFILLED</p>' : ''}
+                    </div>
+                `;
+                
+                if (isAdminMode) {
+                    contentHTML += `
+                        <button onclick="markOrderShipped('${order.id}', ${!order.shipped})"
+                                class="ml-4 py-2 px-4 text-sm font-semibold rounded-lg transition duration-200
+                                ${order.shipped ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-primary hover:bg-cyan-600 text-secondary'}"
+                                >
+                            ${order.shipped ? 'Unmark' : 'Mark Shipped'}
+                        </button>
+                    `;
+                }
+                
+                listItem.innerHTML = contentHTML;
+                list.appendChild(listItem);
+            });
+        }
+        
+        window.toggleAdminMode = function() {
+            const passwordInput = document.getElementById('adminPassword');
+            const password = passwordInput.value.trim();
+            const messageElement = document.getElementById('adminMessage');
+            const adminPanel = document.getElementById('adminPanel');
+            const adminControls = document.getElementById('adminControls');
+            
+            if (password === ADMIN_PASSWORD) {
+                isAdminMode = true;
+                messageElement.textContent = "Admin Mode Activated! Editable content is highlighted in red.";
+                messageElement.className = 'text-green-400 font-bold';
+                
+                adminPanel.classList.add('hidden');
+                adminControls.classList.remove('hidden');
+                
+                toggleContentEditing(true);
+                
+                setupOrderListener();
+                setupReviewListener();
+            } else {
+                isAdminMode = false;
+                messageElement.textContent = "Incorrect Password.";
+                messageElement.className = 'text-red-400 font-bold';
+            }
+            passwordInput.value = '';
+        }
+        
+        window.exitAdminMode = function() {
+            isAdminMode = false;
+            
+            toggleContentEditing(false);
+            
+            document.getElementById('adminControls').classList.add('hidden');
+            document.getElementById('adminPanel').classList.remove('hidden');
+            
+            const messageElement = document.getElementById('adminMessage');
+            messageElement.textContent = "Admin Mode disabled.";
+            messageElement.className = 'text-red-400 font-bold';
+            
+            setupOrderListener();
+            setupReviewListener();
+        }
+        
+        window.markOrderShipped = async function(orderId, shippedState) {
+            if (!isAdminMode || !db) return;
+            
+            try {
+                await db.collection(ORDER_COLLECTION_PATH).doc(orderId).update({
+                    shipped: shippedState,
+                    shippedDate: shippedState ? Date.now() : null
+                });
+            } catch (error) {
+                console.error("Error updating document:", error);
+            }
+        }
+        
+        window.placeOrder = async function() {
+            if (!db) {
+                alert("Firebase not initialized. Please refresh the page.");
+                return;
+            }
+            
+            const form = document.getElementById('orderForm');
+            const name = form.customerName.value.trim();
+            const email = form.email.value.trim();
+            const quantity = parseInt(form.quantity.value, 10);
+            const statusMessage = document.getElementById('statusMessage');
+            
+            if (!name || !email || quantity < 1) {
+                statusMessage.textContent = "Please fill out all fields correctly (Name, Email, and Quantity > 0).";
+                statusMessage.className = 'mt-4 text-red-400 font-medium';
+                return;
+            }
+            
+            statusMessage.textContent = "Placing order...";
+            statusMessage.className = 'mt-4 text-primary font-medium';
+            
+            try {
+                await db.collection(ORDER_COLLECTION_PATH).add({
+                    customerName: name,
+                    email: email,
+                    quantity: quantity,
+                    cdTitle: "DROP IT by DIFTEN",
+                    price: 5.00,
+                    timestamp: Date.now(),
+                    userId: userId,
+                    shipped: false
+                });
+                
+                statusMessage.textContent = "Order placed successfully! Thank you for supporting DIFTEN.";
+                statusMessage.className = 'mt-4 text-green-400 font-bold';
+                form.reset();
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                statusMessage.textContent = `Error placing order: ${e.message}. Check console for details.`;
+                statusMessage.className = 'mt-4 text-red-400 font-bold';
+            }
+        };
+        
+        const cussWordMap = {
+            'crap': 'sugar',
+            'damn': 'darn',
+            'hell': 'heck',
+            'ass': 'butt',
+            'bitch': 'bless',
+            'fuck': 'fudge',
+            'shit': 'shoot',
+        };
+        
+        function censorText(text) {
+            let censoredText = text;
+            for (const cuss in cussWordMap) {
+                const regex = new RegExp(`\\b${cuss}\\b`, 'gi');
+                censoredText = censoredText.replace(regex, cussWordMap[cuss]);
+            }
+            return censoredText;
+        }
+        
+        window.setRating = function(rating) {
+            currentReviewRating = rating;
+            const ratingInput = document.getElementById('ratingInput');
+            if (ratingInput) {
+                ratingInput.value = rating;
+            }
+        }
+        
+        function renderStarDisplay(rating) {
+            const fullStar = '★';
+            const emptyStar = '☆';
+            let stars = '';
+            const roundedRating = Math.round(rating * 2) / 2;
+            
+            for (let i = 1; i <= 5; i++) {
+                if (roundedRating >= i) {
+                    stars += `<span class="text-yellow-400 text-xl">${fullStar}</span>`;
+                } else if (roundedRating > i - 1 && roundedRating < i) {
+                    stars += `<span class="text-yellow-400 text-xl">${fullStar}</span>`;
+                } else {
+                    stars += `<span class="text-gray-600 text-xl">${emptyStar}</span>`;
+                }
+            }
+            
+            return stars;
+        }
+        
+        function calculateAverageRating(reviews) {
+            const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+            const count = reviews.length;
+            const average = count > 0 ? (totalRating / count).toFixed(1) : 'N/A';
+            const countDisplay = count === 1 ? '1 rating' : `${count} ratings`;
+            
+            const avgRatingDisplay = document.getElementById('averageRatingDisplay');
+            if (avgRatingDisplay) {
+                let starsHTML = '';
+                if (count > 0) {
+                    starsHTML = renderStarDisplay(parseFloat(average));
+                } else {
+                    starsHTML = renderStarDisplay(0);
+                }
+                
+                avgRatingDisplay.innerHTML = `
+                    <div class="flex items-center space-x-4">
+                        <div class="text-5xl font-extrabold text-white">${average}</div>
+                        <div>
+                            <div class="flex">${starsHTML}</div>
+                            <p class="text-sm text-gray-400">${countDisplay}</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        function setupReviewListener() {
+            if (!db) return;
+            
+            db.collection(REVIEW_COLLECTION_PATH)
+                .orderBy('timestamp', 'desc')
+                .onSnapshot((snapshot) => {
+                    let reviews = [];
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        reviews.push({
+                            id: doc.id,
+                            ...data,
+                            timestamp: data.timestamp
+                        });
+                    });
+                    
+                    calculateAverageRating(reviews);
+                    displayReviews(reviews);
+                }, (error) => {
+                    console.error("Error listening to reviews:", error);
+                });
+        }
+        
+        function displayReviews(reviews) {
+            const list = document.getElementById('reviewsList');
+            if (!list) return;
+            
+            list.innerHTML = '';
+            
+            if (reviews.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-400 mt-4">No reviews yet. Be the first to share your thoughts!</p>';
+                return;
+            }
+            
+            reviews.forEach(review => {
+                const dateString = review.timestamp
+                    ? new Date(review.timestamp).toLocaleDateString()
+                    : 'N/A';
+                
+                const reviewItem = document.createElement('div');
+                reviewItem.className = 'p-4 bg-gray-700 rounded-lg mb-4 shadow-md';
+                
+                let adminDeleteButton = '';
+                if (isAdminMode) {
+                    adminDeleteButton = `
+                        <button onclick="deleteReview('${review.id}')"
+                                class="ml-4 py-1 px-3 text-xs font-semibold rounded-lg transition duration-200 bg-red-600 hover:bg-red-700 text-white">
+                            Delete
+                        </button>
+                    `;
+                }
+                
+                reviewItem.innerHTML = `
+                    <div class="flex justify-between items-start mb-2 border-b border-gray-600 pb-2">
+                        <p class="text-lg font-bold text-white">${review.reviewerName || 'Anonymous'}</p>
+                        <div class="flex items-center">
+                             <p class="text-sm text-gray-400">${dateString}</p>
+                             ${adminDeleteButton}
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        ${renderStarDisplay(review.rating)}
+                    </div>
+                    <p class="text-gray-300">${review.comment}</p>
+                `;
+                
+                list.appendChild(reviewItem);
+            });
+        }
+        
+        window.submitReview = async function() {
+            if (!db) {
+                alert("Firebase not initialized. Please refresh the page.");
+                return;
+            }
+            
+            const form = document.getElementById('reviewForm');
+            const name = form.reviewerName.value.trim() || 'Anonymous';
+            const rating = parseInt(form.ratingInput.value, 10);
+            let comment = form.comment.value.trim();
+            const reviewStatus = document.getElementById('reviewStatusMessage');
+            
+            if (rating < 1 || rating > 5 || !comment) {
+                reviewStatus.textContent = "Please select a star rating and write a comment.";
+                reviewStatus.className = 'mt-4 text-red-400 font-medium';
+                return;
+            }
+            
+            comment = censorText(comment);
+            
+            reviewStatus.textContent = "Submitting review...";
+            reviewStatus.className = 'mt-4 text-primary font-medium';
+            
+            try {
+                await db.collection(REVIEW_COLLECTION_PATH).add({
+                    reviewerName: name,
+                    rating: rating,
+                    comment: comment,
+                    timestamp: Date.now(),
+                    userId: userId,
+                });
+                
+                reviewStatus.textContent = "Review submitted successfully! (It will be automatically deleted after 60 minutes.)";
+                reviewStatus.className = 'mt-4 text-green-400 font-bold';
+                form.reset();
+                window.setRating(0);
+                document.querySelectorAll('.rating input').forEach(input => input.checked = false);
+            } catch (e) {
+                console.error("Error adding review: ", e);
+                reviewStatus.textContent = `Error submitting review: ${e.message}. Check console for details.`;
+                reviewStatus.className = 'mt-4 text-red-400 font-bold';
+            }
+        };
+        
+        function createLeaf() {
+            const container = document.getElementById('leaf-container');
+            if (!container) return;
+            
+            const leaf = document.createElement('div');
+            leaf.className = 'leaf';
+            leaf.textContent = '🍂';
+            
+            const startX = Math.random() * 100;
+            leaf.style.left = `${startX}vw`;
+            
+            const durationFall = Math.random() * 8 + 8;
+            const durationShake = Math.random() * 3 + 2;
+            const delay = Math.random() * 5;
+            
+            leaf.style.animation =
+                `fall ${durationFall}s linear ${delay}s,
+                shake ${durationShake}s ease-in-out infinite alternate`;
+            
+            const size = Math.random() * 1.5 + 0.8;
+            leaf.style.fontSize = `${size}rem`;
+            leaf.style.opacity = Math.random() * 0.4 + 0.5;
+            
+            container.appendChild(leaf);
+            
+            setTimeout(() => {
+                leaf.remove();
+            }, (durationFall + delay) * 1000);
+        }
+        
+        function startLeafFall() {
+            setInterval(createLeaf, 700);
+            for (let i = 0; i < 15; i++) {
+                setTimeout(createLeaf, i * 300);
+            }
+        }
+        
+        // Wait for DOM and Firebase to be ready
+        function initializePage() {
+            // Wait for Firebase scripts to load
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    setTimeout(() => {
+                        initApp();
+                        startLeafFall();
+                    }, 500);
+                });
+            } else {
+                setTimeout(() => {
+                    initApp();
+                    startLeafFall();
+                }, 500);
+            }
+        }
+        
+        // Start initialization
+        initializePage();
+    </script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#00FFFF',
+                        'secondary': '#1A202C',
+                        'background': '#0A0A0A',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-gray-100 min-h-screen p-4 sm:p-8">
+    <div id="leaf-container"></div>
+    <main class="max-w-4xl mx-auto">
+        <header class="text-center mb-10">
+            <h1 class="text-5xl font-extrabold glitch-text mb-2" id="mainTitle">DIFTEN & BMAN</h1>
+            <p class="text-xl text-gray-300" id="subTitle">Official "DROP IT" CD Pre-Order</p>
+            <p id="userIdDisplay" class="hidden mt-2 text-xs text-gray-500 bg-secondary inline-block p-1 rounded">
+                User ID:
+            </p>
+        </header>
+        <div class="grid md:grid-cols-2 gap-10">
+            <div class="flex flex-col bg-secondary p-6 rounded-xl order-card">
+                <h2 class="text-3xl font-bold text-white mb-4" id="cdDetailsTitle">DROP IT - CD Details</h2>
+                <div class="text-left mb-6">
+                    <p class="text-xl text-gray-400 line-through" id="salePriceRegular"> Price: $7.00</p>
+                    <p class="sale-price font-black text-primary my-1 sale-glow" id="salePrice">
+                        $5.00
+                    </p>
+                    <div class="sale-border-flash flex items-center justify-center bg-cyan-900/20">
+                        <p class="text-md font-bold text-primary text-center tracking-widest sm:text-lg" id="saleAnnouncement">
+                            <span class="text-3xl mr-2 animate-pulse">-$2.00!</span>
+                            SALE EVENT! (ENDS soon!!)
+                            <span class="text-3xl ml-2 animate-pulse">-$2.00!</span>
+                        </p>
+                    </div>
+                </div>
+                <ul class="text-sm text-gray-300 list-disc list-inside space-y-1 text-left w-full">
+                    <li class="js-editable-content">High-quality digital audio</li>
+                    <li class="js-editable-content">Exclusive liner notes</li>
+                    <li class="text-primary font-bold js-editable-content">⭐ BONUS PRIZE: Signed CD by DIFTEN (First 3 Orders Only!) ⭐</li>
+                    <li class="js-editable-content">Estimated Shipping: October 2025</li>
+                </ul>
+            </div>
+            <div class="bg-secondary p-6 rounded-xl order-card">
+                <h3 class="text-2xl font-bold text-white mb-6 border-b border-gray-700 pb-2 js-editable-content">Your Order Details</h3>
+                <form id="orderForm" onsubmit="event.preventDefault(); placeOrder();">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="customerName" class="block text-sm font-medium text-gray-300 mb-1 js-editable-content">Full Name</label>
+                            <input type="text" id="customerName" name="customerName" required
+                                class="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 text-white focus:ring-primary focus:border-primary"
+                                placeholder="Jane Doe">
+                        </div>
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-300 mb-1 js-editable-content">Email Address</label>
+                            <input type="email" id="email" name="email" required
+                                class="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 text-white focus:ring-primary focus:border-primary"
+                                placeholder="name@example.com">
+                        </div>
+                        <div>
+                            <label for="quantity" class="block text-sm font-medium text-gray-300 mb-1 js-editable-content">Quantity ($5.00 each)</label>
+                            <input type="number" id="quantity" name="quantity" required min="1" value="1"
+                                class="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 text-white focus:ring-primary focus:border-primary">
+                        </div>
+                        <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                            <p class="text-sm text-gray-400 js-editable-content">
+                                Total will be calculated at checkout based on the $5.00 sale price. This is a placeholder for a real payment gateway.
+                            </p>
+                        </div>
+                    </div>
+                    <button type="submit"
+                            class="mt-6 w-full py-3 bg-primary text-secondary font-bold text-lg rounded-lg hover:bg-cyan-400 transition duration-300 transform hover:scale-[1.01] js-editable-content">
+                        Place Pre-Order
+                    </button>
+                    <div id="statusMessage" class="text-center"></div>
+                </form>
+            </div>
+        </div>
+        <section class="mt-12 bg-secondary p-6 rounded-xl order-card">
+            <h3 class="text-2xl font-bold text-white mb-4 border-b border-gray-700 pb-2 js-editable-content">Recent Orders (Last 7 Days)</h3>
+            <p class="text-sm text-gray-400 mb-4 js-editable-content">Orders older than one week are automatically removed from this public feed.</p>
+            <ul id="recentOrdersList">
+                <p class="text-center text-gray-400 mt-4">Loading orders...</p>
+            </ul>
+            <div id="adminPanel" class="mt-8 pt-4 border-t border-gray-700">
+                <h4 class="text-xl font-semibold text-primary mb-3 js-editable-content">Admin Access</h4>
+                <div class="flex space-x-2">
+                    <input type="password" id="adminPassword" placeholder="Enter Admin Password"
+                        class="flex-grow p-2 rounded-lg bg-gray-800 border border-gray-700 text-white">
+                    <button onclick="toggleAdminMode()"
+                            class="py-2 px-4 bg-primary text-secondary font-semibold rounded-lg hover:bg-cyan-400 transition duration-200 js-editable-content">
+                        Enter Admin Mode
+                    </button>
+                </div>
+                <p id="adminMessage" class="mt-2 text-sm"></p>
+            </div>
+            <div id="adminControls" class="mt-8 pt-4 border-t border-gray-700 hidden">
+                <p class="text-lg font-bold text-green-400 js-editable-content">Admin Mode Active: Order and Review Management are Enabled.</p>
+                <button onclick="exitAdminMode()"
+                        class="mt-3 py-2 px-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition duration-200">
+                    Exit Admin Mode
+                </button>
+            </div>
+        </section>
+        <section class="mt-12 bg-secondary p-6 rounded-xl order-card">
+            <h3 class="text-2xl font-bold text-white mb-6 border-b border-gray-700 pb-2 js-editable-content">CD Ratings & Reviews</h3>
+            <div id="averageRatingDisplay" class="mb-6">
+                <p class="text-center text-gray-400">Loading average rating...</p>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 mb-8">
+                <h4 class="text-xl font-semibold text-primary mb-3 js-editable-content">Leave a Review (Comments are filtered for kindness!)</h4>
+                <form id="reviewForm" onsubmit="event.preventDefault(); submitReview();">
+                    <div class="mb-4">
+                        <label for="reviewerName" class="block text-sm font-medium text-gray-300 mb-1 js-editable-content">Your Name (Optional)</label>
+                        <input type="text" id="reviewerName" name="reviewerName"
+                            class="w-full p-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:ring-primary focus:border-primary"
+                            placeholder="Reviewer Name">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-300 mb-2 js-editable-content">Your Rating (1-5 Stars)</label>
+                        <div class="rating">
+                            <input type="hidden" id="ratingInput" name="ratingInput" value="0" required>
+                            <input type="radio" id="star5" name="rating" value="5" onclick="setRating(5)" /><label for="star5" title="5 stars">★</label>
+                            <input type="radio" id="star4" name="rating" value="4" onclick="setRating(4)" /><label for="star4" title="4 stars">★</label>
+                            <input type="radio" id="star3" name="rating" value="3" onclick="setRating(3)" /><label for="star3" title="3 stars">★</label>
+                            <input type="radio" id="star2" name="rating" value="2" onclick="setRating(2)" /><label for="star2" title="2 stars">★</label>
+                            <input type="radio" id="star1" name="rating" value="1" onclick="setRating(1)" /><label for="star1" title="1 star">★</label>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="comment" class="block text-sm font-medium text-gray-300 mb-1 js-editable-content">Your Comment</label>
+                        <textarea id="comment" name="comment" required rows="3"
+                            class="w-full p-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:ring-primary focus:border-primary"
+                            placeholder="What do you think of the album?"></textarea>
+                    </div>
+                    <button type="submit"
+                            class="w-full py-2 bg-primary text-secondary font-bold rounded-lg hover:bg-cyan-400 transition duration-300 js-editable-content">
+                        Submit Review
+                    </button>
+                    <div id="reviewStatusMessage" class="text-center"></div>
+                </form>
+            </div>
+            <h4 class="text-xl font-semibold text-white mb-3 mt-8 js-editable-content">Customer Comments</h4>
+            <div id="reviewsList">
+                <p class="text-center text-gray-400 mt-4">Loading comments...</p>
+            </div>
+        </section>
+    </main>
+    <footer class="p-6 bg-secondary mt-12">
+        <div class="max-w-4xl mx-auto text-center text-sm text-gray-400" id="footerText">
+            &copy; 2025 DIFTEN. Pre-order System Demo.
+        </div>
+    </footer>
+</body>
+</html>
+
