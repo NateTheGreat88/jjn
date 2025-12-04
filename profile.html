@@ -587,6 +587,30 @@
                     const unlockedTitles = profile.unlockedTitles || [];
                     return unlockedTitles.includes('vip');
                 }
+            },
+            'pro': {
+                name: 'Pro',
+                description: 'Professional status',
+                unlockCondition: (profile) => {
+                    const unlockedTitles = profile.unlockedTitles || [];
+                    return unlockedTitles.includes('pro');
+                }
+            },
+            'elite': {
+                name: 'Elite',
+                description: 'Elite member',
+                unlockCondition: (profile) => {
+                    const unlockedTitles = profile.unlockedTitles || [];
+                    return unlockedTitles.includes('elite');
+                }
+            },
+            'champion': {
+                name: 'Champion',
+                description: 'Champion status',
+                unlockCondition: (profile) => {
+                    const unlockedTitles = profile.unlockedTitles || [];
+                    return unlockedTitles.includes('champion');
+                }
             }
         };
         
@@ -719,7 +743,11 @@
                 'profile-emoji-2': '🎉',
                 'profile-emoji-3': '🌟',
                 'cool-emoji': '🔥',
-                'vip-icon': '💎'
+                'vip-icon': '💎',
+                'star-emoji': '⭐',
+                'crown-emoji': '👑',
+                'rocket-emoji': '🚀',
+                'diamond-emoji': '💎'
             };
             
             // Make sure unlockedImages is an array
