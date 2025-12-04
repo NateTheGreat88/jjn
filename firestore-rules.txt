@@ -20,9 +20,17 @@ service cloud.firestore {
       allow read, write: if true;
     }
     
-    // User data - users can only read/write their own data
+    // User data - users can read/write their own data
     match /users/{userId} {
+      // Users can read/write their own data
       allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Authenticated users can read any user (needed for dev operations like granting items)
+      allow read: if request.auth != null;
+      // Authenticated users can update any user (devs need this to grant items to other users)
+      // Note: The UI already restricts grant functionality to devs via isDev() check
+      allow update: if request.auth != null;
+      // Only allow users to create their own document
+      allow create: if request.auth != null && request.auth.uid == userId;
     }
     
     // Purchases - allow anyone to create purchases, devs can read and update

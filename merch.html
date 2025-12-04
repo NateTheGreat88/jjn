@@ -453,10 +453,10 @@
                 id: 'vip-pass',
                 name: 'VIP Pass',
                 icon: '👑',
-                description: 'Become a VIP member! Get an exclusive VIP title that shows your special status.',
+                description: 'Become a VIP member! Get exclusive benefits: Exclusive VIP Title, Special VIP Icon (💎), Priority support, Early access to new features, and Exclusive VIP badge on profile.',
                 price: '15.00',
-                type: 'title',
-                grantType: 'title',
+                type: 'vip',
+                grantType: 'vip',
                 grantValue: 'vip',
                 limitedEdition: true
             },
@@ -564,10 +564,23 @@
                 const hasDiscount = item.originalPrice && parseFloat(item.originalPrice) > parseFloat(item.price);
                 const discountAmount = hasDiscount ? (parseFloat(item.originalPrice) - parseFloat(item.price)).toFixed(2) : null;
 
+                // Format description with line breaks for VIP Pass
+                let descriptionHTML = item.description;
+                if (item.id === 'vip-pass') {
+                    descriptionHTML = `
+                        Become a VIP member! Get exclusive benefits:<br>
+                        • <strong>Exclusive VIP Title</strong> - Show your VIP status<br>
+                        • <strong>Special VIP Icon (💎)</strong> - Unlock the diamond icon<br>
+                        • <strong>Priority Support</strong> - Get help faster<br>
+                        • <strong>Early Access</strong> - Try new features first<br>
+                        • <strong>VIP Badge</strong> - Exclusive badge on your profile
+                    `;
+                }
+
                 itemDiv.innerHTML = `
                     <span class="shop-icon">${item.icon}</span>
                     <h2 class="shop-name">${item.name}</h2>
-                    <p class="shop-description">${item.description}</p>
+                    <p class="shop-description">${descriptionHTML}</p>
                     <div class="shop-price-container">
                         ${hasDiscount ? `<span class="shop-price-original">$${item.originalPrice}</span>` : ''}
                         <span class="shop-price">$${item.price}</span>
@@ -806,7 +819,7 @@
                             <span>User ID: ${purchase.userId || 'N/A'}</span>
                             <span>Date: ${timestampStr}</span>
                             <span>Status: ${purchase.granted ? '✅ Granted' : '⏳ Pending'}</span>
-                            <span>Grant: ${purchase.grantType === 'title' ? 'Title: ' + purchase.grantValue : purchase.grantValue}</span>
+                            <span>Grant: ${purchase.grantType === 'title' ? 'Title: ' + purchase.grantValue : purchase.grantType === 'vip' ? 'VIP Pass (title + icon + benefits)' : purchase.grantValue}</span>
                         </div>
                         <button class="grant-button" 
                                 onclick="grantItem('${purchaseId}', '${purchase.userId || ''}', '${purchase.grantType}', '${purchase.grantValue}')"
@@ -825,7 +838,15 @@
 
         // Grant item to user
         async function grantItem(purchaseId, userId, grantType, grantValue) {
-            const itemType = grantType === 'title' ? 'title' : grantType === 'profile-image' ? 'profile image' : 'item';
+            let itemType = 'item';
+            if (grantType === 'title') {
+                itemType = 'title';
+            } else if (grantType === 'vip') {
+                itemType = 'VIP Pass (title + icon + benefits)';
+            } else if (grantType === 'profile-image') {
+                itemType = 'profile image';
+            }
+            
             if (!confirm(`Grant ${itemType}: ${grantValue} to user ${userId || 'N/A'}?`)) {
                 return;
             }
@@ -870,6 +891,28 @@
                         } else {
                             console.log('Title already unlocked:', grantValue);
                         }
+                    } else if (grantType === 'vip') {
+                        // VIP Pass grants multiple things
+                        const unlockedTitles = profile.unlockedTitles || [];
+                        const unlockedImages = profile.unlockedImages || [];
+
+                        // Add VIP title
+                        if (!unlockedTitles.includes('vip')) {
+                            unlockedTitles.push('vip');
+                            profile.unlockedTitles = unlockedTitles;
+                            console.log('Added VIP title to unlockedTitles');
+                        }
+
+                        // Add VIP icon
+                        if (!unlockedImages.includes('vip-icon')) {
+                            unlockedImages.push('vip-icon');
+                            profile.unlockedImages = unlockedImages;
+                            console.log('Added VIP icon to unlockedImages');
+                        }
+
+                        // Set VIP status
+                        profile.isVip = true;
+                        console.log('Set isVip to true');
                     } else if (grantType === 'profile-image') {
                         const unlockedImages = profile.unlockedImages || [];
 
@@ -917,6 +960,15 @@
                             if (grantType === 'title') {
                                 localProfile.unlockedTitles = profile.unlockedTitles || [];
                                 console.log('Updated localStorage unlockedTitles:', localProfile.unlockedTitles);
+                            } else if (grantType === 'vip') {
+                                localProfile.unlockedTitles = profile.unlockedTitles || [];
+                                localProfile.unlockedImages = profile.unlockedImages || [];
+                                localProfile.isVip = profile.isVip || false;
+                                console.log('Updated localStorage for VIP:', {
+                                    titles: localProfile.unlockedTitles,
+                                    images: localProfile.unlockedImages,
+                                    isVip: localProfile.isVip
+                                });
                             } else if (grantType === 'profile-image') {
                                 localProfile.unlockedImages = profile.unlockedImages || [];
                                 console.log('Updated localStorage unlockedImages:', localProfile.unlockedImages);

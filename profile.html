@@ -209,6 +209,97 @@
             background: rgba(255, 255, 255, 0.15);
         }
 
+        /* VIP Styling */
+        body.vip .profile-card {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 193, 7, 0.1) 100%);
+            border: 2px solid rgba(255, 215, 0, 0.5);
+            box-shadow: 0 8px 32px rgba(255, 215, 0, 0.3), 0 0 40px rgba(255, 215, 0, 0.2);
+            animation: vipGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes vipGlow {
+            0%, 100% {
+                box-shadow: 0 8px 32px rgba(255, 215, 0, 0.3), 0 0 40px rgba(255, 215, 0, 0.2);
+            }
+            50% {
+                box-shadow: 0 8px 32px rgba(255, 215, 0, 0.5), 0 0 60px rgba(255, 215, 0, 0.4);
+            }
+        }
+
+        body.vip .profile-button {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #000;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.5);
+            animation: buttonShine 2s ease-in-out infinite;
+        }
+
+        body.vip .profile-button:hover {
+            box-shadow: 0 6px 25px rgba(255, 215, 0, 0.7);
+            transform: translateY(-2px) scale(1.05);
+        }
+
+        body.vip .profile-button.secondary {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 193, 7, 0.2) 100%);
+            border: 2px solid rgba(255, 215, 0, 0.5);
+            color: #FFD700;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        body.vip .profile-button.secondary:hover {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 193, 7, 0.3) 100%);
+        }
+
+        @keyframes buttonShine {
+            0%, 100% {
+                box-shadow: 0 4px 15px rgba(255, 215, 0, 0.5);
+            }
+            50% {
+                box-shadow: 0 4px 25px rgba(255, 215, 0, 0.8), 0 0 30px rgba(255, 215, 0, 0.4);
+            }
+        }
+
+        body.vip .avatar-preview {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            border: 4px solid rgba(255, 215, 0, 0.8);
+            box-shadow: 0 8px 32px rgba(255, 215, 0, 0.5), 0 0 40px rgba(255, 215, 0, 0.3);
+            animation: avatarShine 3s ease-in-out infinite;
+        }
+
+        @keyframes avatarShine {
+            0%, 100% {
+                box-shadow: 0 8px 32px rgba(255, 215, 0, 0.5), 0 0 40px rgba(255, 215, 0, 0.3);
+            }
+            50% {
+                box-shadow: 0 8px 40px rgba(255, 215, 0, 0.7), 0 0 60px rgba(255, 215, 0, 0.5);
+            }
+        }
+
+        body.vip .profile-header h1 {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FFD700 100%);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: titleShine 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+        }
+
+        @keyframes titleShine {
+            0%, 100% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        body.vip .profile-form-group input:focus,
+        body.vip .profile-form-group textarea:focus {
+            border-color: rgba(255, 215, 0, 0.6);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+
 
         .save-indicator {
             position: fixed;
@@ -277,7 +368,7 @@
             <p class="subtitle">Customize your identity</p>
         </header>
 
-        <div class="profile-card">
+        <div class="profile-card" id="profileCard">
             <div class="profile-avatar-section">
                 <div class="avatar-preview" id="avatarPreview">
                     <span id="avatarEmoji">👤</span>
@@ -594,6 +685,24 @@
             saveProfile();
         }
 
+        // Apply VIP styling
+        function applyVipStyling(profile) {
+            const isVip = profile.isVip === true || (profile.unlockedTitles && profile.unlockedTitles.includes('vip'));
+            const profileCard = document.getElementById('profileCard');
+            
+            if (isVip) {
+                document.body.classList.add('vip');
+                if (profileCard) {
+                    profileCard.classList.add('vip');
+                }
+            } else {
+                document.body.classList.remove('vip');
+                if (profileCard) {
+                    profileCard.classList.remove('vip');
+                }
+            }
+        }
+
         // Render claimed icons
         function renderClaimedIcons() {
             const claimedIconsList = document.getElementById('claimedIconsList');
@@ -609,8 +718,16 @@
                 'profile-emoji-1': '😊',
                 'profile-emoji-2': '🎉',
                 'profile-emoji-3': '🌟',
-                'cool-emoji': '🔥'
+                'cool-emoji': '🔥',
+                'vip-icon': '💎'
             };
+            
+            // Make sure unlockedImages is an array
+            if (!Array.isArray(unlockedImages)) {
+                unlockedImages = [];
+            }
+            
+            console.log('Rendering claimed icons. unlockedImages:', unlockedImages);
             
             if (unlockedImages.length === 0) {
                 claimedIconsList.style.display = 'none';
@@ -621,23 +738,31 @@
                 
                 unlockedImages.forEach(iconId => {
                     const iconDiv = document.createElement('div');
+                    const isVipIcon = iconId === 'vip-icon';
                     iconDiv.style.cssText = `
                         padding: 15px;
-                        background: rgba(102, 126, 234, 0.1);
-                        border: 2px solid rgba(102, 126, 234, 0.3);
+                        background: ${isVipIcon ? 'rgba(255, 215, 0, 0.1)' : 'rgba(102, 126, 234, 0.1)'};
+                        border: 2px solid ${isVipIcon ? 'rgba(255, 215, 0, 0.5)' : 'rgba(102, 126, 234, 0.3)'};
                         border-radius: 12px;
                         text-align: center;
                         cursor: pointer;
                         transition: all 0.3s ease;
                         font-size: 32px;
+                        ${isVipIcon ? 'box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);' : ''}
                     `;
                     iconDiv.onmouseenter = () => {
-                        iconDiv.style.background = 'rgba(102, 126, 234, 0.2)';
+                        iconDiv.style.background = isVipIcon ? 'rgba(255, 215, 0, 0.2)' : 'rgba(102, 126, 234, 0.2)';
                         iconDiv.style.transform = 'scale(1.1)';
+                        if (isVipIcon) {
+                            iconDiv.style.boxShadow = '0 0 30px rgba(255, 215, 0, 0.5)';
+                        }
                     };
                     iconDiv.onmouseleave = () => {
-                        iconDiv.style.background = 'rgba(102, 126, 234, 0.1)';
+                        iconDiv.style.background = isVipIcon ? 'rgba(255, 215, 0, 0.1)' : 'rgba(102, 126, 234, 0.1)';
                         iconDiv.style.transform = 'scale(1)';
+                        if (isVipIcon) {
+                            iconDiv.style.boxShadow = '0 0 20px rgba(255, 215, 0, 0.3)';
+                        }
                     };
                     iconDiv.onclick = () => {
                         // Set as avatar emoji
@@ -678,6 +803,7 @@
                             const profile = {
                                 ...userData.profile,
                                 isDev: userData.isDev || false,
+                                isVip: userData.profile?.isVip || false,
                                 userId: user.uid
                             };
                             
@@ -723,19 +849,20 @@
                                 localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
                             }
                             
-                            updateAvatarPreview();
-                            updateColorPreview();
-                            updateBioCount();
-                            renderTitles();
-                            renderClaimedIcons();
-                            checkLeavesClaimed(profile);
-                            checkUploadButtonVisibility(profile);
-                            
-                            // Show dev star if user is a dev
-                            const devStarBadge = document.getElementById('devStarBadge');
-                            if (devStarBadge && profile.isDev === true) {
-                                devStarBadge.style.display = 'inline-block';
-                            }
+                    updateAvatarPreview();
+                    updateColorPreview();
+                    updateBioCount();
+                    renderTitles();
+                    renderClaimedIcons();
+                    checkLeavesClaimed(profile);
+                    checkUploadButtonVisibility(profile);
+                    applyVipStyling(profile);
+                    
+                    // Show dev star if user is a dev
+                    const devStarBadge = document.getElementById('devStarBadge');
+                    if (devStarBadge && profile.isDev === true) {
+                        devStarBadge.style.display = 'inline-block';
+                    }
                             
                             // Save to localStorage for compatibility
                             localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
@@ -789,6 +916,7 @@
                     renderClaimedIcons();
                     checkLeavesClaimed(profile);
                     checkUploadButtonVisibility(profile);
+                    applyVipStyling(profile);
                     
                     // Show dev star if user is a dev
                     const devStarBadge = document.getElementById('devStarBadge');
