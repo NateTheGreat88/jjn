@@ -144,6 +144,25 @@
             text-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
         }
 
+        .shop-price-original {
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: line-through;
+            margin-right: 10px;
+        }
+
+        .shop-discount-badge {
+            display: inline-block;
+            background: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-left: 10px;
+            border: 1px solid rgba(239, 68, 68, 0.5);
+        }
+
         .shop-button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -275,6 +294,31 @@
             color: rgba(255, 255, 255, 0.5);
             padding: 40px;
         }
+
+        .shop-item.purchased {
+            opacity: 0.7;
+            border-color: rgba(34, 197, 94, 0.5);
+        }
+
+        .purchased-badge {
+            display: inline-block;
+            background: rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 10px;
+            border: 1px solid rgba(34, 197, 94, 0.5);
+        }
+
+        .shop-button:disabled,
+        .shop-button.purchased {
+            background: rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+            cursor: not-allowed;
+            border: 2px solid rgba(34, 197, 94, 0.5);
+        }
     </style>
 </head>
 <body>
@@ -308,6 +352,19 @@
         
         // Shop items configuration
         const SHOP_ITEMS = [
+            {
+                id: 'cd',
+                name: 'Song CD',
+                icon: '💿',
+                description: 'Physical CD containing all original JNJ compositions. High-quality audio with exclusive artwork and liner notes.',
+                price: '5.00',
+                originalPrice: '7.00',
+                type: 'item',
+                grantType: 'item',
+                grantValue: 'cd',
+                url: 'cd-order.html',
+                limitedEdition: false
+            },
             {
                 id: 'legendary-title',
                 name: 'Legendary Title',
@@ -377,37 +434,78 @@
             return false;
         }
 
+        // Check if user has purchased an item
+        async function hasPurchasedItem(itemId) {
+            try {
+                if (!db) {
+                    initFirebase();
+                }
+                
+                if (!db) return false;
+
+                // Get current user ID
+                let userId = null;
+                if (window.authSystem && window.authSystem.isAuthenticated()) {
+                    const user = window.authSystem.getUser();
+                    if (user && user.uid) {
+                        userId = user.uid;
+                    }
+                }
+
+                if (!userId) return false;
+
+                // Check if user has purchased this item
+                const purchasesSnapshot = await db.collection('purchases')
+                    .where('userId', '==', userId)
+                    .where('itemId', '==', itemId)
+                    .get();
+
+                return !purchasesSnapshot.empty;
+            } catch (error) {
+                console.error('Error checking purchase status:', error);
+                return false;
+            }
+        }
+
         // Render shop items
-        function renderShopItems() {
+        async function renderShopItems() {
             const shopGrid = document.getElementById('shopGrid');
             if (!shopGrid) return;
 
             shopGrid.innerHTML = '';
 
-            SHOP_ITEMS.forEach(item => {
+            for (const item of SHOP_ITEMS) {
                 const itemDiv = document.createElement('div');
-                itemDiv.className = `shop-item ${item.limitedEdition ? 'limited-edition' : ''}`;
+                const isPurchased = await hasPurchasedItem(item.id);
+                itemDiv.className = `shop-item ${item.limitedEdition ? 'limited-edition' : ''} ${isPurchased ? 'purchased' : ''}`;
                 
                 let buttonHTML = '';
-                if (item.url) {
+                if (isPurchased) {
+                    buttonHTML = `<button class="shop-button purchased" disabled>✓ Purchased</button>`;
+                } else if (item.url) {
                     buttonHTML = `<a href="${item.url}" class="shop-button" style="text-decoration: none; display: block; text-align: center;">Purchase ${item.name}</a>`;
-            } else {
+                } else {
                     buttonHTML = `<button class="shop-button" onclick="purchaseItem('${item.id}')">Purchase ${item.name}</button>`;
                 }
+
+                const hasDiscount = item.originalPrice && parseFloat(item.originalPrice) > parseFloat(item.price);
+                const discountAmount = hasDiscount ? (parseFloat(item.originalPrice) - parseFloat(item.price)).toFixed(2) : null;
 
                 itemDiv.innerHTML = `
                     <span class="shop-icon">${item.icon}</span>
                     <h2 class="shop-name">${item.name}</h2>
                     <p class="shop-description">${item.description}</p>
                     <div class="shop-price-container">
+                        ${hasDiscount ? `<span class="shop-price-original">$${item.originalPrice}</span>` : ''}
                         <span class="shop-price">$${item.price}</span>
-                        ${item.originalPrice ? `<span style="color: rgba(255,255,255,0.5); text-decoration: line-through; margin-left: 10px;">$${item.originalPrice}</span>` : ''}
+                        ${hasDiscount ? `<span class="shop-discount-badge">Save $${discountAmount}!</span>` : ''}
                     </div>
                     ${buttonHTML}
+                    ${isPurchased ? '<div class="purchased-badge">✓ Already Purchased</div>' : ''}
                 `;
 
                 shopGrid.appendChild(itemDiv);
-            });
+            }
         }
 
         // Purchase item
@@ -509,11 +607,15 @@
                 // Remove loading
                     document.body.removeChild(loadingMsg);
 
-                            alert(
-                                '✅ Purchase Confirmed!\n\n' +
+                alert(
+                    '✅ Purchase Confirmed!\n\n' +
                     `Thank you for purchasing ${item.name} for $${item.price}.\n\n` +
-                    'Your purchase has been recorded. A developer will grant your item soon!'
+                    '💰 Please bring the money ($' + item.price + ') to one of the developers.\n\n' +
+                    'Your purchase has been recorded. A developer will grant your item once payment is received!'
                 );
+
+                // Refresh shop items to show purchased status
+                renderShopItems();
 
                 // Refresh purchases if dev
                 if (isDev()) {
