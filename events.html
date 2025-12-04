@@ -137,6 +137,11 @@
                 <p>Check back when events are active!</p>
             </div>
 
+            <div id="notQualified" class="no-events" style="display: none;">
+                <p>This page is only available to accounts created before December 3, 2025.</p>
+                <p>Your account does not meet this requirement.</p>
+            </div>
+
             <div style="text-align: center;">
                 <a href="index.html" class="back-button">← Back to Home</a>
             </div>
@@ -163,38 +168,57 @@
                 const profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
                 let visitedEvents = profile.visitedEvents || [];
                 
-                // Check if account was created before today
+                // Check if account was created before 12/3/2025
                 let accountCreatedBeforeCutoff = false;
-                const cutoffDate = new Date();
-                cutoffDate.setHours(23, 59, 59, 999); // End of today
+                const cutoffDate = new Date('2025-12-02T23:59:59');
+                
+                console.log('Checking account creation date. Cutoff:', cutoffDate);
                 
                 // Try to get account creation date from Firestore if authenticated
                 if (window.authSystem && window.authSystem.isAuthenticated()) {
                     try {
                         const user = window.authSystem.getUser();
+                        console.log('User object:', user);
                         if (user && user.uid) {
                             // First try Firebase Auth metadata
-                            if (user.metadata && user.metadata.creationTime) {
-                                const createdAtDate = new Date(user.metadata.creationTime);
-                                if (createdAtDate < cutoffDate) {
-                                    accountCreatedBeforeCutoff = true;
-                                }
-                            } else {
-                                // Fallback to Firestore createdAt
-                                const userData = await window.authSystem.loadUserData(user.uid);
-                                if (userData && userData.createdAt) {
-                                    let createdAtDate;
-                                    if (userData.createdAt.toDate) {
-                                        createdAtDate = userData.createdAt.toDate();
-                                    } else if (userData.createdAt.seconds) {
-                                        createdAtDate = new Date(userData.createdAt.seconds * 1000);
-                                    } else {
-                                        createdAtDate = new Date(userData.createdAt);
-                                    }
-                                    
+                            if (user.metadata) {
+                                console.log('User metadata:', user.metadata);
+                                // In compat mode, creationTime might be a string or timestamp
+                                const creationTime = user.metadata.creationTime || user.metadata.createdAt;
+                                if (creationTime) {
+                                    const createdAtDate = new Date(creationTime);
+                                    console.log('Account created at (from metadata):', createdAtDate);
                                     if (createdAtDate < cutoffDate) {
                                         accountCreatedBeforeCutoff = true;
+                                        console.log('Account created before cutoff (metadata)');
                                     }
+                                }
+                            }
+                            
+                            // Fallback to Firestore createdAt
+                            if (!accountCreatedBeforeCutoff) {
+                                try {
+                                    const userData = await window.authSystem.loadUserData(user.uid);
+                                    console.log('User data from Firestore:', userData);
+                                    if (userData && userData.createdAt) {
+                                        let createdAtDate;
+                                        if (userData.createdAt.toDate) {
+                                            createdAtDate = userData.createdAt.toDate();
+                                        } else if (userData.createdAt.seconds) {
+                                            createdAtDate = new Date(userData.createdAt.seconds * 1000);
+                                        } else if (userData.createdAt.toMillis) {
+                                            createdAtDate = new Date(userData.createdAt.toMillis());
+                                        } else {
+                                            createdAtDate = new Date(userData.createdAt);
+                                        }
+                                        console.log('Account created at (from Firestore):', createdAtDate);
+                                        if (createdAtDate < cutoffDate) {
+                                            accountCreatedBeforeCutoff = true;
+                                            console.log('Account created before cutoff (Firestore)');
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.error('Error loading user data:', e);
                                 }
                             }
                         }
@@ -207,17 +231,40 @@
                 if (!accountCreatedBeforeCutoff && profile.joinDate) {
                     try {
                         const joinDate = new Date(profile.joinDate);
+                        console.log('Account created at (from joinDate):', joinDate);
                         if (joinDate < cutoffDate) {
                             accountCreatedBeforeCutoff = true;
+                            console.log('Account created before cutoff (joinDate)');
                         }
                     } catch (e) {
                         console.error('Error parsing joinDate:', e);
                     }
                 }
                 
-                // If account was created before today, add Thanksgiving event if not already in list
-                if (accountCreatedBeforeCutoff && !visitedEvents.includes('thanksgiving')) {
+                console.log('Final accountCreatedBeforeCutoff:', accountCreatedBeforeCutoff);
+                console.log('Visited events before check:', visitedEvents);
+                
+                const eventsGrid = document.getElementById('eventsGrid');
+                const noEvents = document.getElementById('noEvents');
+                const notQualified = document.getElementById('notQualified');
+                
+                // If account doesn't meet cutoff, hide everything and show not qualified message
+                if (!accountCreatedBeforeCutoff) {
+                    console.log('Account does not meet cutoff - hiding events page');
+                    eventsGrid.style.display = 'none';
+                    noEvents.style.display = 'none';
+                    if (notQualified) {
+                        notQualified.style.display = 'block';
+                    }
+                    return;
+                }
+                
+                // If account was created before cutoff, add Thanksgiving event if not already in list
+                if (!visitedEvents.includes('thanksgiving')) {
                     visitedEvents.push('thanksgiving');
+                    profile.visitedEvents = visitedEvents;
+                    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+                    console.log('Added thanksgiving to visitedEvents');
                 }
                 
                 // Filter events: only show Thanksgiving if account was created before cutoff AND they participated
@@ -228,12 +275,12 @@
                     return true;
                 });
                 
-                const eventsGrid = document.getElementById('eventsGrid');
-                const noEvents = document.getElementById('noEvents');
-                
                 if (eventsToShow.length === 0) {
                     eventsGrid.style.display = 'none';
                     noEvents.style.display = 'block';
+                    if (notQualified) {
+                        notQualified.style.display = 'none';
+                    }
                     return;
                 }
                 

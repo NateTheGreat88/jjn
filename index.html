@@ -327,51 +327,75 @@
         // Show Events button if user has visited events or account created before tomorrow
         async function checkAndShowEventsButton() {
             try {
+                console.log('checkAndShowEventsButton called');
                 const profile = JSON.parse(localStorage.getItem('jnjUserProfile') || '{}');
                 const visitedEvents = profile.visitedEvents || [];
                 const eventsButton = document.getElementById('eventsButton');
                 
-                if (!eventsButton) return;
+                console.log('Profile:', profile);
+                console.log('Visited events:', visitedEvents);
+                
+                if (!eventsButton) {
+                    console.log('Events button not found');
+                    return;
+                }
                 
                 let shouldShow = false;
                 
                 // Check if user has Thanksgiving event unlocked
                 if (visitedEvents.includes('thanksgiving')) {
+                    console.log('Thanksgiving event found in visitedEvents');
                     shouldShow = true;
                 } else {
-                    // Check if account was created before tomorrow
-                    let accountCreatedBeforeTomorrow = false;
-                    const tomorrow = new Date();
-                    tomorrow.setDate(tomorrow.getDate() + 1);
-                    tomorrow.setHours(0, 0, 0, 0);
+                    console.log('Thanksgiving event not in visitedEvents, checking account creation date');
+                    // Check if account was created before 12/3/2025
+                    let accountCreatedBeforeCutoff = false;
+                    const cutoffDate = new Date('2025-12-02T23:59:59');
+                    
+                    console.log('Checking account creation date. Cutoff:', cutoffDate);
+                    console.log('Auth system available:', !!window.authSystem);
+                    console.log('Is authenticated:', window.authSystem && window.authSystem.isAuthenticated());
                     
                     // Try to get account creation date from Firestore if authenticated
                     if (window.authSystem && window.authSystem.isAuthenticated()) {
+                        console.log('User is authenticated, checking creation date');
                         try {
                             const user = window.authSystem.getUser();
                             if (user && user.uid) {
                                 // First try Firebase Auth metadata
-                                if (user.metadata && user.metadata.creationTime) {
-                                    const createdAtDate = new Date(user.metadata.creationTime);
-                                    if (createdAtDate < tomorrow) {
-                                        accountCreatedBeforeTomorrow = true;
+                                if (user.metadata) {
+                                    // In compat mode, creationTime might be a string or timestamp
+                                    const creationTime = user.metadata.creationTime || user.metadata.createdAt;
+                                    if (creationTime) {
+                                        const createdAtDate = new Date(creationTime);
+                                        if (createdAtDate < cutoffDate) {
+                                            accountCreatedBeforeCutoff = true;
+                                        }
                                     }
-                                } else {
-                                    // Fallback to Firestore createdAt
-                                    const userData = await window.authSystem.loadUserData(user.uid);
-                                    if (userData && userData.createdAt) {
-                                        let createdAtDate;
-                                        if (userData.createdAt.toDate) {
-                                            createdAtDate = userData.createdAt.toDate();
-                                        } else if (userData.createdAt.seconds) {
-                                            createdAtDate = new Date(userData.createdAt.seconds * 1000);
-                                        } else {
-                                            createdAtDate = new Date(userData.createdAt);
+                                }
+                                
+                                // Fallback to Firestore createdAt
+                                if (!accountCreatedBeforeCutoff) {
+                                    try {
+                                        const userData = await window.authSystem.loadUserData(user.uid);
+                                        if (userData && userData.createdAt) {
+                                            let createdAtDate;
+                                            if (userData.createdAt.toDate) {
+                                                createdAtDate = userData.createdAt.toDate();
+                                            } else if (userData.createdAt.seconds) {
+                                                createdAtDate = new Date(userData.createdAt.seconds * 1000);
+                                            } else if (userData.createdAt.toMillis) {
+                                                createdAtDate = new Date(userData.createdAt.toMillis());
+                                            } else {
+                                                createdAtDate = new Date(userData.createdAt);
+                                            }
+                                            
+                                            if (createdAtDate < cutoffDate) {
+                                                accountCreatedBeforeCutoff = true;
+                                            }
                                         }
-                                        
-                                        if (createdAtDate < tomorrow) {
-                                            accountCreatedBeforeTomorrow = true;
-                                        }
+                                    } catch (e) {
+                                        console.error('Error loading user data:', e);
                                     }
                                 }
                             }
@@ -381,25 +405,32 @@
                     }
                     
                     // Fallback to localStorage joinDate
-                    if (!accountCreatedBeforeTomorrow && profile.joinDate) {
+                    if (!accountCreatedBeforeCutoff && profile.joinDate) {
                         try {
                             const joinDate = new Date(profile.joinDate);
-                            if (joinDate < tomorrow) {
-                                accountCreatedBeforeTomorrow = true;
+                            if (joinDate < cutoffDate) {
+                                accountCreatedBeforeCutoff = true;
                             }
                         } catch (e) {
                             console.error('Error parsing joinDate:', e);
                         }
                     }
                     
-                    if (accountCreatedBeforeTomorrow) {
+                    console.log('Final accountCreatedBeforeCutoff:', accountCreatedBeforeCutoff);
+                    
+                    // Only show if we can confirm account was created before cutoff
+                    if (accountCreatedBeforeCutoff) {
                         shouldShow = true;
                     }
                 }
                 
+                console.log('Final shouldShow:', shouldShow);
+                
                 if (shouldShow) {
+                    console.log('Showing events button');
                     eventsButton.style.display = 'inline-block';
                 } else {
+                    console.log('Hiding events button');
                     eventsButton.style.display = 'none';
                 }
             } catch (e) {
@@ -438,18 +469,30 @@
         // Check on page load
         checkAndShowSecretsButton();
         checkGamesUnlocked();
-        checkAndShowEventsButton();
+        
+        // Wait for auth system to be ready before checking events button
+        function waitForAuthAndCheckEvents() {
+            if (window.authSystem) {
+                checkAndShowEventsButton();
+            } else {
+                setTimeout(waitForAuthAndCheckEvents, 100);
+            }
+        }
+        waitForAuthAndCheckEvents();
         
         // Also check when secretPages becomes available
         window.addEventListener('load', () => {
             checkAndShowSecretsButton();
             checkGamesUnlocked();
-            checkAndShowEventsButton();
+            waitForAuthAndCheckEvents();
         });
         
         // Check events button when auth state changes
         window.addEventListener('authStateChanged', () => {
-            setTimeout(checkAndShowEventsButton, 500);
+            setTimeout(() => {
+                console.log('authStateChanged event received, checking events button');
+                checkAndShowEventsButton();
+            }, 500);
         });
         
         // Cursor Trail Effect - Smooth line effect
