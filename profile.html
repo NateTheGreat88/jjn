@@ -294,6 +294,18 @@
                 <div class="avatar-selector" id="avatarSelector" style="display: none;">
                     <div class="emoji-grid" id="emojiGrid"></div>
                 </div>
+                
+                <div class="profile-form-group" style="margin-top: 30px;">
+                    <label>Claimed Icons</label>
+                    <div id="claimedIconsContainer" style="margin-top: 10px;">
+                        <div id="claimedIconsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; max-height: 200px; overflow-y: auto; padding: 10px; background: rgba(0, 0, 0, 0.2); border-radius: 12px;">
+                            <!-- Claimed icons will be populated here -->
+                        </div>
+                        <div id="noClaimedIcons" style="text-align: center; color: rgba(255, 255, 255, 0.5); padding: 20px; display: none;">
+                            No claimed icons yet. Purchase icons from the shop!
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <form id="profileForm">
@@ -366,6 +378,7 @@
         let avatarSelectorVisible = false;
         let equippedTitle = null;
         let unlockedTitles = [];
+        let unlockedImages = []; // Claimed icons/profile images
         
         // Titles system
         const TITLES = {
@@ -467,6 +480,22 @@
                     const displayName = (profile.displayName || '').trim();
                     return displayName.toLowerCase() === 'lebron';
                 }
+            },
+            'legendary': {
+                name: 'Legendary',
+                description: 'Purchased from the shop',
+                unlockCondition: (profile) => {
+                    const unlockedTitles = profile.unlockedTitles || [];
+                    return unlockedTitles.includes('legendary');
+                }
+            },
+            'vip': {
+                name: 'VIP',
+                description: 'VIP Pass holder',
+                unlockCondition: (profile) => {
+                    const unlockedTitles = profile.unlockedTitles || [];
+                    return unlockedTitles.includes('vip');
+                }
             }
         };
         
@@ -565,6 +594,65 @@
             saveProfile();
         }
 
+        // Render claimed icons
+        function renderClaimedIcons() {
+            const claimedIconsList = document.getElementById('claimedIconsList');
+            const noClaimedIcons = document.getElementById('noClaimedIcons');
+            
+            if (!claimedIconsList || !noClaimedIcons) return;
+            
+            claimedIconsList.innerHTML = '';
+            
+            // Map of icon IDs to emoji/display
+            const iconMap = {
+                'fire-emoji': '🔥',
+                'profile-emoji-1': '😊',
+                'profile-emoji-2': '🎉',
+                'profile-emoji-3': '🌟',
+                'cool-emoji': '🔥'
+            };
+            
+            if (unlockedImages.length === 0) {
+                claimedIconsList.style.display = 'none';
+                noClaimedIcons.style.display = 'block';
+            } else {
+                claimedIconsList.style.display = 'grid';
+                noClaimedIcons.style.display = 'none';
+                
+                unlockedImages.forEach(iconId => {
+                    const iconDiv = document.createElement('div');
+                    iconDiv.style.cssText = `
+                        padding: 15px;
+                        background: rgba(102, 126, 234, 0.1);
+                        border: 2px solid rgba(102, 126, 234, 0.3);
+                        border-radius: 12px;
+                        text-align: center;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        font-size: 32px;
+                    `;
+                    iconDiv.onmouseenter = () => {
+                        iconDiv.style.background = 'rgba(102, 126, 234, 0.2)';
+                        iconDiv.style.transform = 'scale(1.1)';
+                    };
+                    iconDiv.onmouseleave = () => {
+                        iconDiv.style.background = 'rgba(102, 126, 234, 0.1)';
+                        iconDiv.style.transform = 'scale(1)';
+                    };
+                    iconDiv.onclick = () => {
+                        // Set as avatar emoji
+                        selectedEmoji = iconMap[iconId] || '👤';
+                        selectedImage = null;
+                        updateAvatarPreview();
+                        saveProfile();
+                    };
+                    iconDiv.textContent = iconMap[iconId] || '❓';
+                    iconDiv.title = iconId;
+                    claimedIconsList.appendChild(iconDiv);
+                });
+            }
+        }
+
         // Generate a unique user ID
         function generateUserId() {
             // Generate a unique ID using timestamp and random string
@@ -622,6 +710,7 @@
                             selectedImage = profile.avatarImage || null;
                             equippedTitle = profile.equippedTitle || null;
                             unlockedTitles = profile.unlockedTitles || [];
+                            unlockedImages = profile.unlockedImages || [];
                             
                             // Check for new title unlocks
                             const newlyUnlocked = checkTitleUnlocks(profile);
@@ -638,6 +727,7 @@
                             updateColorPreview();
                             updateBioCount();
                             renderTitles();
+                            renderClaimedIcons();
                             checkLeavesClaimed(profile);
                             checkUploadButtonVisibility(profile);
                             
@@ -683,7 +773,7 @@
                     selectedImage = profile.avatarImage || null;
                     equippedTitle = profile.equippedTitle || null;
                     unlockedTitles = profile.unlockedTitles || [];
-                    
+                    unlockedImages = profile.unlockedImages || [];
                     
                     // Check for new title unlocks
                     const newlyUnlocked = checkTitleUnlocks(profile);
@@ -696,6 +786,7 @@
                     updateColorPreview();
                     updateBioCount();
                     renderTitles();
+                    renderClaimedIcons();
                     checkLeavesClaimed(profile);
                     checkUploadButtonVisibility(profile);
                     
@@ -734,6 +825,7 @@
                 avatarImage: selectedImage,
                 equippedTitle: equippedTitle,
                 unlockedTitles: unlockedTitles,
+                unlockedImages: unlockedImages,
                 lastUpdated: new Date().toISOString()
             };
 
