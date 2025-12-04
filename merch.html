@@ -295,6 +295,70 @@
             padding: 40px;
         }
 
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            gap: 15px;
+            min-width: 300px;
+            max-width: 500px;
+            border: 2px solid rgba(102, 126, 234, 0.5);
+            backdrop-filter: blur(10px);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .notification.show {
+            display: flex;
+        }
+
+        .notification.success {
+            border-color: rgba(34, 197, 94, 0.5);
+        }
+
+        .notification.error {
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+
+        .notification-icon {
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .notification-message {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.5;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
         .shop-item.purchased {
             opacity: 0.7;
             border-color: rgba(34, 197, 94, 0.5);
@@ -344,6 +408,15 @@
             <div style="text-align: center;">
                 <a href="index.html" class="back-button">← Back to Home</a>
             </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <span class="notification-icon" id="notificationIcon">✅</span>
+        <div class="notification-content">
+            <div class="notification-title" id="notificationTitle">Success</div>
+            <div class="notification-message" id="notificationMessage"></div>
         </div>
     </div>
 
@@ -508,11 +581,41 @@
             }
         }
 
+        // Show notification
+        function showNotification(type, title, message) {
+            const notification = document.getElementById('notification');
+            const notificationIcon = document.getElementById('notificationIcon');
+            const notificationTitle = document.getElementById('notificationTitle');
+            const notificationMessage = document.getElementById('notificationMessage');
+
+            if (!notification) return;
+
+            // Set icon based on type
+            if (type === 'success') {
+                notificationIcon.textContent = '✅';
+                notification.className = 'notification success show';
+            } else if (type === 'error') {
+                notificationIcon.textContent = '❌';
+                notification.className = 'notification error show';
+            } else {
+                notificationIcon.textContent = 'ℹ️';
+                notification.className = 'notification show';
+            }
+
+            notificationTitle.textContent = title;
+            notificationMessage.textContent = message;
+
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 5000);
+        }
+
         // Purchase item
         async function purchaseItem(itemId) {
             const item = SHOP_ITEMS.find(i => i.id === itemId);
             if (!item) {
-                alert('Item not found!');
+                showNotification('error', '❌ Error', 'Item not found!');
                 return;
             }
 
@@ -545,6 +648,14 @@
                 }
             } catch (error) {
                 console.warn('Could not get user info:', error);
+            }
+
+            // Check if already purchased
+            const alreadyPurchased = await hasPurchasedItem(itemId);
+            if (alreadyPurchased) {
+                showNotification('error', '❌ Already Purchased', 'You have already purchased this item!');
+                renderShopItems(); // Refresh to show purchased status
+                return;
             }
 
             // Show confirmation
@@ -607,11 +718,10 @@
                 // Remove loading
                     document.body.removeChild(loadingMsg);
 
-                alert(
-                    '✅ Purchase Confirmed!\n\n' +
-                    `Thank you for purchasing ${item.name} for $${item.price}.\n\n` +
-                    '💰 Please bring the money ($' + item.price + ') to one of the developers.\n\n' +
-                    'Your purchase has been recorded. A developer will grant your item once payment is received!'
+                showNotification(
+                    'success',
+                    '✅ Purchase Confirmed!',
+                    `Thank you for purchasing ${item.name} for $${item.price}.\n\n💰 Please bring the money ($${item.price}) to one of the developers.\n\nYour purchase has been recorded. A developer will grant your item once payment is received!`
                 );
 
                 // Refresh shop items to show purchased status
@@ -623,8 +733,14 @@
                 }
             } catch (error) {
                 console.error('Purchase error:', error);
-                document.body.removeChild(loadingMsg);
-                alert('Error processing purchase. Please try again.');
+                if (document.body.contains(loadingMsg)) {
+                    document.body.removeChild(loadingMsg);
+                }
+                showNotification(
+                    'error',
+                    '❌ Purchase Error',
+                    'Error processing purchase. Please try again.'
+                );
             }
         }
 
@@ -720,7 +836,7 @@
                 }
 
                 if (!db) {
-                    alert('Firebase not available');
+                    showNotification('error', '❌ Error', 'Firebase not available');
                     return;
                 }
 
@@ -820,11 +936,11 @@
                     console.warn('No userId provided, cannot grant item');
                 }
 
-                alert('✅ Item granted successfully!');
+                showNotification('success', '✅ Item Granted', 'Item granted successfully!');
                 loadPurchases(); // Refresh the list
                 } catch (error) {
                 console.error('Error granting item:', error);
-                alert('Error granting item. Please try again.');
+                showNotification('error', '❌ Error', 'Error granting item. Please try again.');
             }
         }
 
