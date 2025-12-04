@@ -573,6 +573,48 @@
         // Check if user has purchased an item
         async function hasPurchasedItem(itemId) {
             try {
+                // First check user's profile (faster, no Firebase read needed if profile is loaded)
+                if (window.authSystem && window.authSystem.isAuthenticated()) {
+                    const user = window.authSystem.getUser();
+                    if (user && user.uid) {
+                        // Check localStorage first (fastest)
+                        const profileData = localStorage.getItem(PROFILE_STORAGE_KEY);
+                        if (profileData) {
+                            try {
+                                const profile = JSON.parse(profileData);
+                                const purchasedItems = profile.purchasedItems || [];
+                                if (purchasedItems.includes(itemId)) {
+                                    return true;
+                                }
+                            } catch (e) {
+                                console.warn('Error parsing profile from localStorage:', e);
+                            }
+                        }
+                        
+                        // If not in localStorage, check Firestore user profile
+                        if (!db) {
+                            initFirebase();
+                        }
+                        
+                        if (db) {
+                            try {
+                                const userDoc = await db.collection('users').doc(user.uid).get();
+                                if (userDoc.exists) {
+                                    const userData = userDoc.data();
+                                    const profile = userData.profile || {};
+                                    const purchasedItems = profile.purchasedItems || [];
+                                    if (purchasedItems.includes(itemId)) {
+                                        return true;
+                                    }
+                                }
+                            } catch (e) {
+                                console.warn('Error checking Firestore profile:', e);
+                            }
+                        }
+                    }
+                }
+
+                // Fallback: Check purchases collection (for backwards compatibility)
                 if (!db) {
                     initFirebase();
                 }
@@ -590,10 +632,11 @@
 
                 if (!userId) return false;
 
-                // Check if user has purchased this item
+                // Check if user has purchased this item in purchases collection
                 const purchasesSnapshot = await db.collection('purchases')
                     .where('userId', '==', userId)
                     .where('itemId', '==', itemId)
+                    .limit(1)
                     .get();
 
                 return !purchasesSnapshot.empty;
@@ -791,6 +834,59 @@
                 await db.collection('purchases').add(purchaseData);
                 console.log('Purchase saved to Firestore');
 
+                // Add to user's purchasedItems in profile
+                if (userId) {
+                    try {
+                        const userDoc = await db.collection('users').doc(userId).get();
+                        let userData = {};
+                        let profile = {};
+                        
+                        if (userDoc.exists) {
+                            userData = userDoc.data();
+                            profile = { ...(userData.profile || {}) };
+                        }
+                        
+                        // Add itemId to purchasedItems array
+                        const purchasedItems = profile.purchasedItems || [];
+                        if (!purchasedItems.includes(item.id)) {
+                            purchasedItems.push(item.id);
+                            profile.purchasedItems = purchasedItems;
+                            
+                            // Update user profile in Firestore
+                            if (userDoc.exists) {
+                                await db.collection('users').doc(userId).update({
+                                    profile: profile
+                                });
+                            } else {
+                                await db.collection('users').doc(userId).set({
+                                    profile: profile,
+                                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                                });
+                            }
+                            
+                            // Update localStorage if this is the current user
+                            if (window.authSystem && window.authSystem.isAuthenticated()) {
+                                const currentUser = window.authSystem.getUser();
+                                if (currentUser && currentUser.uid === userId) {
+                                    const localProfile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
+                                    localProfile.purchasedItems = purchasedItems;
+                                    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(localProfile));
+                                    
+                                    // Sync to Firestore via authSystem
+                                    try {
+                                        await window.authSystem.saveUserData({ profile: localProfile });
+                                    } catch (e) {
+                                        console.error('Error syncing profile:', e);
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error updating purchasedItems:', e);
+                        // Don't block the purchase if this fails
+                    }
+                }
+
                 // Remove loading
                     document.body.removeChild(loadingMsg);
 
@@ -929,6 +1025,50 @@
                     granted: true,
                     grantedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
+
+                // Ensure item is in user's purchasedItems (in case purchase record gets deleted)
+                if (userId) {
+                    try {
+                        const userDoc = await db.collection('users').doc(userId).get();
+                        let userData = {};
+                        let profile = {};
+                        
+                        if (userDoc.exists) {
+                            userData = userDoc.data();
+                            profile = { ...(userData.profile || {}) };
+                        }
+                        
+                        // Get the itemId from the purchase
+                        const purchaseDoc = await db.collection('purchases').doc(purchaseId).get();
+                        if (purchaseDoc.exists) {
+                            const purchaseData = purchaseDoc.data();
+                            const itemId = purchaseData.itemId;
+                            
+                            if (itemId) {
+                                const purchasedItems = profile.purchasedItems || [];
+                                if (!purchasedItems.includes(itemId)) {
+                                    purchasedItems.push(itemId);
+                                    profile.purchasedItems = purchasedItems;
+                                    
+                                    // Update user profile
+                                    if (userDoc.exists) {
+                                        await db.collection('users').doc(userId).update({
+                                            profile: profile
+                                        });
+                                    } else {
+                                        await db.collection('users').doc(userId).set({
+                                            profile: profile,
+                                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error ensuring purchasedItems:', e);
+                        // Don't block the grant if this fails
+                    }
+                }
 
                 // Grant the item to the user
                 if (userId) {
