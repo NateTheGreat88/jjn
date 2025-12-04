@@ -1051,11 +1051,78 @@
                     console.warn('No userId provided, cannot grant item');
                 }
 
+                // Delete all granted purchases except the last 3
+                await cleanupOldGrantedPurchases();
+
                 showNotification('success', '✅ Item Granted', 'Item granted successfully!');
                 loadPurchases(); // Refresh the list
                 } catch (error) {
                 console.error('Error granting item:', error);
                 showNotification('error', '❌ Error', 'Error granting item. Please try again.');
+            }
+        }
+
+        // Clean up old granted purchases, keeping only the last 3
+        async function cleanupOldGrantedPurchases() {
+            try {
+                if (!db) {
+                    initFirebase();
+                }
+
+                if (!db) {
+                    console.warn('Firebase not available for cleanup');
+                    return;
+                }
+
+                // Get all granted purchases
+                const grantedPurchasesSnapshot = await db.collection('purchases')
+                    .where('granted', '==', true)
+                    .get();
+
+                if (grantedPurchasesSnapshot.empty) {
+                    return; // No granted purchases to clean up
+                }
+
+                const grantedPurchases = [];
+                grantedPurchasesSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    grantedPurchases.push({
+                        id: doc.id,
+                        grantedAt: data.grantedAt ? (data.grantedAt.toDate ? data.grantedAt.toDate() : new Date(data.grantedAt.seconds * 1000)) : new Date(0), // Use epoch if no grantedAt
+                        data: data
+                    });
+                });
+
+                // Sort by grantedAt (most recent first), then by timestamp as fallback
+                grantedPurchases.sort((a, b) => {
+                    const aTime = a.grantedAt.getTime();
+                    const bTime = b.grantedAt.getTime();
+                    if (aTime !== bTime) {
+                        return bTime - aTime; // Descending (newest first)
+                    }
+                    // Fallback to timestamp if grantedAt is the same
+                    const aTimestamp = a.data.timestamp ? (a.data.timestamp.toDate ? a.data.timestamp.toDate() : new Date(a.data.timestamp.seconds * 1000)) : new Date(0);
+                    const bTimestamp = b.data.timestamp ? (b.data.timestamp.toDate ? b.data.timestamp.toDate() : new Date(b.data.timestamp.seconds * 1000)) : new Date(0);
+                    return bTimestamp.getTime() - aTimestamp.getTime();
+                });
+
+                // If we have more than 3 granted purchases, delete the older ones
+                if (grantedPurchases.length > 3) {
+                    const purchasesToDelete = grantedPurchases.slice(3); // Skip first 3, delete the rest
+                    
+                    console.log(`Cleaning up ${purchasesToDelete.length} old granted purchases, keeping the last 3`);
+                    
+                    // Delete each old granted purchase
+                    const deletePromises = purchasesToDelete.map(purchase => {
+                        return db.collection('purchases').doc(purchase.id).delete();
+                    });
+
+                    await Promise.all(deletePromises);
+                    console.log(`Successfully deleted ${purchasesToDelete.length} old granted purchases`);
+                }
+            } catch (error) {
+                console.error('Error cleaning up old granted purchases:', error);
+                // Don't throw - this is a cleanup operation, shouldn't block the grant
             }
         }
 

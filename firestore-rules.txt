@@ -33,12 +33,12 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Purchases - allow anyone to create purchases, devs can read and update
+    // Purchases - allow anyone to create purchases, devs can read, update, and delete
     match /purchases/{purchaseId} {
       allow create: if true;
       allow read: if request.auth != null; // Authenticated users (devs) can read
       allow update: if request.auth != null; // Authenticated users (devs) can update to grant items
-      allow delete: if false;
+      allow delete: if request.auth != null; // Authenticated users (devs) can delete for cleanup
     }
     
     // CD Orders - allow anyone to create, read recent orders (for public display), and update if admin
