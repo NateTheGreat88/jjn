@@ -744,19 +744,23 @@
                         });
                         
                         // Also check all current messages in snapshot for deleted flag (in case modified event was missed)
-                        querySnapshot.forEach((doc) => {
-                            const data = doc.data();
-                            const docId = doc.id;
-                            if (data.deleted === true && loadedMessageIds.has(docId)) {
-                                const messageElement = chatMessages.querySelector(`[data-message-id="${docId}"]`);
-                                if (messageElement) {
-                                    console.log('Found deleted message in snapshot, removing:', docId);
-                                    messageElement.style.transition = 'opacity 0.3s';
-                                    messageElement.style.opacity = '0';
-                                    setTimeout(() => {
-                                        messageElement.remove();
-                                    }, 300);
-                                    loadedMessageIds.delete(docId);
+                        // Only check documents that are already loaded to avoid unnecessary reads
+                        const loadedIdsArray = Array.from(loadedMessageIds);
+                        loadedIdsArray.forEach(docId => {
+                            const doc = querySnapshot.docs.find(d => d.id === docId);
+                            if (doc) {
+                                const data = doc.data();
+                                if (data.deleted === true) {
+                                    const messageElement = chatMessages.querySelector(`[data-message-id="${docId}"]`);
+                                    if (messageElement) {
+                                        console.log('Found deleted message in snapshot, removing:', docId);
+                                        messageElement.style.transition = 'opacity 0.3s';
+                                        messageElement.style.opacity = '0';
+                                        setTimeout(() => {
+                                            messageElement.remove();
+                                        }, 300);
+                                        loadedMessageIds.delete(docId);
+                                    }
                                 }
                             }
                         });
@@ -807,9 +811,10 @@
                                 });
                                 scrollToBottom();
                                 
-                                // Set up a simpler listener without orderBy
+                                // Set up a simpler listener without orderBy, but with limit
                                 messagesUnsubscribe = db.collection('roomMessages')
                                     .where('roomCode', '==', roomCode)
+                                    .limit(100) // Limit to prevent reading all messages
                                     .onSnapshot({ includeMetadataChanges: false }, (snapshot) => {
                                         snapshot.docChanges().forEach((change) => {
                                             if (change.type === 'added' && !loadedMessageIds.has(change.doc.id)) {
@@ -1343,7 +1348,9 @@
             
             // Update messages with old username
             if (oldUsername) {
-                collection.where('user', '==', oldUsername).get()
+                // Limit to prevent reading thousands of messages when updating username
+                // Process in batches of 500 (Firestore batch limit)
+                collection.where('user', '==', oldUsername).limit(500).get()
                     .then(querySnapshot => {
                         if (querySnapshot.empty) return;
                         const batch = db.batch();
@@ -1365,7 +1372,8 @@
             
             // Update messages with old displayName (if different from username)
             if (oldDisplayName && oldDisplayName !== oldUsername) {
-                collection.where('user', '==', oldDisplayName).get()
+                // Limit to prevent reading thousands of messages when updating display name
+                collection.where('user', '==', oldDisplayName).limit(500).get()
                     .then(querySnapshot => {
                         if (querySnapshot.empty) return;
                         const batch2 = db.batch();
