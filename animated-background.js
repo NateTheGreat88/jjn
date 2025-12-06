@@ -6,12 +6,17 @@
     let simpleDots = []; // Simple dots for 'none' option
     let ripples = [];
     let piledLeaves = []; // Leaves that have piled up at the bottom
+    let fallingBoxes = []; // Falling box.png images
     let mouseX = 0;
     let mouseY = 0;
     let time = 0;
     let particleType = 'follow'; // 'follow', 'small', or 'none'
     let leafImages = []; // Array to store loaded leaf images
     let leafImagesLoaded = false;
+    let boxImage = null; // box.png image
+    let boxImageLoaded = false;
+    let lastBoxSpawnTime = 0; // Frame count of last box spawn
+    let frameCount = 0; // Frame counter
     
     // Reset leaves to follow (Thanksgiving event is over) - run immediately
     (function resetLeavesOnLoad() {
@@ -113,6 +118,39 @@
         });
     }
     
+    // Load box image
+    function loadBoxImage() {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                boxImage = img;
+                boxImageLoaded = true;
+                resolve();
+            };
+            img.onerror = () => {
+                console.warn('Failed to load box.png');
+                boxImageLoaded = true; // Mark as loaded even if failed
+                resolve();
+            };
+            img.src = 'box.png';
+        });
+    }
+    
+    // Create a falling box
+    function createFallingBox() {
+        if (!boxImageLoaded || !boxImage) return;
+        
+        fallingBoxes.push({
+            x: Math.random() * canvas.width,
+            y: -50,
+            rotation: Math.random() * Math.PI * 2,
+            rotationSpeed: (Math.random() - 0.5) * 0.05,
+            fallSpeed: Math.random() * 0.5 + 0.3, // 0.3 to 0.8
+            size: 25 + Math.random() * 15, // 25 to 40px
+            opacity: 0.15
+        });
+    }
+    
     // Create interactive background canvas
     function createInteractiveBackground() {
         // Remove existing canvas if present
@@ -146,8 +184,9 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
         
-        // Load leaf images before creating particles
+        // Load leaf images and box image before creating particles
         loadLeafImages();
+        loadBoxImage();
         
         // Create particles that follow cursor - better formation
         const numCursorParticles = 60;
@@ -287,6 +326,7 @@
         // Animate
         function animate() {
             time += 0.01;
+            frameCount++;
             
             // Update particle type from storage (in case it changed)
             // Always reset leaves to follow
@@ -561,6 +601,49 @@
                 ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.shadowBlur = 0;
+                });
+            }
+            
+            // Update and draw falling boxes (occasional)
+            if (boxImageLoaded && boxImage) {
+                // Spawn boxes occasionally (every 8-15 seconds)
+                // At ~60fps, 8 seconds = ~480 frames, 15 seconds = ~900 frames
+                const framesSinceLastBox = frameCount - lastBoxSpawnTime;
+                const minFrames = 480; // 8 seconds at 60fps
+                const maxFrames = 900; // 15 seconds at 60fps
+                const spawnInterval = minFrames + Math.random() * (maxFrames - minFrames);
+                
+                if (framesSinceLastBox >= spawnInterval || lastBoxSpawnTime === 0) {
+                    createFallingBox();
+                    lastBoxSpawnTime = frameCount;
+                }
+                
+                // Update and draw falling boxes
+                fallingBoxes = fallingBoxes.filter(box => {
+                    // Update position
+                    box.y += box.fallSpeed;
+                    box.rotation += box.rotationSpeed;
+                    
+                    // Remove if off screen
+                    if (box.y > canvas.height + 100) {
+                        return false;
+                    }
+                    
+                    // Draw box
+                    ctx.save();
+                    ctx.globalAlpha = box.opacity;
+                    ctx.translate(box.x, box.y);
+                    ctx.rotate(box.rotation);
+                    ctx.drawImage(
+                        boxImage,
+                        -box.size / 2,
+                        -box.size / 2,
+                        box.size,
+                        box.size
+                    );
+                    ctx.restore();
+                    
+                    return true;
                 });
             }
             
