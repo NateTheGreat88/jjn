@@ -17,50 +17,221 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="auth.js" defer></script>
     <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-color: #22c55e;
+            --error-color: #ef4444;
+            --warning-color: #f59e0b;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-primary: rgba(255, 255, 255, 0.9);
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --hover-glow: rgba(102, 126, 234, 0.3);
+        }
+
         .shop-container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 40px 20px;
         }
 
         .shop-header {
             text-align: center;
-            margin-bottom: 50px;
+            margin-bottom: 40px;
         }
 
         .shop-title {
-            font-size: 48px;
-            font-weight: bold;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-size: 56px;
+            font-weight: 800;
+            background: var(--primary-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            letter-spacing: -1px;
+            text-shadow: 0 0 30px rgba(102, 126, 234, 0.3);
         }
 
         .shop-subtitle {
             font-size: 20px;
-            color: rgba(255, 255, 255, 0.8);
-            margin-bottom: 40px;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+
+        /* Search and Filter Bar */
+        .shop-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .shop-controls {
+                flex-direction: column;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            .category-filters {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .results-count {
+                width: 100%;
+                text-align: center;
+                margin-left: 0;
+            }
+
+            .shop-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .shop-title {
+                font-size: 36px;
+            }
+
+            .modal {
+                padding: 25px;
+                margin: 10px;
+            }
+
+            .item-details-icon {
+                font-size: 80px;
+            }
+
+            .item-details-name {
+                font-size: 24px;
+            }
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 14px 20px 14px 50px;
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 16px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: rgba(102, 126, 234, 0.6);
+            box-shadow: 0 0 20px var(--hover-glow);
+        }
+
+        .search-box::before {
+            content: '🔍';
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+            pointer-events: none;
+        }
+
+        .category-filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .category-btn {
+            padding: 10px 20px;
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 25px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            white-space: nowrap;
+        }
+
+        .category-btn:hover {
+            border-color: rgba(102, 126, 234, 0.6);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+
+        .category-btn.active {
+            background: var(--primary-gradient);
+            border-color: transparent;
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .results-count {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-left: auto;
+            padding: 10px 0;
         }
 
         .shop-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
             margin-bottom: 40px;
         }
 
+        .shop-grid.empty {
+            grid-template-columns: 1fr;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .no-results-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .no-results h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
         .shop-item {
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 20px;
             padding: 30px;
             text-align: center;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             backdrop-filter: blur(10px);
             position: relative;
             overflow: hidden;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            min-height: 450px;
+        }
+
+        .shop-item:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: rgba(102, 126, 234, 0.6);
+            box-shadow: 0 15px 40px var(--hover-glow);
         }
 
         .shop-item.limited-edition {
@@ -105,30 +276,39 @@
         }
 
         .shop-icon {
-            font-size: 80px;
+            font-size: 90px;
             margin-bottom: 20px;
             display: block;
             position: relative;
             z-index: 1;
-            filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3));
+            filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.4));
+            transition: transform 0.3s ease;
+        }
+
+        .shop-item:hover .shop-icon {
+            transform: scale(1.1) rotate(5deg);
         }
 
         .shop-name {
-            font-size: 28px;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 15px;
+            font-size: 26px;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
             position: relative;
             z-index: 1;
         }
 
         .shop-description {
-            font-size: 16px;
-            color: rgba(255, 255, 255, 0.7);
+            font-size: 15px;
+            color: var(--text-secondary);
             margin-bottom: 20px;
-            line-height: 1.6;
+            line-height: 1.7;
             position: relative;
             z-index: 1;
+            flex-grow: 1;
         }
 
         .shop-price-container {
@@ -164,31 +344,55 @@
         }
 
         .shop-button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary-gradient);
             color: white;
             border: none;
-            padding: 14px 35px;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 10px;
+            padding: 16px 35px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 12px;
             cursor: pointer;
             transition: all 0.3s ease;
             width: 100%;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 1px;
             position: relative;
             z-index: 1;
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-            margin-top: 20px;
+            margin-top: auto;
+            overflow: hidden;
+        }
+
+        .shop-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .shop-button:hover::before {
+            width: 300px;
+            height: 300px;
         }
 
         .shop-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
         }
 
         .shop-button:active {
-            transform: scale(0.98);
+            transform: translateY(0);
+        }
+
+        .shop-button span {
+            position: relative;
+            z-index: 1;
         }
 
         .back-button {
@@ -378,10 +582,241 @@
 
         .shop-button:disabled,
         .shop-button.purchased {
-            background: rgba(34, 197, 94, 0.3);
-            color: #22c55e;
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--success-color);
             cursor: not-allowed;
-            border: 2px solid rgba(34, 197, 94, 0.5);
+            border: 2px solid rgba(34, 197, 94, 0.4);
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+        }
+
+        .shop-button:disabled:hover,
+        .shop-button.purchased:hover {
+            transform: none;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(22, 33, 62, 0.95) 100%);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.9) translateY(20px);
+            transition: transform 0.3s ease;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .modal-icon {
+            font-size: 64px;
+            margin-bottom: 15px;
+        }
+
+        .modal-title {
+            font-size: 28px;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .modal-content {
+            margin-bottom: 30px;
+        }
+
+        .modal-item-info {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .modal-item-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .modal-item-info-row:last-child {
+            border-bottom: none;
+        }
+
+        .modal-item-info-label {
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .modal-item-info-value {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .modal-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .modal-btn-secondary {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border: 2px solid var(--card-border);
+        }
+
+        .modal-btn-secondary:hover {
+            border-color: rgba(102, 126, 234, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 28px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .close-modal:hover {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            transform: rotate(90deg);
+        }
+
+        /* Item Details Modal */
+        .item-details-modal .modal {
+            max-width: 600px;
+        }
+
+        .item-details-content {
+            text-align: center;
+        }
+
+        .item-details-icon {
+            font-size: 120px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.5));
+        }
+
+        .item-details-name {
+            font-size: 32px;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+        }
+
+        .item-details-description {
+            font-size: 16px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+
+        .item-details-features {
+            text-align: left;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .item-details-features h4 {
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .item-details-features ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .item-details-features li {
+            color: var(--text-secondary);
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .item-details-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--success-color);
+            font-weight: bold;
         }
     </style>
 </head>
@@ -391,6 +826,21 @@
             <div class="shop-header">
                 <h1 class="shop-title">🛍️ JNJ Shop 🛍️</h1>
                 <p class="shop-subtitle">Exclusive limited edition items and merchandise!</p>
+            </div>
+
+            <div class="shop-controls">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search items..." autocomplete="off">
+                </div>
+                <div class="category-filters" id="categoryFilters">
+                    <button class="category-btn active" data-category="all">All Items</button>
+                    <button class="category-btn" data-category="title">Titles</button>
+                    <button class="category-btn" data-category="profile-image">Emojis</button>
+                    <button class="category-btn" data-category="item">Physical</button>
+                    <button class="category-btn" data-category="vip">VIP</button>
+                    <button class="category-btn" data-category="limited">Limited</button>
+                </div>
+                <div class="results-count" id="resultsCount"></div>
             </div>
 
             <div class="shop-grid" id="shopGrid">
@@ -417,6 +867,36 @@
         <div class="notification-content">
             <div class="notification-title" id="notificationTitle">Success</div>
             <div class="notification-message" id="notificationMessage"></div>
+        </div>
+    </div>
+
+    <!-- Purchase Confirmation Modal -->
+    <div class="modal-overlay" id="purchaseModal">
+        <div class="modal">
+            <button class="close-modal" onclick="closePurchaseModal()">×</button>
+            <div class="modal-header">
+                <div class="modal-icon" id="purchaseModalIcon">🛒</div>
+                <h2 class="modal-title">Confirm Purchase</h2>
+            </div>
+            <div class="modal-content">
+                <div class="modal-item-info" id="purchaseModalInfo">
+                    <!-- Item info will be inserted here -->
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-secondary" onclick="closePurchaseModal()">Cancel</button>
+                <button class="modal-btn modal-btn-primary" id="confirmPurchaseBtn">Confirm Purchase</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Item Details Modal -->
+    <div class="modal-overlay item-details-modal" id="itemDetailsModal">
+        <div class="modal">
+            <button class="close-modal" onclick="closeItemDetailsModal()">×</button>
+            <div class="item-details-content" id="itemDetailsContent">
+                <!-- Item details will be inserted here -->
+            </div>
         </div>
     </div>
 
@@ -646,6 +1126,67 @@
             }
         }
 
+        // Filter and search state
+        let currentCategory = 'all';
+        let searchQuery = '';
+        let filteredItems = [...SHOP_ITEMS];
+
+        // Initialize filters
+        function initFilters() {
+            const categoryButtons = document.querySelectorAll('.category-btn');
+            categoryButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    categoryButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentCategory = btn.dataset.category;
+                    filterItems();
+                });
+            });
+
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    searchQuery = e.target.value.toLowerCase().trim();
+                    filterItems();
+                });
+            }
+        }
+
+        // Filter items based on category and search
+        function filterItems() {
+            filteredItems = SHOP_ITEMS.filter(item => {
+                // Category filter
+                let categoryMatch = true;
+                if (currentCategory !== 'all') {
+                    if (currentCategory === 'limited') {
+                        categoryMatch = item.limitedEdition === true;
+                    } else {
+                        categoryMatch = item.type === currentCategory;
+                    }
+                }
+
+                // Search filter
+                const searchMatch = !searchQuery || 
+                    item.name.toLowerCase().includes(searchQuery) ||
+                    item.description.toLowerCase().includes(searchQuery) ||
+                    item.id.toLowerCase().includes(searchQuery);
+
+                return categoryMatch && searchMatch;
+            });
+
+            updateResultsCount();
+            renderShopItems();
+        }
+
+        // Update results count
+        function updateResultsCount() {
+            const resultsCount = document.getElementById('resultsCount');
+            if (resultsCount) {
+                const count = filteredItems.length;
+                resultsCount.textContent = `${count} ${count === 1 ? 'item' : 'items'}`;
+            }
+        }
+
         // Render shop items
         async function renderShopItems() {
             const shopGrid = document.getElementById('shopGrid');
@@ -653,18 +1194,32 @@
 
             shopGrid.innerHTML = '';
 
-            for (const item of SHOP_ITEMS) {
+            if (filteredItems.length === 0) {
+                shopGrid.className = 'shop-grid empty';
+                shopGrid.innerHTML = `
+                    <div class="no-results">
+                        <div class="no-results-icon">🔍</div>
+                        <h3>No items found</h3>
+                        <p>Try adjusting your search or filters</p>
+                    </div>
+                `;
+                return;
+            }
+
+            shopGrid.className = 'shop-grid';
+
+            for (const item of filteredItems) {
                 const itemDiv = document.createElement('div');
                 const isPurchased = await hasPurchasedItem(item.id);
                 itemDiv.className = `shop-item ${item.limitedEdition ? 'limited-edition' : ''} ${isPurchased ? 'purchased' : ''}`;
                 
                 let buttonHTML = '';
                 if (isPurchased) {
-                    buttonHTML = `<button class="shop-button purchased" disabled>✓ Purchased</button>`;
+                    buttonHTML = `<button class="shop-button purchased" disabled><span>✓ Purchased</span></button>`;
                 } else if (item.url) {
-                    buttonHTML = `<a href="${item.url}" class="shop-button" style="text-decoration: none; display: block; text-align: center;">Purchase ${item.name}</a>`;
+                    buttonHTML = `<a href="${item.url}" class="shop-button" style="text-decoration: none; display: block; text-align: center;"><span>Purchase ${item.name}</span></a>`;
                 } else {
-                    buttonHTML = `<button class="shop-button" onclick="purchaseItem('${item.id}')">Purchase ${item.name}</button>`;
+                    buttonHTML = `<button class="shop-button" onclick="openPurchaseModal('${item.id}')"><span>Purchase ${item.name}</span></button>`;
                 }
 
                 const hasDiscount = item.originalPrice && parseFloat(item.originalPrice) > parseFloat(item.price);
@@ -696,9 +1251,151 @@
                     ${isPurchased ? '<div class="purchased-badge">✓ Already Purchased</div>' : ''}
                 `;
 
+                // Add click handler for item details
+                itemDiv.addEventListener('click', (e) => {
+                    if (!e.target.closest('.shop-button') && !e.target.closest('a')) {
+                        openItemDetailsModal(item.id);
+                    }
+                });
+
                 shopGrid.appendChild(itemDiv);
             }
         }
+
+        // Open purchase modal
+        let currentPurchaseItemId = null;
+        function openPurchaseModal(itemId) {
+            const item = SHOP_ITEMS.find(i => i.id === itemId);
+            if (!item) return;
+
+            currentPurchaseItemId = itemId;
+            const modal = document.getElementById('purchaseModal');
+            const modalIcon = document.getElementById('purchaseModalIcon');
+            const modalInfo = document.getElementById('purchaseModalInfo');
+
+            modalIcon.textContent = item.icon;
+            
+            const hasDiscount = item.originalPrice && parseFloat(item.originalPrice) > parseFloat(item.price);
+            const discountAmount = hasDiscount ? (parseFloat(item.originalPrice) - parseFloat(item.price)).toFixed(2) : null;
+
+            modalInfo.innerHTML = `
+                <div class="modal-item-info-row">
+                    <span class="modal-item-info-label">Item:</span>
+                    <span class="modal-item-info-value">${item.name}</span>
+                </div>
+                <div class="modal-item-info-row">
+                    <span class="modal-item-info-label">Type:</span>
+                    <span class="modal-item-info-value">${item.type === 'title' ? 'Title' : item.type === 'profile-image' ? 'Emoji' : item.type === 'vip' ? 'VIP Pass' : 'Physical Item'}</span>
+                </div>
+                ${hasDiscount ? `
+                <div class="modal-item-info-row">
+                    <span class="modal-item-info-label">Original Price:</span>
+                    <span class="modal-item-info-value" style="text-decoration: line-through; opacity: 0.6;">$${item.originalPrice}</span>
+                </div>
+                <div class="modal-item-info-row">
+                    <span class="modal-item-info-label">Discount:</span>
+                    <span class="modal-item-info-value" style="color: var(--error-color);">Save $${discountAmount}!</span>
+                </div>
+                ` : ''}
+                <div class="modal-item-info-row">
+                    <span class="modal-item-info-label">Price:</span>
+                    <span class="modal-item-info-value" style="color: var(--success-color); font-size: 24px;">$${item.price}</span>
+                </div>
+            `;
+
+            modal.classList.add('active');
+        }
+
+        // Close purchase modal
+        function closePurchaseModal() {
+            const modal = document.getElementById('purchaseModal');
+            modal.classList.remove('active');
+            currentPurchaseItemId = null;
+        }
+
+        // Confirm purchase from modal
+        document.getElementById('confirmPurchaseBtn')?.addEventListener('click', () => {
+            if (currentPurchaseItemId) {
+                closePurchaseModal();
+                purchaseItem(currentPurchaseItemId);
+            }
+        });
+
+        // Open item details modal
+        function openItemDetailsModal(itemId) {
+            const item = SHOP_ITEMS.find(i => i.id === itemId);
+            if (!item) return;
+
+            const modal = document.getElementById('itemDetailsModal');
+            const content = document.getElementById('itemDetailsContent');
+
+            const hasDiscount = item.originalPrice && parseFloat(item.originalPrice) > parseFloat(item.price);
+            const discountAmount = hasDiscount ? (parseFloat(item.originalPrice) - parseFloat(item.price)).toFixed(2) : null;
+
+            let featuresHTML = '';
+            if (item.id === 'vip-pass') {
+                featuresHTML = `
+                    <div class="item-details-features">
+                        <h4>VIP Benefits:</h4>
+                        <ul>
+                            <li>Exclusive VIP Title</li>
+                            <li>Special VIP Icon (💎)</li>
+                            <li>Priority Support</li>
+                            <li>Early Access to new features</li>
+                            <li>Exclusive VIP Badge on profile</li>
+                        </ul>
+                    </div>
+                `;
+            }
+
+            content.innerHTML = `
+                <div class="item-details-icon">${item.icon}</div>
+                <h2 class="item-details-name">${item.name}</h2>
+                <p class="item-details-description">${item.description}</p>
+                ${featuresHTML}
+                <div class="shop-price-container">
+                    ${hasDiscount ? `<span class="shop-price-original">$${item.originalPrice}</span>` : ''}
+                    <span class="shop-price">$${item.price}</span>
+                    ${hasDiscount ? `<span class="shop-discount-badge">Save $${discountAmount}!</span>` : ''}
+                </div>
+                <div class="modal-actions" style="margin-top: 30px;">
+                    <button class="modal-btn modal-btn-secondary" onclick="closeItemDetailsModal()">Close</button>
+                    ${item.url ? 
+                        `<a href="${item.url}" class="modal-btn modal-btn-primary" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">Purchase ${item.name}</a>` :
+                        `<button class="modal-btn modal-btn-primary" onclick="closeItemDetailsModal(); openPurchaseModal('${item.id}')">Purchase ${item.name}</button>`
+                    }
+                </div>
+            `;
+
+            modal.classList.add('active');
+        }
+
+        // Close item details modal
+        function closeItemDetailsModal() {
+            const modal = document.getElementById('itemDetailsModal');
+            modal.classList.remove('active');
+        }
+
+        // Close modals on overlay click
+        document.getElementById('purchaseModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'purchaseModal') {
+                closePurchaseModal();
+            }
+        });
+
+        document.getElementById('itemDetailsModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'itemDetailsModal') {
+                closeItemDetailsModal();
+            }
+        });
+
+        // Close modals on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closePurchaseModal();
+                closeItemDetailsModal();
+            }
+        });
 
         // Show notification
         function showNotification(type, title, message) {
@@ -777,15 +1474,7 @@
                 return;
             }
 
-            // Show confirmation
-            const confirmed = confirm(
-                `Confirm Purchase\n\n` +
-                `Item: ${item.name}\n` +
-                `Price: $${item.price}\n\n` +
-                `Click OK to confirm your purchase.`
-            );
-
-            if (!confirmed) return;
+            // Purchase confirmation is now handled by modal
 
             // Show loading
                 const loadingMsg = document.createElement('div');
@@ -1268,6 +1957,7 @@
 
         // Initialize page
         function initPage() {
+            initFilters();
             renderShopItems();
             
             // Wait for auth system to be ready, then check dev status
@@ -1287,6 +1977,7 @@
                     if (isDev()) {
                         loadPurchases();
                     }
+                    renderShopItems(); // Refresh to update purchase status
                 }, 500);
             });
             
