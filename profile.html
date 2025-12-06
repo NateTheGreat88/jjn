@@ -747,7 +747,8 @@
                 'star-emoji': '⭐',
                 'crown-emoji': '👑',
                 'rocket-emoji': '🚀',
-                'diamond-emoji': '💎'
+                'diamond-emoji': '💎',
+                'donate-box': 'box.png' // Image icon
             };
             
             // Make sure unlockedImages is an array
@@ -767,6 +768,9 @@
                 unlockedImages.forEach(iconId => {
                     const iconDiv = document.createElement('div');
                     const isVipIcon = iconId === 'vip-icon';
+                    const iconValue = iconMap[iconId] || '❓'; // Default to question mark if not found
+                    const isImageIcon = iconValue.endsWith('.png') || iconValue.endsWith('.jpg') || iconValue.endsWith('.jpeg') || iconValue.endsWith('.gif') || iconValue.endsWith('.svg');
+                    
                     iconDiv.style.cssText = `
                         padding: 15px;
                         background: ${isVipIcon ? 'rgba(255, 215, 0, 0.1)' : 'rgba(102, 126, 234, 0.1)'};
@@ -776,8 +780,28 @@
                         cursor: pointer;
                         transition: all 0.3s ease;
                         font-size: 32px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
                         ${isVipIcon ? 'box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);' : ''}
                     `;
+                    
+                    // Add icon content (emoji or image)
+                    if (isImageIcon) {
+                        const img = document.createElement('img');
+                        img.src = iconValue;
+                        img.alt = iconId;
+                        img.style.cssText = 'width: 32px; height: 32px; object-fit: contain; display: block;';
+                        img.onerror = () => {
+                            // Fallback to box emoji if image fails to load
+                            iconDiv.innerHTML = '📦';
+                            iconDiv.style.fontSize = '32px';
+                        };
+                        iconDiv.appendChild(img);
+                    } else {
+                        iconDiv.textContent = iconValue;
+                    }
+                    
                     iconDiv.onmouseenter = () => {
                         iconDiv.style.background = isVipIcon ? 'rgba(255, 215, 0, 0.2)' : 'rgba(102, 126, 234, 0.2)';
                         iconDiv.style.transform = 'scale(1.1)';
@@ -793,13 +817,17 @@
                         }
                     };
                     iconDiv.onclick = () => {
-                        // Set as avatar emoji
-                        selectedEmoji = iconMap[iconId] || '👤';
-                        selectedImage = null;
+                        // Set as avatar (emoji or image)
+                        if (isImageIcon) {
+                            selectedImage = iconValue; // Store image path
+                            selectedEmoji = '👤'; // Reset emoji
+                        } else {
+                            selectedEmoji = iconValue || '👤';
+                            selectedImage = null;
+                        }
                         updateAvatarPreview();
                         saveProfile();
                     };
-                    iconDiv.textContent = iconMap[iconId] || '❓';
                     iconDiv.title = iconId;
                     claimedIconsList.appendChild(iconDiv);
                 });

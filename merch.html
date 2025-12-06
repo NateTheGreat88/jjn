@@ -654,7 +654,19 @@
             transition: transform 0.3s ease;
         }
 
+        .shop-icon img {
+            width: 90px;
+            height: 90px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
+
         .shop-item:hover .shop-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .shop-item:hover .shop-icon img {
             transform: scale(1.1) rotate(5deg);
         }
 
@@ -1445,6 +1457,18 @@
                 grantType: 'title',
                 grantValue: 'champion',
                 limitedEdition: true
+            },
+            {
+                id: 'donate-box',
+                name: 'Donate Box',
+                icon: 'box.png',
+                iconType: 'image',
+                description: 'Support the JNJ website with a donation! Get a special Donate Box icon to show your support.',
+                price: '5.00',
+                type: 'profile-image',
+                grantType: 'profile-image',
+                grantValue: 'donate-box',
+                limitedEdition: false
             }
         ];
 
@@ -1836,13 +1860,21 @@
                     `;
                 }
 
+                // Handle icon - can be emoji or image
+                let iconHTML = '';
+                if (item.iconType === 'image' || item.icon.endsWith('.png') || item.icon.endsWith('.jpg') || item.icon.endsWith('.jpeg') || item.icon.endsWith('.gif') || item.icon.endsWith('.svg')) {
+                    iconHTML = `<span class="shop-icon"><img src="${item.icon}" alt="${item.name}" onerror="this.parentElement.innerHTML='📦';"></span>`;
+                } else {
+                    iconHTML = `<span class="shop-icon">${item.icon}</span>`;
+                }
+
                 itemDiv.innerHTML = `
                     <button class="wishlist-btn ${inWishlist ? 'active' : ''}" onclick="event.stopPropagation(); toggleWishlist('${escapedItemId}')" title="${inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}">
                         <svg viewBox="0 0 24 24" fill="${inWishlist ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
                             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                         </svg>
                     </button>
-                    <span class="shop-icon">${item.icon}</span>
+                    ${iconHTML}
                     <h2 class="shop-name">${item.name}${isSubscription ? ' <span class="subscription-badge" style="font-size: 12px; margin-left: 8px;">Monthly</span>' : ''}</h2>
                     <p class="shop-description">${descriptionHTML}</p>
                     ${priceHTML}
@@ -1884,7 +1916,12 @@
             const modalIcon = document.getElementById('purchaseModalIcon');
             const modalInfo = document.getElementById('purchaseModalInfo');
 
-            modalIcon.textContent = item.icon;
+            // Handle icon in purchase modal
+            if (item.iconType === 'image' || item.icon.endsWith('.png') || item.icon.endsWith('.jpg') || item.icon.endsWith('.jpeg') || item.icon.endsWith('.gif') || item.icon.endsWith('.svg')) {
+                modalIcon.innerHTML = `<img src="${item.icon}" alt="${item.name}" style="width: 64px; height: 64px; object-fit: contain;" onerror="this.parentElement.textContent='📦';">`;
+            } else {
+                modalIcon.textContent = item.icon;
+            }
             
             const hasDiscount = item.originalPrice && parseFloat(item.originalPrice) > parseFloat(item.price);
             const discountAmount = hasDiscount ? (parseFloat(item.originalPrice) - parseFloat(item.price)).toFixed(2) : null;
@@ -2005,8 +2042,16 @@
                 `;
             }
 
+            // Handle icon in details modal
+            let detailsIconHTML = '';
+            if (item.iconType === 'image' || item.icon.endsWith('.png') || item.icon.endsWith('.jpg') || item.icon.endsWith('.jpeg') || item.icon.endsWith('.gif') || item.icon.endsWith('.svg')) {
+                detailsIconHTML = `<div class="item-details-icon"><img src="${item.icon}" alt="${item.name}" style="width: 120px; height: 120px; object-fit: contain; filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.5));" onerror="this.parentElement.innerHTML='📦';"></div>`;
+            } else {
+                detailsIconHTML = `<div class="item-details-icon">${item.icon}</div>`;
+            }
+
             content.innerHTML = `
-                <div class="item-details-icon">${item.icon}</div>
+                ${detailsIconHTML}
                 <h2 class="item-details-name">${item.name}${isSubscription ? ' <span class="subscription-badge" style="font-size: 14px; margin-left: 10px;">Monthly</span>' : ''}</h2>
                 <p class="item-details-description">${item.description}</p>
                 ${featuresHTML}
