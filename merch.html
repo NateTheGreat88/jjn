@@ -27,6 +27,38 @@
             --text-primary: rgba(255, 255, 255, 0.9);
             --text-secondary: rgba(255, 255, 255, 0.7);
             --hover-glow: rgba(102, 126, 234, 0.3);
+            --gold-gradient: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
         }
 
         .shop-container {
@@ -50,6 +82,17 @@
             margin-bottom: 15px;
             letter-spacing: -1px;
             text-shadow: 0 0 30px rgba(102, 126, 234, 0.3);
+            animation: float 6s ease-in-out infinite;
+            position: relative;
+        }
+
+        .shop-title::after {
+            content: '✨';
+            position: absolute;
+            top: -10px;
+            right: -40px;
+            font-size: 30px;
+            animation: sparkle 2s ease-in-out infinite;
         }
 
         .shop-subtitle {
@@ -67,6 +110,48 @@
             align-items: center;
         }
 
+        /* Scroll animations */
+        .shop-item {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .shop-item:nth-child(1) { animation-delay: 0.1s; }
+        .shop-item:nth-child(2) { animation-delay: 0.2s; }
+        .shop-item:nth-child(3) { animation-delay: 0.3s; }
+        .shop-item:nth-child(4) { animation-delay: 0.4s; }
+        .shop-item:nth-child(5) { animation-delay: 0.5s; }
+        .shop-item:nth-child(6) { animation-delay: 0.6s; }
+        .shop-item:nth-child(n+7) { animation-delay: 0.7s; }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Enhanced card glow */
+        .shop-item.limited-edition::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: var(--gold-gradient);
+            border-radius: 20px;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            filter: blur(10px);
+        }
+
+        .shop-item.limited-edition:hover::after {
+            opacity: 0.6;
+        }
+
         @media (max-width: 768px) {
             .shop-controls {
                 flex-direction: column;
@@ -77,6 +162,11 @@
             }
 
             .category-filters {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .sort-controls {
                 width: 100%;
                 justify-content: center;
             }
@@ -95,6 +185,11 @@
                 font-size: 36px;
             }
 
+            .shop-title::after {
+                right: -30px;
+                font-size: 24px;
+            }
+
             .modal {
                 padding: 25px;
                 margin: 10px;
@@ -105,6 +200,18 @@
             }
 
             .item-details-name {
+                font-size: 24px;
+            }
+
+            .featured-banner {
+                padding: 20px;
+            }
+
+            .featured-icon {
+                font-size: 60px;
+            }
+
+            .featured-title {
                 font-size: 24px;
             }
         }
@@ -183,6 +290,263 @@
             padding: 10px 0;
         }
 
+        .sort-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .sort-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .sort-select {
+            padding: 10px 15px;
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .sort-select:hover {
+            border-color: rgba(102, 126, 234, 0.6);
+        }
+
+        .sort-select:focus {
+            outline: none;
+            border-color: rgba(102, 126, 234, 0.8);
+            box-shadow: 0 0 15px var(--hover-glow);
+        }
+
+        /* Featured Banner */
+        .featured-banner {
+            background: var(--primary-gradient);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+        }
+
+        .featured-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+
+        .featured-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .featured-icon {
+            font-size: 80px;
+            filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3));
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .featured-text {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .featured-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .featured-description {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.6;
+        }
+
+        /* Skeleton Loading */
+        .skeleton {
+            background: linear-gradient(90deg, var(--card-bg) 25%, rgba(255, 255, 255, 0.1) 50%, var(--card-bg) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 20px;
+        }
+
+        .skeleton-item {
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 20px;
+            padding: 30px;
+            min-height: 450px;
+        }
+
+        .skeleton-icon {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+        }
+
+        .skeleton-title {
+            width: 70%;
+            height: 28px;
+            border-radius: 8px;
+            margin: 0 auto 15px;
+        }
+
+        .skeleton-description {
+            width: 90%;
+            height: 16px;
+            border-radius: 8px;
+            margin: 0 auto 10px;
+        }
+
+        .skeleton-description:nth-child(4) {
+            width: 75%;
+        }
+
+        .skeleton-price {
+            width: 100px;
+            height: 32px;
+            border-radius: 8px;
+            margin: 20px auto;
+        }
+
+        .skeleton-button {
+            width: 100%;
+            height: 50px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        /* Wishlist Button */
+        .wishlist-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+        }
+
+        .wishlist-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
+            border-color: var(--error-color);
+            transform: scale(1.1);
+        }
+
+        .wishlist-btn.active {
+            background: var(--error-color);
+            border-color: var(--error-color);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+        }
+
+        .wishlist-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* Confetti */
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 99999;
+            overflow: hidden;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--success-color);
+            animation: confetti-fall 3s linear forwards;
+        }
+
+        /* Purchase Success Animation */
+        .purchase-success {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            z-index: 100001;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.95) 0%, rgba(16, 163, 74, 0.95) 100%);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(20px);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .purchase-success.show {
+            animation: purchaseSuccessPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        }
+
+        @keyframes purchaseSuccessPop {
+            0% {
+                transform: translate(-50%, -50%) scale(0) rotate(-180deg);
+                opacity: 0;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.1) rotate(10deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        .purchase-success-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        .purchase-success-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .purchase-success-message {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.95);
+            line-height: 1.6;
+        }
+
         .shop-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -229,9 +593,14 @@
         }
 
         .shop-item:hover {
-            transform: translateY(-8px) scale(1.02);
+            transform: translateY(-8px) scale(1.02) rotateY(2deg);
             border-color: rgba(102, 126, 234, 0.6);
             box-shadow: 0 15px 40px var(--hover-glow);
+        }
+
+        .shop-item.limited-edition:hover {
+            box-shadow: 0 15px 50px rgba(255, 215, 0, 0.5);
+            transform: translateY(-10px) scale(1.03) rotateY(3deg);
         }
 
         .shop-item.limited-edition {
@@ -580,6 +949,35 @@
             border: 1px solid rgba(34, 197, 94, 0.5);
         }
 
+        .subscription-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+            color: #a78bfa;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-left: 10px;
+            border: 1px solid rgba(102, 126, 234, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .subscription-price {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .subscription-period {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
         .shop-button:disabled,
         .shop-button.purchased {
             background: rgba(34, 197, 94, 0.2);
@@ -828,6 +1226,17 @@
                 <p class="shop-subtitle">Exclusive limited edition items and merchandise!</p>
             </div>
 
+            <!-- Featured Banner -->
+            <div class="featured-banner" id="featuredBanner" style="display: none;">
+                <div class="featured-content">
+                    <div class="featured-icon" id="featuredIcon">⭐</div>
+                    <div class="featured-text">
+                        <h2 class="featured-title" id="featuredTitle">Featured Item</h2>
+                        <p class="featured-description" id="featuredDescription">Check out our featured item!</p>
+                    </div>
+                </div>
+            </div>
+
             <div class="shop-controls">
                 <div class="search-box">
                     <input type="text" id="searchInput" placeholder="Search items..." autocomplete="off">
@@ -836,9 +1245,20 @@
                     <button class="category-btn active" data-category="all">All Items</button>
                     <button class="category-btn" data-category="title">Titles</button>
                     <button class="category-btn" data-category="profile-image">Emojis</button>
-                    <button class="category-btn" data-category="item">Physical</button>
+                    <button class="category-btn" data-category="item">CD Only</button>
                     <button class="category-btn" data-category="vip">VIP</button>
                     <button class="category-btn" data-category="limited">Limited</button>
+                </div>
+                <div class="sort-controls">
+                    <span class="sort-label">Sort:</span>
+                    <select class="sort-select" id="sortSelect">
+                        <option value="default">Default</option>
+                        <option value="price-low">Price: Low to High</option>
+                        <option value="price-high">Price: High to Low</option>
+                        <option value="name-asc">Name: A-Z</option>
+                        <option value="name-desc">Name: Z-A</option>
+                        <option value="popular">Most Popular</option>
+                    </select>
                 </div>
                 <div class="results-count" id="resultsCount"></div>
             </div>
@@ -900,6 +1320,16 @@
         </div>
     </div>
 
+    <!-- Confetti Container -->
+    <div class="confetti-container" id="confettiContainer"></div>
+
+    <!-- Purchase Success Animation -->
+    <div class="purchase-success" id="purchaseSuccess">
+        <div class="purchase-success-icon">🎉</div>
+        <h2 class="purchase-success-title">Purchase Successful!</h2>
+        <p class="purchase-success-message" id="purchaseSuccessMessage"></p>
+    </div>
+
     <script>
         const PROFILE_STORAGE_KEY = 'jnjUserProfile';
         
@@ -934,11 +1364,14 @@
                 name: 'VIP Pass',
                 icon: '👑',
                 description: 'Become a VIP member! Get exclusive benefits: Exclusive VIP Title, Special VIP Icon (💎), Priority support, Early access to new features, and Exclusive VIP badge on profile.',
-                price: '15.00',
+                price: '5.00',
+                originalPrice: null,
                 type: 'vip',
                 grantType: 'vip',
                 grantValue: 'vip',
-                limitedEdition: true
+                limitedEdition: true,
+                subscription: true,
+                subscriptionPeriod: 'month'
             },
             {
                 id: 'fire-emoji',
@@ -1129,7 +1562,9 @@
         // Filter and search state
         let currentCategory = 'all';
         let searchQuery = '';
+        let sortBy = 'default';
         let filteredItems = [...SHOP_ITEMS];
+        let wishlist = JSON.parse(localStorage.getItem('jnjWishlist') || '[]');
 
         // Initialize filters
         function initFilters() {
@@ -1149,6 +1584,115 @@
                     searchQuery = e.target.value.toLowerCase().trim();
                     filterItems();
                 });
+            }
+
+            const sortSelect = document.getElementById('sortSelect');
+            if (sortSelect) {
+                sortSelect.addEventListener('change', (e) => {
+                    sortBy = e.target.value;
+                    filterItems();
+                });
+            }
+        }
+
+        // Sort items
+        function sortItems(items) {
+            const sorted = [...items];
+            switch(sortBy) {
+                case 'price-low':
+                    return sorted.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+                case 'price-high':
+                    return sorted.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+                case 'name-asc':
+                    return sorted.sort((a, b) => a.name.localeCompare(b.name));
+                case 'name-desc':
+                    return sorted.sort((a, b) => b.name.localeCompare(a.name));
+                case 'popular':
+                    // Sort by limited edition first, then by price (higher = more popular)
+                    return sorted.sort((a, b) => {
+                        if (a.limitedEdition && !b.limitedEdition) return -1;
+                        if (!a.limitedEdition && b.limitedEdition) return 1;
+                        return parseFloat(b.price) - parseFloat(a.price);
+                    });
+                default:
+                    return sorted;
+            }
+        }
+
+        // Toggle wishlist
+        function toggleWishlist(itemId) {
+            const index = wishlist.indexOf(itemId);
+            if (index > -1) {
+                wishlist.splice(index, 1);
+            } else {
+                wishlist.push(itemId);
+            }
+            localStorage.setItem('jnjWishlist', JSON.stringify(wishlist));
+            renderShopItems();
+        }
+
+        // Check if item is in wishlist
+        function isInWishlist(itemId) {
+            return wishlist.includes(itemId);
+        }
+
+        // Show featured item
+        function showFeaturedItem() {
+            const featuredItems = SHOP_ITEMS.filter(item => item.limitedEdition);
+            if (featuredItems.length > 0) {
+                const featured = featuredItems[Math.floor(Math.random() * featuredItems.length)];
+                const banner = document.getElementById('featuredBanner');
+                const icon = document.getElementById('featuredIcon');
+                const title = document.getElementById('featuredTitle');
+                const desc = document.getElementById('featuredDescription');
+                
+                if (banner && icon && title && desc) {
+                    icon.textContent = featured.icon;
+                    title.textContent = featured.name;
+                    desc.textContent = featured.description.substring(0, 100) + '...';
+                    banner.style.display = 'block';
+                    banner.onclick = () => openItemDetailsModal(featured.id);
+                    banner.style.cursor = 'pointer';
+                }
+            }
+        }
+
+        // Create confetti
+        function createConfetti() {
+            const container = document.getElementById('confettiContainer');
+            if (!container) return;
+
+            const colors = ['#22c55e', '#667eea', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+            const confettiCount = 50;
+
+            for (let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 3 + 's';
+                confetti.style.width = (Math.random() * 10 + 5) + 'px';
+                confetti.style.height = (Math.random() * 10 + 5) + 'px';
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                container.appendChild(confetti);
+
+                setTimeout(() => confetti.remove(), 3000);
+            }
+        }
+
+        // Show purchase success animation
+        function showPurchaseSuccess(itemName) {
+            const successDiv = document.getElementById('purchaseSuccess');
+            const message = document.getElementById('purchaseSuccessMessage');
+            
+            if (successDiv && message) {
+                message.textContent = `Thank you for purchasing ${itemName}! Your item will be granted once payment is received.`;
+                successDiv.classList.add('show');
+                createConfetti();
+
+                setTimeout(() => {
+                    successDiv.classList.remove('show');
+                }, 3000);
             }
         }
 
@@ -1174,6 +1718,9 @@
                 return categoryMatch && searchMatch;
             });
 
+            // Sort items
+            filteredItems = sortItems(filteredItems);
+
             updateResultsCount();
             renderShopItems();
         }
@@ -1191,6 +1738,26 @@
         async function renderShopItems() {
             const shopGrid = document.getElementById('shopGrid');
             if (!shopGrid) return;
+
+            // Show skeleton loading
+            shopGrid.innerHTML = '';
+            shopGrid.className = 'shop-grid';
+            for (let i = 0; i < Math.min(6, filteredItems.length || 6); i++) {
+                const skeleton = document.createElement('div');
+                skeleton.className = 'skeleton skeleton-item';
+                skeleton.innerHTML = `
+                    <div class="skeleton skeleton-icon"></div>
+                    <div class="skeleton skeleton-title"></div>
+                    <div class="skeleton skeleton-description"></div>
+                    <div class="skeleton skeleton-description"></div>
+                    <div class="skeleton skeleton-price"></div>
+                    <div class="skeleton skeleton-button"></div>
+                `;
+                shopGrid.appendChild(skeleton);
+            }
+
+            // Small delay for skeleton effect
+            await new Promise(resolve => setTimeout(resolve, 300));
 
             shopGrid.innerHTML = '';
 
@@ -1211,6 +1778,7 @@
             for (const item of filteredItems) {
                 const itemDiv = document.createElement('div');
                 const isPurchased = await hasPurchasedItem(item.id);
+                const inWishlist = isInWishlist(item.id);
                 itemDiv.className = `shop-item ${item.limitedEdition ? 'limited-edition' : ''} ${isPurchased ? 'purchased' : ''}`;
                 
                 let buttonHTML = '';
@@ -1224,6 +1792,7 @@
 
                 const hasDiscount = item.originalPrice && parseFloat(item.originalPrice) > parseFloat(item.price);
                 const discountAmount = hasDiscount ? (parseFloat(item.originalPrice) - parseFloat(item.price)).toFixed(2) : null;
+                const isSubscription = item.subscription === true;
 
                 // Format description with line breaks for VIP Pass
                 let descriptionHTML = item.description;
@@ -1234,26 +1803,47 @@
                         • <strong>Special VIP Icon (💎)</strong> - Unlock the diamond icon<br>
                         • <strong>Priority Support</strong> - Get help faster<br>
                         • <strong>Early Access</strong> - Try new features first<br>
-                        • <strong>VIP Badge</strong> - Exclusive badge on your profile
+                        • <strong>VIP Badge</strong> - Exclusive badge on your profile<br><br>
+                        <em style="color: var(--text-secondary); font-size: 14px;">Monthly subscription - renews automatically</em>
                     `;
                 }
 
-                itemDiv.innerHTML = `
-                    <span class="shop-icon">${item.icon}</span>
-                    <h2 class="shop-name">${item.name}</h2>
-                    <p class="shop-description">${descriptionHTML}</p>
+                let priceHTML = '';
+                if (isSubscription) {
+                    priceHTML = `
+                        <div class="subscription-price">
+                            <span class="shop-price">$${item.price}</span>
+                            <span class="subscription-period">/ ${item.subscriptionPeriod || 'month'}</span>
+                            <span class="subscription-badge">Subscription</span>
+                        </div>
+                    `;
+                } else {
+                    priceHTML = `
                     <div class="shop-price-container">
                         ${hasDiscount ? `<span class="shop-price-original">$${item.originalPrice}</span>` : ''}
                         <span class="shop-price">$${item.price}</span>
                         ${hasDiscount ? `<span class="shop-discount-badge">Save $${discountAmount}!</span>` : ''}
                     </div>
+                    `;
+                }
+
+                itemDiv.innerHTML = `
+                    <button class="wishlist-btn ${inWishlist ? 'active' : ''}" onclick="event.stopPropagation(); toggleWishlist('${item.id}')" title="${inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}">
+                        <svg viewBox="0 0 24 24" fill="${inWishlist ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                    </button>
+                    <span class="shop-icon">${item.icon}</span>
+                    <h2 class="shop-name">${item.name}${isSubscription ? ' <span class="subscription-badge" style="font-size: 12px; margin-left: 8px;">Monthly</span>' : ''}</h2>
+                    <p class="shop-description">${descriptionHTML}</p>
+                    ${priceHTML}
                     ${buttonHTML}
                     ${isPurchased ? '<div class="purchased-badge">✓ Already Purchased</div>' : ''}
                 `;
 
                 // Add click handler for item details
                 itemDiv.addEventListener('click', (e) => {
-                    if (!e.target.closest('.shop-button') && !e.target.closest('a')) {
+                    if (!e.target.closest('.shop-button') && !e.target.closest('a') && !e.target.closest('.wishlist-btn')) {
                         openItemDetailsModal(item.id);
                     }
                 });
@@ -1278,15 +1868,23 @@
             const hasDiscount = item.originalPrice && parseFloat(item.originalPrice) > parseFloat(item.price);
             const discountAmount = hasDiscount ? (parseFloat(item.originalPrice) - parseFloat(item.price)).toFixed(2) : null;
 
-            modalInfo.innerHTML = `
+                const isSubscription = item.subscription === true;
+                
+                modalInfo.innerHTML = `
                 <div class="modal-item-info-row">
                     <span class="modal-item-info-label">Item:</span>
-                    <span class="modal-item-info-value">${item.name}</span>
+                    <span class="modal-item-info-value">${item.name}${isSubscription ? ' <span class="subscription-badge" style="font-size: 10px; margin-left: 5px;">Monthly</span>' : ''}</span>
                 </div>
                 <div class="modal-item-info-row">
                     <span class="modal-item-info-label">Type:</span>
-                    <span class="modal-item-info-value">${item.type === 'title' ? 'Title' : item.type === 'profile-image' ? 'Emoji' : item.type === 'vip' ? 'VIP Pass' : 'Physical Item'}</span>
+                    <span class="modal-item-info-value">${item.type === 'title' ? 'Title' : item.type === 'profile-image' ? 'Emoji' : item.type === 'vip' ? 'VIP Pass (Subscription)' : 'Physical Item'}</span>
                 </div>
+                ${isSubscription ? `
+                <div class="modal-item-info-row">
+                    <span class="modal-item-info-label">Billing:</span>
+                    <span class="modal-item-info-value" style="color: var(--warning-color);">Recurring Monthly</span>
+                </div>
+                ` : ''}
                 ${hasDiscount ? `
                 <div class="modal-item-info-row">
                     <span class="modal-item-info-label">Original Price:</span>
@@ -1298,9 +1896,14 @@
                 </div>
                 ` : ''}
                 <div class="modal-item-info-row">
-                    <span class="modal-item-info-label">Price:</span>
-                    <span class="modal-item-info-value" style="color: var(--success-color); font-size: 24px;">$${item.price}</span>
+                    <span class="modal-item-info-label">${isSubscription ? 'Monthly Price:' : 'Price:'}</span>
+                    <span class="modal-item-info-value" style="color: var(--success-color); font-size: 24px;">$${item.price}${isSubscription ? ' <span style="font-size: 16px; color: var(--text-secondary);">/month</span>' : ''}</span>
                 </div>
+                ${isSubscription ? `
+                <div style="background: rgba(102, 126, 234, 0.1); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; padding: 12px; margin-top: 15px; text-align: center;">
+                    <p style="color: var(--text-secondary); font-size: 13px; margin: 0;">⚠️ This is a monthly subscription that will renew automatically</p>
+                </div>
+                ` : ''}
             `;
 
             modal.classList.add('active');
@@ -1331,6 +1934,7 @@
 
             const hasDiscount = item.originalPrice && parseFloat(item.originalPrice) > parseFloat(item.price);
             const discountAmount = hasDiscount ? (parseFloat(item.originalPrice) - parseFloat(item.price)).toFixed(2) : null;
+            const isSubscription = item.subscription === true;
 
             let featuresHTML = '';
             if (item.id === 'vip-pass') {
@@ -1345,19 +1949,38 @@
                             <li>Exclusive VIP Badge on profile</li>
                         </ul>
                     </div>
+                    <div style="background: rgba(102, 126, 234, 0.1); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 12px; padding: 15px; margin-top: 20px; text-align: center;">
+                        <p style="color: var(--text-primary); font-weight: 600; margin-bottom: 5px;">📅 Monthly Subscription</p>
+                        <p style="color: var(--text-secondary); font-size: 14px;">This is a recurring monthly payment. Your VIP status will renew automatically each month.</p>
+                    </div>
+                `;
+            }
+
+            let priceHTML = '';
+            if (isSubscription) {
+                priceHTML = `
+                    <div class="subscription-price" style="justify-content: center; margin: 20px 0;">
+                        <span class="shop-price" style="font-size: 36px;">$${item.price}</span>
+                        <span class="subscription-period" style="font-size: 18px;">/ ${item.subscriptionPeriod || 'month'}</span>
+                        <span class="subscription-badge" style="font-size: 14px; padding: 8px 16px;">Subscription</span>
+                    </div>
+                `;
+            } else {
+                priceHTML = `
+                    <div class="shop-price-container">
+                        ${hasDiscount ? `<span class="shop-price-original">$${item.originalPrice}</span>` : ''}
+                        <span class="shop-price">$${item.price}</span>
+                        ${hasDiscount ? `<span class="shop-discount-badge">Save $${discountAmount}!</span>` : ''}
+                    </div>
                 `;
             }
 
             content.innerHTML = `
                 <div class="item-details-icon">${item.icon}</div>
-                <h2 class="item-details-name">${item.name}</h2>
+                <h2 class="item-details-name">${item.name}${isSubscription ? ' <span class="subscription-badge" style="font-size: 14px; margin-left: 10px;">Monthly</span>' : ''}</h2>
                 <p class="item-details-description">${item.description}</p>
                 ${featuresHTML}
-                <div class="shop-price-container">
-                    ${hasDiscount ? `<span class="shop-price-original">$${item.originalPrice}</span>` : ''}
-                    <span class="shop-price">$${item.price}</span>
-                    ${hasDiscount ? `<span class="shop-discount-badge">Save $${discountAmount}!</span>` : ''}
-                </div>
+                ${priceHTML}
                 <div class="modal-actions" style="margin-top: 30px;">
                     <button class="modal-btn modal-btn-secondary" onclick="closeItemDetailsModal()">Close</button>
                     ${item.url ? 
@@ -1579,6 +2202,10 @@
                 // Remove loading
                     document.body.removeChild(loadingMsg);
 
+                // Show purchase success animation
+                showPurchaseSuccess(item.name);
+
+                // Also show notification
                 showNotification(
                     'success',
                     '✅ Purchase Confirmed!',
@@ -1958,6 +2585,7 @@
         // Initialize page
         function initPage() {
             initFilters();
+            showFeaturedItem();
             renderShopItems();
             
             // Wait for auth system to be ready, then check dev status
