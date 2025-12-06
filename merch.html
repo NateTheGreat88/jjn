@@ -1776,10 +1776,19 @@
             shopGrid.className = 'shop-grid';
 
             for (const item of filteredItems) {
+                // Validate item has required properties
+                if (!item || !item.id) {
+                    console.error('Invalid item in filteredItems:', item);
+                    continue;
+                }
+
                 const itemDiv = document.createElement('div');
                 const isPurchased = await hasPurchasedItem(item.id);
                 const inWishlist = isInWishlist(item.id);
                 itemDiv.className = `shop-item ${item.limitedEdition ? 'limited-edition' : ''} ${isPurchased ? 'purchased' : ''}`;
+                
+                // Escape item.id for use in HTML attributes
+                const escapedItemId = String(item.id).replace(/'/g, "\\'");
                 
                 let buttonHTML = '';
                 if (isPurchased) {
@@ -1787,7 +1796,7 @@
                 } else if (item.url) {
                     buttonHTML = `<a href="${item.url}" class="shop-button" style="text-decoration: none; display: block; text-align: center;"><span>Purchase ${item.name}</span></a>`;
                 } else {
-                    buttonHTML = `<button class="shop-button" onclick="openPurchaseModal('${item.id}')"><span>Purchase ${item.name}</span></button>`;
+                    buttonHTML = `<button class="shop-button" onclick="openPurchaseModal('${escapedItemId}')"><span>Purchase ${item.name || 'Item'}</span></button>`;
                 }
 
                 const hasDiscount = item.originalPrice && parseFloat(item.originalPrice) > parseFloat(item.price);
@@ -1828,7 +1837,7 @@
                 }
 
                 itemDiv.innerHTML = `
-                    <button class="wishlist-btn ${inWishlist ? 'active' : ''}" onclick="event.stopPropagation(); toggleWishlist('${item.id}')" title="${inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}">
+                    <button class="wishlist-btn ${inWishlist ? 'active' : ''}" onclick="event.stopPropagation(); toggleWishlist('${escapedItemId}')" title="${inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}">
                         <svg viewBox="0 0 24 24" fill="${inWishlist ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
                             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                         </svg>
@@ -1855,8 +1864,20 @@
         // Open purchase modal
         let currentPurchaseItemId = null;
         function openPurchaseModal(itemId) {
+            // Validate and clean itemId
+            if (!itemId) {
+                console.error('openPurchaseModal called with no itemId');
+                showNotification('error', '❌ Error', 'No item selected!');
+                return;
+            }
+
+            itemId = String(itemId).trim();
             const item = SHOP_ITEMS.find(i => i.id === itemId);
-            if (!item) return;
+            if (!item) {
+                console.error('Item not found in openPurchaseModal:', itemId);
+                showNotification('error', '❌ Error', `Item not found: ${itemId}`);
+                return;
+            }
 
             currentPurchaseItemId = itemId;
             const modal = document.getElementById('purchaseModal');
@@ -1912,15 +1933,24 @@
         // Close purchase modal
         function closePurchaseModal() {
             const modal = document.getElementById('purchaseModal');
-            modal.classList.remove('active');
-            currentPurchaseItemId = null;
+            if (modal) {
+                modal.classList.remove('active');
+            }
+            // Don't clear currentPurchaseItemId immediately - wait a bit in case purchase is in progress
+            setTimeout(() => {
+                currentPurchaseItemId = null;
+            }, 100);
         }
 
         // Confirm purchase from modal
         document.getElementById('confirmPurchaseBtn')?.addEventListener('click', () => {
             if (currentPurchaseItemId) {
+                const itemId = String(currentPurchaseItemId).trim();
                 closePurchaseModal();
-                purchaseItem(currentPurchaseItemId);
+                purchaseItem(itemId);
+            } else {
+                console.error('Confirm purchase clicked but currentPurchaseItemId is null/undefined');
+                showNotification('error', '❌ Error', 'No item selected! Please try again.');
             }
         });
 
@@ -1984,8 +2014,8 @@
                 <div class="modal-actions" style="margin-top: 30px;">
                     <button class="modal-btn modal-btn-secondary" onclick="closeItemDetailsModal()">Close</button>
                     ${item.url ? 
-                        `<a href="${item.url}" class="modal-btn modal-btn-primary" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">Purchase ${item.name}</a>` :
-                        `<button class="modal-btn modal-btn-primary" onclick="closeItemDetailsModal(); openPurchaseModal('${item.id}')">Purchase ${item.name}</button>`
+                        `<a href="${item.url}" class="modal-btn modal-btn-primary" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">Purchase ${item.name || 'Item'}</a>` :
+                        `<button class="modal-btn modal-btn-primary" onclick="closeItemDetailsModal(); openPurchaseModal('${String(item.id).replace(/'/g, "\\'")}')">Purchase ${item.name || 'Item'}</button>`
                     }
                 </div>
             `;
@@ -2052,9 +2082,20 @@
 
         // Purchase item
         async function purchaseItem(itemId) {
+            // Validate and clean itemId
+            if (!itemId) {
+                console.error('purchaseItem called with no itemId');
+                showNotification('error', '❌ Error', 'No item selected!');
+                return;
+            }
+
+            // Trim whitespace and ensure it's a string
+            itemId = String(itemId).trim();
+
             const item = SHOP_ITEMS.find(i => i.id === itemId);
             if (!item) {
-                showNotification('error', '❌ Error', 'Item not found!');
+                console.error('Item not found:', itemId, 'Available items:', SHOP_ITEMS.map(i => i.id));
+                showNotification('error', '❌ Error', `Item not found: ${itemId}`);
                 return;
             }
 
