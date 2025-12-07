@@ -1562,8 +1562,56 @@
                     return;
                 }
                 
+                // Handle /user command (by username)
+                if (message.startsWith('/user ')) {
+                    const username = message.substring(6).trim();
+                    if (!username) {
+                        showNotification('error', 'Invalid Command', 'Usage: /user [username]\n\nExample: /user john');
+                        messageInput.value = '';
+                        return;
+                    }
+                    viewUserByUsername(username);
+                    messageInput.value = '';
+                    return;
+                }
+                
+                // Handle /help command
+                if (message === '/help' || message.startsWith('/help ')) {
+                    showHelp();
+                    messageInput.value = '';
+                    return;
+                }
+                
+                // Handle /grant command
+                if (message.startsWith('/grant ')) {
+                    const parts = message.substring(7).trim().split(' ');
+                    if (parts.length < 2) {
+                        showNotification('error', 'Invalid Command', 'Usage: /grant [userId] [itemId]\n\nExample: /grant user123 legendary-title');
+                        messageInput.value = '';
+                        return;
+                    }
+                    const userId = parts[0];
+                    const itemId = parts.slice(1).join(' '); // In case itemId has spaces
+                    grantItemCommand(userId, itemId);
+                    messageInput.value = '';
+                    return;
+                }
+                
+                // Handle /clear command
+                if (message.startsWith('/clear ')) {
+                    const count = parseInt(message.substring(7).trim());
+                    if (isNaN(count) || count < 1 || count > 100) {
+                        showNotification('error', 'Invalid Command', 'Usage: /clear [number]\n\nClear last 1-100 messages from chat.');
+                        messageInput.value = '';
+                        return;
+                    }
+                    clearMessages(count);
+                    messageInput.value = '';
+                    return;
+                }
+                
                 // Unknown command
-                showNotification('info', 'Unknown Command', 'Available commands:\n/announce [message] - Send site-wide announcement\n/mystats - Show your statistics');
+                showNotification('info', 'Unknown Command', 'Available commands:\n/announce [message] - Send site-wide announcement\n/mystats - Show your statistics\n/user [username] - View user by username');
                 messageInput.value = '';
                 return;
             }
@@ -2188,6 +2236,213 @@
             } catch (e) {
                 console.error('Error showing stats:', e);
                 showNotification('error', 'Error', 'Failed to load statistics.');
+            }
+        }
+        
+        // View user by username (searches username and displayName)
+        async function viewUserByUsername(username) {
+            if (!db) {
+                try {
+                    if (typeof firebaseConfig !== 'undefined') {
+                        if (!firebase.apps || firebase.apps.length === 0) {
+                            firebase.initializeApp(firebaseConfig);
+                        }
+                        db = firebase.firestore();
+                    } else {
+                        showNotification('error', 'Error', 'Firebase not available');
+                        return;
+                    }
+                } catch (error) {
+                    showNotification('error', 'Error', 'Firebase initialization failed');
+                    return;
+                }
+            }
+            
+            try {
+                // Query users by username or displayName
+                const usersSnapshot = await db.collection('users')
+                    .where('profile.username', '==', username)
+                    .get();
+                
+                // Also check displayName
+                const displayNameSnapshot = await db.collection('users')
+                    .where('profile.displayName', '==', username)
+                    .get();
+                
+                // Combine results, avoiding duplicates
+                const userDocs = [];
+                const seenIds = new Set();
+                
+                usersSnapshot.forEach(doc => {
+                    if (!seenIds.has(doc.id)) {
+                        userDocs.push(doc);
+                        seenIds.add(doc.id);
+                    }
+                });
+                
+                displayNameSnapshot.forEach(doc => {
+                    if (!seenIds.has(doc.id)) {
+                        userDocs.push(doc);
+                        seenIds.add(doc.id);
+                    }
+                });
+                
+                if (userDocs.length === 0) {
+                    showNotification('error', 'User Not Found', `No user found with username "${username}"`);
+                    return;
+                }
+                
+                // If multiple users found, show first one (or could show all)
+                const targetUserDoc = userDocs[0];
+                const userData = targetUserDoc.data();
+                const profile = userData.profile || {};
+                const userId = targetUserDoc.id;
+                
+                const displayName = profile.displayName || 'N/A';
+                const foundUsername = profile.username || 'N/A';
+                const bio = profile.bio || 'No bio';
+                const avatar = profile.avatar || '👤';
+                const avatarImage = profile.avatarImage || null;
+                const equippedTitle = profile.equippedTitle || 'None';
+                const unlockedTitles = profile.unlockedTitles || [];
+                const isDev = userData.isDev === true;
+                const isVip = profile.isVip === true || (unlockedTitles && unlockedTitles.includes('vip'));
+                const joinDate = userData.createdAt ? 
+                    (userData.createdAt.toDate ? userData.createdAt.toDate().toLocaleDateString() : 'Unknown') : 
+                    'Unknown';
+                
+                // Get title names
+                const TITLES = {
+                    'newbie': 'Newbie',
+                    'tech-wizard': 'Tech Wizard',
+                    'early-bird': 'Early Bird',
+                    'dev': 'Developer',
+                    'veteran': 'Veteran',
+                    'chatterbox': 'Chatterbox',
+                    'legend': 'Legend',
+                    'kind-word-user': 'Kind Word User',
+                    'turkey-king': 'Turkey King',
+                    'lebron': 'Lebron',
+                    'legendary': 'Legendary',
+                    'vip': 'VIP',
+                    'pro': 'Pro',
+                    'elite': 'Elite',
+                    'champion': 'Champion'
+                };
+                
+                const titleNames = unlockedTitles.map(id => TITLES[id] || id).join(', ') || 'None';
+                const equippedTitleName = TITLES[equippedTitle] || equippedTitle || 'None';
+                
+                let userInfo = `👤 User Profile
+
+🆔 User ID: ${userId}
+📛 Display Name: ${displayName}
+👤 Username: ${foundUsername}
+⭐ Status: ${isDev ? 'Developer' : (isVip ? 'VIP' : 'User')}
+📅 Joined: ${joinDate}
+
+${avatarImage ? '🖼️ Avatar: [Image]' : `😊 Avatar: ${avatar}`}
+👑 Equipped Title: ${equippedTitleName}
+🏆 Titles Unlocked: ${unlockedTitles.length}
+   ${titleNames}
+
+📝 Bio: ${bio}`;
+                
+                if (userDocs.length > 1) {
+                    userInfo += `\n\n⚠️ Note: ${userDocs.length} users found with this username. Showing the first one.`;
+                }
+                
+                showNotification('info', 'User Info', userInfo);
+            } catch (error) {
+                console.error('Error viewing user:', error);
+                showNotification('error', 'Error', `Failed to load user: ${error.message}`);
+            }
+        }
+        
+        // View user by userId (direct lookup, 1 read)
+        async function viewUserById(userId) {
+            if (!db) {
+                try {
+                    if (typeof firebaseConfig !== 'undefined') {
+                        if (!firebase.apps || firebase.apps.length === 0) {
+                            firebase.initializeApp(firebaseConfig);
+                        }
+                        db = firebase.firestore();
+                    } else {
+                        showNotification('error', 'Error', 'Firebase not available');
+                        return;
+                    }
+                } catch (error) {
+                    showNotification('error', 'Error', 'Firebase initialization failed');
+                    return;
+                }
+            }
+            
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+                
+                if (!userDoc.exists) {
+                    showNotification('error', 'User Not Found', `No user found with User ID "${userId}"`);
+                    return;
+                }
+                
+                const userData = userDoc.data();
+                const profile = userData.profile || {};
+                
+                const displayName = profile.displayName || 'N/A';
+                const username = profile.username || 'N/A';
+                const bio = profile.bio || 'No bio';
+                const avatar = profile.avatar || '👤';
+                const avatarImage = profile.avatarImage || null;
+                const equippedTitle = profile.equippedTitle || 'None';
+                const unlockedTitles = profile.unlockedTitles || [];
+                const isDev = userData.isDev === true;
+                const isVip = profile.isVip === true || (unlockedTitles && unlockedTitles.includes('vip'));
+                const joinDate = userData.createdAt ? 
+                    (userData.createdAt.toDate ? userData.createdAt.toDate().toLocaleDateString() : 'Unknown') : 
+                    'Unknown';
+                
+                // Get title names
+                const TITLES = {
+                    'newbie': 'Newbie',
+                    'tech-wizard': 'Tech Wizard',
+                    'early-bird': 'Early Bird',
+                    'dev': 'Developer',
+                    'veteran': 'Veteran',
+                    'chatterbox': 'Chatterbox',
+                    'legend': 'Legend',
+                    'kind-word-user': 'Kind Word User',
+                    'turkey-king': 'Turkey King',
+                    'lebron': 'Lebron',
+                    'legendary': 'Legendary',
+                    'vip': 'VIP',
+                    'pro': 'Pro',
+                    'elite': 'Elite',
+                    'champion': 'Champion'
+                };
+                
+                const titleNames = unlockedTitles.map(id => TITLES[id] || id).join(', ') || 'None';
+                const equippedTitleName = TITLES[equippedTitle] || equippedTitle || 'None';
+                
+                const userInfo = `👤 User Profile
+
+🆔 User ID: ${userId}
+📛 Display Name: ${displayName}
+👤 Username: ${username}
+⭐ Status: ${isDev ? 'Developer' : (isVip ? 'VIP' : 'User')}
+📅 Joined: ${joinDate}
+
+${avatarImage ? '🖼️ Avatar: [Image]' : `😊 Avatar: ${avatar}`}
+👑 Equipped Title: ${equippedTitleName}
+🏆 Titles Unlocked: ${unlockedTitles.length}
+   ${titleNames}
+
+📝 Bio: ${bio}`;
+                
+                showNotification('info', 'User Info', userInfo);
+            } catch (error) {
+                console.error('Error viewing user:', error);
+                showNotification('error', 'Error', `Failed to load user: ${error.message}`);
             }
         }
         
