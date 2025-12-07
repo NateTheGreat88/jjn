@@ -7,17 +7,40 @@
     let auth = null;
     let db = null;
     let currentUser = null;
+    let initAttempted = false;
+    let initInProgress = false;
+    let initFailed = false;
     
     // Initialize Firebase Auth
     function initAuth() {
+        // Prevent multiple simultaneous initialization attempts
+        if (initInProgress) {
+            return false;
+        }
+        
+        // If already initialized, return success
+        if (auth && db) {
+            return true;
+        }
+        
+        // If initialization failed due to network error, don't retry immediately
+        if (initFailed) {
+            return false;
+        }
+        
+        initInProgress = true;
+        initAttempted = true;
+        
         try {
             if (typeof firebaseConfig === 'undefined') {
                 console.warn('Firebase config not found');
+                initInProgress = false;
                 return false;
             }
             
             if (typeof firebase === 'undefined') {
                 console.warn('Firebase SDK not loaded');
+                initInProgress = false;
                 return false;
             }
             
@@ -30,6 +53,7 @@
                 // App might already be initialized, that's okay
                 if (!initError.message.includes('already exists')) {
                     console.error('Firebase initialization error:', initError);
+                    initInProgress = false;
                     return false;
                 }
             }
@@ -40,16 +64,18 @@
                 db = firebase.firestore();
             } catch (authError) {
                 console.error('Error accessing Firebase Auth:', authError);
+                initInProgress = false;
                 return false;
             }
             
             // Check if auth is available
             if (!auth) {
                 console.warn('Firebase Auth is not available');
+                initInProgress = false;
                 return false;
             }
             
-            // Listen for auth state changes
+            // Listen for auth state changes with error handling
             try {
                 auth.onAuthStateChanged((user) => {
                     currentUser = user;
@@ -62,15 +88,45 @@
                     }
                     // Dispatch custom event for other scripts
                     window.dispatchEvent(new CustomEvent('authStateChanged', { detail: { user } }));
+                }, (error) => {
+                    // Handle auth state change errors (like network errors)
+                    if (error.code === 'auth/network-request-failed' || 
+                        error.message.includes('ERR_NAME_NOT_RESOLVED') ||
+                        error.message.includes('network')) {
+                        console.warn('Firebase Auth network error - will retry later:', error.message);
+                        initFailed = true;
+                        // Retry after 30 seconds if network comes back
+                        setTimeout(() => {
+                            initFailed = false;
+                        }, 30000);
+                    } else {
+                        console.error('Firebase Auth state change error:', error);
+                    }
                 });
             } catch (stateError) {
                 console.error('Error setting up auth state listener:', stateError);
+                initInProgress = false;
                 return false;
             }
             
+            initInProgress = false;
             return true;
         } catch (error) {
             console.error('Firebase Auth initialization error:', error);
+            // Check if it's a network error
+            if (error.message && (
+                error.message.includes('ERR_NAME_NOT_RESOLVED') ||
+                error.message.includes('network') ||
+                error.message.includes('NetworkError')
+            )) {
+                console.warn('Network error detected - Firebase Auth unavailable');
+                initFailed = true;
+                // Retry after 30 seconds
+                setTimeout(() => {
+                    initFailed = false;
+                }, 30000);
+            }
+            initInProgress = false;
             return false;
         }
     }
@@ -336,6 +392,11 @@
     
     // Initialize on load - wait for Firebase SDKs to be ready
     function waitForFirebase() {
+        // Don't retry if we've already failed due to network error
+        if (initFailed) {
+            return;
+        }
+        
         if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
             // Firebase is ready, initialize auth
             if (document.readyState === 'loading') {
@@ -361,6 +422,15 @@
     
     // Start waiting for Firebase
     waitForFirebase();
+    
+    // Retry initialization if network comes back (check every 30 seconds)
+    setInterval(() => {
+        if (initFailed && !initInProgress && !auth) {
+            console.log('Retrying Firebase Auth initialization...');
+            initFailed = false;
+            waitForFirebase();
+        }
+    }, 30000);
     
     // Export to window
     window.authSystem = {
