@@ -341,10 +341,11 @@
         let announcementId = null;
         
         // Real-time announcement listener
-        let announcementUnsubscribe = null;
+        // Announcement polling (reduces Firebase reads vs real-time listeners)
+        let announcementPollInterval = null;
         
         // Load and check announcements
-        function loadAnnouncements() {
+        async function loadAnnouncements() {
             try {
                 if (typeof firebaseConfig === 'undefined' || typeof firebase === 'undefined') {
                     return;
@@ -357,17 +358,42 @@
                 
                 const db = firebase.firestore();
                 
-                // Unsubscribe from previous listener if exists
-                if (announcementUnsubscribe) {
-                    announcementUnsubscribe();
+                // Clear existing polling
+                if (announcementPollInterval) {
+                    clearInterval(announcementPollInterval);
                 }
                 
-                // Set up real-time listener for announcements
-                announcementUnsubscribe = db.collection('announcements')
+                // Load immediately
+                await checkAnnouncements(db);
+                
+                // Set up polling (every 2 minutes, only when page is visible)
+                announcementPollInterval = setInterval(() => {
+                    // Only poll when page is visible
+                    if (document.visibilityState === 'visible') {
+                        checkAnnouncements(db);
+                    }
+                }, 120000); // 2 minutes (reduces reads significantly)
+                
+                // Also check when page becomes visible
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible') {
+                        checkAnnouncements(db);
+                    }
+                });
+            } catch (error) {
+                console.error('Error setting up announcement polling:', error);
+            }
+        }
+        
+        // Check for announcements (polling function)
+        async function checkAnnouncements(db) {
+            try {
+                const snapshot = await db.collection('announcements')
                     .where('active', '==', true)
                     .orderBy('createdAt', 'desc')
                     .limit(1)
-                    .onSnapshot((snapshot) => {
+                    .get();
+                
                 if (!snapshot.empty) {
                     const doc = snapshot.docs[0];
                     const newAnnouncementId = doc.id;
@@ -396,24 +422,21 @@
                     
                     // Check if announcement has been read
                     checkAnnouncementRead();
-                        } else {
-                            // No active announcements
-                            announcementId = null;
-                            currentAnnouncement = null;
-                            const bubble = document.getElementById('announcementBubble');
-                            if (bubble) {
-                                bubble.style.display = 'none';
-                            }
-                            const panel = document.getElementById('announcementPanel');
-                            if (panel) {
-                                panel.style.display = 'none';
-                            }
-                        }
-                    }, (error) => {
-                        console.error('Error listening to announcements:', error);
-                    });
+                } else {
+                    // No active announcements
+                    announcementId = null;
+                    currentAnnouncement = null;
+                    const bubble = document.getElementById('announcementBubble');
+                    if (bubble) {
+                        bubble.style.display = 'none';
+                    }
+                    const panel = document.getElementById('announcementPanel');
+                    if (panel) {
+                        panel.style.display = 'none';
+                    }
+                }
             } catch (error) {
-                console.error('Error setting up announcement listener:', error);
+                console.error('Error checking announcements:', error);
             }
         }
         
