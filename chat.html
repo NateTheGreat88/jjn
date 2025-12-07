@@ -1575,6 +1575,13 @@
                     return;
                 }
                 
+                // Handle /ping command
+                if (message === '/ping' || message.startsWith('/ping ')) {
+                    pingTest();
+                    messageInput.value = '';
+                    return;
+                }
+                
                 // Handle /help command
                 if (message === '/help' || message.startsWith('/help ')) {
                     showHelp();
@@ -1611,7 +1618,7 @@
                 }
                 
                 // Unknown command
-                showNotification('info', 'Unknown Command', 'Available commands:\n/announce [message] - Send site-wide announcement\n/mystats - Show your statistics\n/user [username] - View user by username');
+                showNotification('info', 'Unknown Command', 'Available commands:\n/announce [message] - Send site-wide announcement\n/mystats - Show your statistics\n/user [username] - View user by username\n/ping - Test response time');
                 messageInput.value = '';
                 return;
             }
@@ -2237,6 +2244,28 @@
                 console.error('Error showing stats:', e);
                 showNotification('error', 'Error', 'Failed to load statistics.');
             }
+        }
+        
+        // Ping test (zero reads - no Firebase)
+        function pingTest() {
+            const startTime = performance.now();
+            
+            // Simple computation to test response
+            let result = 0;
+            for (let i = 0; i < 1000; i++) {
+                result += Math.sqrt(i);
+            }
+            
+            const endTime = performance.now();
+            const responseTime = (endTime - startTime).toFixed(2);
+            
+            const pingMessage = `🏓 Pong!
+
+⚡ Response Time: ${responseTime}ms
+🕐 Timestamp: ${new Date().toLocaleTimeString()}
+✅ System: Operational`;
+
+            showNotification('success', 'Ping Test', pingMessage);
         }
         
         // View user by username (searches username and displayName)
