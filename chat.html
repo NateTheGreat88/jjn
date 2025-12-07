@@ -1200,8 +1200,11 @@
             // Title display (golden color)
             const titleHtml = userTitle ? ` <span style="color: #FFD700; font-weight: bold; font-size: 0.9em;">[${getTitleName(userTitle)}]</span>` : '';
             
-            // Add rainbow class if enabled
-            const rainbowClass = rainbowModeEnabled ? ' rainbow-text' : '';
+            // Add rainbow and glitch classes if enabled
+            let messageClasses = [];
+            if (rainbowModeEnabled) messageClasses.push('rainbow-text');
+            if (glitchModeEnabled) messageClasses.push('glitch-text');
+            const messageClass = messageClasses.length > 0 ? ' ' + messageClasses.join(' ') : '';
             
             messageDiv.innerHTML = `
                 <div class="message-header" style="display: flex; align-items: center; gap: 8px;">
@@ -1212,7 +1215,7 @@
                 <div class="message-content">
                     ${imageHtml}
                     ${gifHtml}
-                    ${messageHtml ? `<p class="${rainbowClass.trim()}">${messageHtml}</p>` : (imageHtml || gifHtml ? '' : `<p class="${rainbowClass.trim()}"></p>`)}
+                    ${messageHtml ? `<p class="${messageClass.trim()}">${messageHtml}</p>` : (imageHtml || gifHtml ? '' : `<p class="${messageClass.trim()}"></p>`)}
                 </div>
             `;
             
@@ -1599,6 +1602,20 @@
                     return;
                 }
                 
+                // Handle /snake command
+                if (message === '/snake' || message.startsWith('/snake ')) {
+                    startSnakeGame();
+                    messageInput.value = '';
+                    return;
+                }
+                
+                // Handle /glitch command
+                if (message === '/glitch' || message.startsWith('/glitch ')) {
+                    toggleGlitchMode();
+                    messageInput.value = '';
+                    return;
+                }
+                
                 // Handle /grant command
                 if (message.startsWith('/grant ')) {
                     const parts = message.substring(7).trim().split(' ');
@@ -1628,7 +1645,7 @@
                 }
                 
                 // Unknown command
-                showNotification('info', 'Unknown Command', 'Available commands:\n/announce [message] - Send site-wide announcement\n/mystats - Show your statistics\n/user [username] - View user by username\n/ping - Test response time\n/rainbow - Toggle rainbow text mode');
+                showNotification('info', 'Unknown Command', 'Available commands:\n/announce [message] - Send site-wide announcement\n/mystats - Show your statistics\n/user [username] - View user by username\n/ping - Test response time\n/rainbow - Toggle rainbow text mode\n/snake - Start snake game\n/glitch - Toggle glitch text effect');
                 messageInput.value = '';
                 return;
             }
@@ -2297,6 +2314,12 @@
 /rainbow
    Toggle rainbow text mode
 
+/snake
+   Start snake game
+
+/glitch
+   Toggle glitch text effect
+
 /help
    Show this help message`;
 
@@ -2386,6 +2409,218 @@
         
         // Also apply after a short delay to ensure all messages are loaded
         setTimeout(initializeRainbowMode, 500);
+        
+        // Glitch mode toggle (zero reads - no Firebase)
+        let glitchModeEnabled = localStorage.getItem('jnjGlitchMode') === 'true';
+        
+        function toggleGlitchMode() {
+            glitchModeEnabled = !glitchModeEnabled;
+            localStorage.setItem('jnjGlitchMode', glitchModeEnabled.toString());
+            
+            const chatContainer = document.querySelector('.chat-container');
+            if (chatContainer) {
+                if (glitchModeEnabled) {
+                    chatContainer.classList.add('glitch-mode');
+                    applyGlitchToMessages();
+                } else {
+                    chatContainer.classList.remove('glitch-mode');
+                    removeGlitchFromMessages();
+                }
+            }
+            
+            const status = glitchModeEnabled ? 'enabled' : 'disabled';
+            const emoji = glitchModeEnabled ? '💥' : '⚪';
+            showNotification(glitchModeEnabled ? 'success' : 'info', 'Glitch Mode', `${emoji} Glitch text effect ${status}!`);
+        }
+        
+        function applyGlitchToMessages() {
+            const messages = document.querySelectorAll('.message .message-content p');
+            messages.forEach(msg => {
+                if (!msg.classList.contains('glitch-text')) {
+                    msg.classList.add('glitch-text');
+                }
+            });
+        }
+        
+        function removeGlitchFromMessages() {
+            const messages = document.querySelectorAll('.message .message-content p');
+            messages.forEach(msg => {
+                msg.classList.remove('glitch-text');
+            });
+        }
+        
+        // Initialize glitch mode on page load
+        function initializeGlitchMode() {
+            if (glitchModeEnabled) {
+                const chatContainer = document.querySelector('.chat-container');
+                if (chatContainer) {
+                    chatContainer.classList.add('glitch-mode');
+                    applyGlitchToMessages();
+                }
+            }
+        }
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeGlitchMode);
+        } else {
+            initializeGlitchMode();
+        }
+        
+        setTimeout(initializeGlitchMode, 500);
+        
+        // Snake game (zero reads)
+        let snakeGameActive = false;
+        let snakeCanvas = null;
+        let snakeCtx = null;
+        let snakeInterval = null;
+        
+        function startSnakeGame() {
+            if (snakeGameActive) {
+                stopSnakeGame();
+                return;
+            }
+            
+            // Create canvas overlay
+            snakeCanvas = document.createElement('canvas');
+            snakeCanvas.id = 'snakeGameCanvas';
+            snakeCanvas.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 9999;
+                background: rgba(0, 0, 0, 0.8);
+                cursor: none;
+            `;
+            document.body.appendChild(snakeCanvas);
+            
+            snakeCtx = snakeCanvas.getContext('2d');
+            snakeCanvas.width = window.innerWidth;
+            snakeCanvas.height = window.innerHeight;
+            
+            // Snake game state
+            let snake = [{ x: 50, y: 50 }];
+            let direction = { x: 10, y: 0 };
+            let food = { x: 200, y: 200 };
+            let score = 0;
+            
+            // Generate random food position
+            function generateFood() {
+                food.x = Math.floor(Math.random() * (snakeCanvas.width / 10)) * 10;
+                food.y = Math.floor(Math.random() * (snakeCanvas.height / 10)) * 10;
+            }
+            
+            // Draw game
+            function draw() {
+                // Clear canvas
+                snakeCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                snakeCtx.fillRect(0, 0, snakeCanvas.width, snakeCanvas.height);
+                
+                // Draw food
+                snakeCtx.fillStyle = '#ff0000';
+                snakeCtx.fillRect(food.x, food.y, 10, 10);
+                
+                // Draw snake
+                snakeCtx.fillStyle = '#00ff00';
+                snake.forEach(segment => {
+                    snakeCtx.fillRect(segment.x, segment.y, 10, 10);
+                });
+                
+                // Draw score
+                snakeCtx.fillStyle = '#ffffff';
+                snakeCtx.font = '20px monospace';
+                snakeCtx.fillText(`Score: ${score}`, 10, 30);
+                snakeCtx.fillText('Press ESC to exit', 10, 60);
+            }
+            
+            // Update game
+            function update() {
+                const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+                
+                // Check wall collision
+                if (head.x < 0 || head.x >= snakeCanvas.width || head.y < 0 || head.y >= snakeCanvas.height) {
+                    gameOver();
+                    return;
+                }
+                
+                // Check self collision
+                for (let segment of snake) {
+                    if (head.x === segment.x && head.y === segment.y) {
+                        gameOver();
+                        return;
+                    }
+                }
+                
+                snake.unshift(head);
+                
+                // Check food collision
+                if (head.x === food.x && head.y === food.y) {
+                    score++;
+                    generateFood();
+                } else {
+                    snake.pop();
+                }
+                
+                draw();
+            }
+            
+            function gameOver() {
+                stopSnakeGame();
+                showNotification('info', 'Snake Game', `Game Over! Final Score: ${score}`);
+            }
+            
+            // Keyboard controls
+            const keyHandler = (e) => {
+                if (e.key === 'Escape') {
+                    stopSnakeGame();
+                    return;
+                }
+                
+                switch(e.key) {
+                    case 'ArrowUp':
+                        if (direction.y === 0) direction = { x: 0, y: -10 };
+                        break;
+                    case 'ArrowDown':
+                        if (direction.y === 0) direction = { x: 0, y: 10 };
+                        break;
+                    case 'ArrowLeft':
+                        if (direction.x === 0) direction = { x: -10, y: 0 };
+                        break;
+                    case 'ArrowRight':
+                        if (direction.x === 0) direction = { x: 10, y: 0 };
+                        break;
+                }
+            };
+            
+            window.addEventListener('keydown', keyHandler);
+            
+            // Handle resize
+            const resizeHandler = () => {
+                snakeCanvas.width = window.innerWidth;
+                snakeCanvas.height = window.innerHeight;
+            };
+            window.addEventListener('resize', resizeHandler);
+            
+            snakeGameActive = true;
+            draw();
+            snakeInterval = setInterval(update, 100);
+            
+            showNotification('success', 'Snake Game', 'Game started! Use arrow keys to play. Press ESC to exit.');
+        }
+        
+        function stopSnakeGame() {
+            if (snakeInterval) {
+                clearInterval(snakeInterval);
+                snakeInterval = null;
+            }
+            if (snakeCanvas) {
+                snakeCanvas.remove();
+                snakeCanvas = null;
+                snakeCtx = null;
+            }
+            snakeGameActive = false;
+        }
         
         // View user by username (searches username and displayName)
         async function viewUserByUsername(username) {
