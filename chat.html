@@ -1200,6 +1200,9 @@
             // Title display (golden color)
             const titleHtml = userTitle ? ` <span style="color: #FFD700; font-weight: bold; font-size: 0.9em;">[${getTitleName(userTitle)}]</span>` : '';
             
+            // Add rainbow class if enabled
+            const rainbowClass = rainbowModeEnabled ? ' rainbow-text' : '';
+            
             messageDiv.innerHTML = `
                 <div class="message-header" style="display: flex; align-items: center; gap: 8px;">
                     ${avatarHtml}
@@ -1209,7 +1212,7 @@
                 <div class="message-content">
                     ${imageHtml}
                     ${gifHtml}
-                    ${messageHtml ? `<p>${messageHtml}</p>` : (imageHtml || gifHtml ? '' : '<p></p>')}
+                    ${messageHtml ? `<p class="${rainbowClass.trim()}">${messageHtml}</p>` : (imageHtml || gifHtml ? '' : `<p class="${rainbowClass.trim()}"></p>`)}
                 </div>
             `;
             
@@ -1582,6 +1585,13 @@
                     return;
                 }
                 
+                // Handle /rainbow command
+                if (message === '/rainbow' || message.startsWith('/rainbow ')) {
+                    toggleRainbowMode();
+                    messageInput.value = '';
+                    return;
+                }
+                
                 // Handle /help command
                 if (message === '/help' || message.startsWith('/help ')) {
                     showHelp();
@@ -1618,7 +1628,7 @@
                 }
                 
                 // Unknown command
-                showNotification('info', 'Unknown Command', 'Available commands:\n/announce [message] - Send site-wide announcement\n/mystats - Show your statistics\n/user [username] - View user by username\n/ping - Test response time');
+                showNotification('info', 'Unknown Command', 'Available commands:\n/announce [message] - Send site-wide announcement\n/mystats - Show your statistics\n/user [username] - View user by username\n/ping - Test response time\n/rainbow - Toggle rainbow text mode');
                 messageInput.value = '';
                 return;
             }
@@ -2266,6 +2276,66 @@
 ✅ System: Operational`;
 
             showNotification('success', 'Ping Test', pingMessage);
+        }
+        
+        // Rainbow mode toggle (zero reads - no Firebase)
+        let rainbowModeEnabled = localStorage.getItem('jnjRainbowMode') === 'true';
+        
+        function toggleRainbowMode() {
+            rainbowModeEnabled = !rainbowModeEnabled;
+            localStorage.setItem('jnjRainbowMode', rainbowModeEnabled.toString());
+            
+            const chatContainer = document.querySelector('.chat-container');
+            if (chatContainer) {
+                if (rainbowModeEnabled) {
+                    chatContainer.classList.add('rainbow-mode');
+                    // Apply to existing messages
+                    applyRainbowToMessages();
+                } else {
+                    chatContainer.classList.remove('rainbow-mode');
+                    // Remove from existing messages
+                    removeRainbowFromMessages();
+                }
+            }
+            
+            const status = rainbowModeEnabled ? 'enabled' : 'disabled';
+            const emoji = rainbowModeEnabled ? '🌈' : '⚪';
+            showNotification(rainbowModeEnabled ? 'success' : 'info', 'Rainbow Mode', `${emoji} Rainbow text mode ${status}!`);
+        }
+        
+        function applyRainbowToMessages() {
+            const messages = document.querySelectorAll('.message .message-content p');
+            messages.forEach(msg => {
+                if (!msg.classList.contains('rainbow-text')) {
+                    msg.classList.add('rainbow-text');
+                }
+            });
+        }
+        
+        function removeRainbowFromMessages() {
+            const messages = document.querySelectorAll('.message .message-content p');
+            messages.forEach(msg => {
+                msg.classList.remove('rainbow-text');
+            });
+        }
+        
+        // Initialize rainbow mode on page load
+        if (rainbowModeEnabled) {
+            document.addEventListener('DOMContentLoaded', () => {
+                const chatContainer = document.querySelector('.chat-container');
+                if (chatContainer) {
+                    chatContainer.classList.add('rainbow-mode');
+                    applyRainbowToMessages();
+                }
+            });
+            // Also apply after a short delay to ensure DOM is ready
+            setTimeout(() => {
+                const chatContainer = document.querySelector('.chat-container');
+                if (chatContainer) {
+                    chatContainer.classList.add('rainbow-mode');
+                    applyRainbowToMessages();
+                }
+            }, 100);
         }
         
         // View user by username (searches username and displayName)
