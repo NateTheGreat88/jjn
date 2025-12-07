@@ -120,30 +120,12 @@
         }
     };
     
-    // Load discovered secrets
+    // Load discovered secrets (zero reads - uses localStorage only)
+    // Secrets are synced to localStorage on sign-in via auth.js
     async function loadSecrets() {
-        console.log('Loading secrets...');
+        console.log('Loading secrets from localStorage...');
         
-        // Try to load from Firestore if authenticated
-        if (window.authSystem && window.authSystem.isAuthenticated()) {
-            try {
-                const userData = await window.authSystem.loadUserData(window.authSystem.getUser().uid);
-                if (userData && userData.secrets) {
-                    console.log('Loading secrets from Firestore:', userData.secrets);
-                    Object.keys(secrets).forEach(key => {
-                        if (userData.secrets[key]) {
-                            secrets[key].unlocked = true;
-                        }
-                    });
-                    console.log('Secrets loaded from Firestore');
-                    return;
-                }
-            } catch (e) {
-                console.error('Error loading secrets from Firestore:', e);
-            }
-        }
-        
-        // Fallback to localStorage
+        // Load from localStorage only (like hardcore2 mode)
         const saved = localStorage.getItem(SECRET_STORAGE_KEY);
         if (saved) {
             try {
@@ -159,7 +141,7 @@
                 console.error('Error loading secrets:', e);
             }
         } else {
-            console.log('No saved secrets found');
+            console.log('No saved secrets found in localStorage');
         }
     }
     
