@@ -26,9 +26,20 @@
     
     <div class="chat-container" id="chatContainer">
         <header class="chat-header" id="chatHeader">
-            <h1 id="chatTitle">JNJ Chat</h1>
+            <h1 id="chatTitle">JNJ Chat <span id="announcementBubble" class="announcement-bubble" style="display: none;" onclick="toggleAnnouncement()" title="Click to view announcement">📢</span></h1>
             <p class="chat-subtitle">Junhu Choi • Jaxon Croskey • Nathan DeLuca</p>
             <button id="devStarButton" class="dev-star-button" style="display: none; position: absolute; top: 10px; right: 10px; background: rgba(255, 215, 0, 0.2); border: 2px solid #ffd700; border-radius: 50%; width: 50px; height: 50px; font-size: 28px; cursor: pointer; z-index: 1000; transition: all 0.2s; color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.8); box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);" title="Become a Dev">⭐</button>
+            <div id="announcementPanel" class="announcement-panel" style="display: none;">
+                <div class="announcement-panel-content">
+                    <div class="announcement-panel-header">
+                        <span class="announcement-panel-icon">📢</span>
+                        <h3>Announcement</h3>
+                        <button class="announcement-panel-close" onclick="toggleAnnouncement()">×</button>
+                    </div>
+                    <div id="announcementPanelText" class="announcement-panel-text"></div>
+                    <div id="announcementPanelAuthor" class="announcement-panel-author"></div>
+                </div>
+            </div>
             <div class="room-controls">
                 <button id="createRoomButton" class="room-button" style="display: none;">Create Private Room</button>
                 <button id="joinRoomButton" class="room-button" style="display: none;">Join Room</button>
@@ -1505,6 +1516,42 @@
             let message = messageInput.value.trim();
             if ((message === '' && !selectedImage && !selectedGif) || !currentUserName) return;
 
+            // Check for dev commands
+            if (message.startsWith('/')) {
+                // Check if user is a dev
+                if (!isDev()) {
+                    alert('Only developers can use commands.');
+                    messageInput.value = '';
+                    return;
+                }
+                
+                // Handle /announce command
+                if (message.startsWith('/announce ')) {
+                    const announcementText = message.substring(10).trim(); // Remove '/announce '
+                    if (announcementText === '') {
+                        alert('Please provide an announcement message. Usage: /announce Your message here');
+                        messageInput.value = '';
+                        return;
+                    }
+                    
+                    // Save announcement to Firestore
+                    saveAnnouncement(announcementText).then(() => {
+                        alert('✅ Announcement sent successfully!');
+                        messageInput.value = '';
+                    }).catch((error) => {
+                        console.error('Error saving announcement:', error);
+                        alert('❌ Error saving announcement. Please try again.');
+                        messageInput.value = '';
+                    });
+                    return;
+                }
+                
+                // Unknown command
+                alert('Unknown command. Available commands:\n/announce [message] - Send site-wide announcement');
+                messageInput.value = '';
+                return;
+            }
+
             // Check for chat code secret: "JNJ2025"
             if (message.toLowerCase() === 'jnj2025' && window.secretPages) {
                 if (window.secretPages.unlock('chatcode')) {
@@ -1742,6 +1789,12 @@
             currentRoomCode = roomCode;
             localStorage.setItem('jjnChatRoomCode', roomCode);
             
+            // Remove announcement banner when creating a room
+            const announcementBanner = document.getElementById('announcementBanner');
+            if (announcementBanner) {
+                announcementBanner.remove();
+            }
+            
             // Save room metadata to Firestore
             if (db) {
                 db.collection('rooms').doc(roomCode).set({
@@ -1879,6 +1932,12 @@
                 
                 // Update UI
                 updateRoomUI();
+                
+                // Remove announcement banner when entering a room
+                const announcementBanner = document.getElementById('announcementBanner');
+                if (announcementBanner) {
+                    announcementBanner.remove();
+                }
                 
                 // Close modal
                 joinRoomModal.style.display = 'none';
@@ -2018,6 +2077,165 @@
             }
             return false;
         }
+        
+        // Save announcement to Firestore
+        async function saveAnnouncement(text) {
+            if (!db) {
+                try {
+                    if (typeof firebaseConfig !== 'undefined') {
+                        if (!firebase.apps || firebase.apps.length === 0) {
+                            firebase.initializeApp(firebaseConfig);
+                        }
+                        db = firebase.firestore();
+                    } else {
+                        throw new Error('Firebase config not found');
+                    }
+                } catch (error) {
+                    throw new Error('Firebase not available');
+                }
+            }
+            
+            const profileData = localStorage.getItem('jnjUserProfile');
+            let devName = 'Developer';
+            if (profileData) {
+                try {
+                    const profile = JSON.parse(profileData);
+                    devName = profile.displayName || profile.username || 'Developer';
+                } catch (e) {
+                    // Ignore
+                }
+            }
+            
+            // First, delete all existing active announcements
+            try {
+                const existingSnapshot = await db.collection('announcements')
+                    .where('active', '==', true)
+                    .get();
+                
+                // Delete all active announcements
+                const deletePromises = existingSnapshot.docs.map(doc => doc.ref.delete());
+                await Promise.all(deletePromises);
+                
+                if (existingSnapshot.docs.length > 0) {
+                    console.log(`Deleted ${existingSnapshot.docs.length} old announcement(s)`);
+                }
+            } catch (error) {
+                console.error('Error deleting old announcements:', error);
+                // Continue anyway - try to create the new announcement
+            }
+            
+            // Create the new announcement
+            const announcementData = {
+                text: text,
+                createdBy: devName,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                active: true
+            };
+            
+            return db.collection('announcements').add(announcementData);
+        }
+        
+        // Load and display announcements (only in main chat, not in private rooms)
+        async function loadAnnouncements() {
+            // Don't show announcements in private rooms
+            if (currentRoomCode) {
+                return;
+            }
+            
+            if (!db) {
+                try {
+                    if (typeof firebaseConfig !== 'undefined') {
+                        if (!firebase.apps || firebase.apps.length === 0) {
+                            firebase.initializeApp(firebaseConfig);
+                        }
+                        db = firebase.firestore();
+                    } else {
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Firebase initialization error:', error);
+                    return;
+                }
+            }
+            
+            try {
+                const snapshot = await db.collection('announcements')
+                    .where('active', '==', true)
+                    .orderBy('createdAt', 'desc')
+                    .limit(1)
+                    .get();
+                
+                if (!snapshot.empty) {
+                    const doc = snapshot.docs[0];
+                    announcementId = doc.id;
+                    const announcementData = doc.data();
+                    currentAnnouncement = {
+                        text: announcementData.text,
+                        createdBy: announcementData.createdBy || 'Developer',
+                        createdAt: announcementData.createdAt
+                    };
+                    
+                    // Check if announcement has been read
+                    checkAnnouncementRead();
+                }
+            } catch (error) {
+                console.error('Error loading announcements:', error);
+            }
+        }
+        
+        // Global announcement data
+        let currentAnnouncement = null;
+        let announcementId = null;
+        
+        // Check if announcement has been read
+        function checkAnnouncementRead() {
+            if (!announcementId) return;
+            
+            const readAnnouncements = JSON.parse(localStorage.getItem('jnjReadAnnouncements') || '[]');
+            const isRead = readAnnouncements.includes(announcementId);
+            
+            const bubble = document.getElementById('announcementBubble');
+            if (bubble) {
+                if (!isRead) {
+                    bubble.style.display = 'inline-block';
+                    bubble.classList.add('unread');
+                } else {
+                    bubble.style.display = 'inline-block';
+                    bubble.classList.remove('unread');
+                }
+            }
+        }
+        
+        // Toggle announcement panel
+        function toggleAnnouncement() {
+            const panel = document.getElementById('announcementPanel');
+            const bubble = document.getElementById('announcementBubble');
+            
+            if (!panel || !currentAnnouncement) return;
+            
+            if (panel.style.display === 'none' || panel.style.display === '') {
+                // Show panel
+                panel.style.display = 'block';
+                document.getElementById('announcementPanelText').textContent = currentAnnouncement.text;
+                document.getElementById('announcementPanelAuthor').textContent = `- ${currentAnnouncement.createdBy}`;
+                
+                // Mark as read
+                if (announcementId) {
+                    const readAnnouncements = JSON.parse(localStorage.getItem('jnjReadAnnouncements') || '[]');
+                    if (!readAnnouncements.includes(announcementId)) {
+                        readAnnouncements.push(announcementId);
+                        localStorage.setItem('jnjReadAnnouncements', JSON.stringify(readAnnouncements));
+                        if (bubble) bubble.classList.remove('unread');
+                    }
+                }
+            } else {
+                // Hide panel
+                panel.style.display = 'none';
+            }
+        }
+        
+        // Make toggleAnnouncement available globally
+        window.toggleAnnouncement = toggleAnnouncement;
 
         // Check if dev chat is active on page load
         function checkDevChatOnLoad() {
@@ -2293,6 +2511,9 @@
                 // Fallback: reload from localStorage
                 loadMessages();
             }
+            
+            // Load announcements when returning to main chat
+            loadAnnouncements();
         }
         
         // Copy room code to clipboard
@@ -2490,6 +2711,7 @@
         // Initialize on page load
         loadUserName();
         loadMessages();
+        loadAnnouncements();
         
         // Cursor Trail Effect - Smooth line effect
         const trails = [];

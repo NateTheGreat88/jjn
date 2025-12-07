@@ -69,8 +69,19 @@
         </div>
         
         <header>
-            <h1>JNJ WEBSITE</h1>
+            <h1>JNJ WEBSITE <span id="announcementBubble" class="announcement-bubble" style="display: none;" onclick="toggleAnnouncement()" title="Click to view announcement">📢</span></h1>
             <p class="subtitle">Created by <span class="creator-name">Junhu Choi</span>, <span class="creator-name">Nathan DeLuca</span>, and <span class="creator-name">Jaxon Croskey</span></p>
+            <div id="announcementPanel" class="announcement-panel" style="display: none;">
+                <div class="announcement-panel-content">
+                    <div class="announcement-panel-header">
+                        <span class="announcement-panel-icon">📢</span>
+                        <h3>Announcement</h3>
+                        <button class="announcement-panel-close" onclick="toggleAnnouncement()">×</button>
+                    </div>
+                    <div id="announcementPanelText" class="announcement-panel-text"></div>
+                    <div id="announcementPanelAuthor" class="announcement-panel-author"></div>
+                </div>
+            </div>
         </header>
 
         <section class="features-section">
@@ -324,6 +335,100 @@
         
         // Show indicators on page load
         showRecentIndicators();
+        
+        // Global announcement data
+        let currentAnnouncement = null;
+        let announcementId = null;
+        
+        // Load and check announcements
+        async function loadAnnouncements() {
+            try {
+                if (typeof firebaseConfig === 'undefined' || typeof firebase === 'undefined') {
+                    return;
+                }
+                
+                // Initialize Firebase if not already done
+                if (!firebase.apps || firebase.apps.length === 0) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                
+                const db = firebase.firestore();
+                const snapshot = await db.collection('announcements')
+                    .where('active', '==', true)
+                    .orderBy('createdAt', 'desc')
+                    .limit(1)
+                    .get();
+                
+                if (!snapshot.empty) {
+                    const doc = snapshot.docs[0];
+                    announcementId = doc.id;
+                    const announcementData = doc.data();
+                    currentAnnouncement = {
+                        text: announcementData.text,
+                        createdBy: announcementData.createdBy || 'Developer',
+                        createdAt: announcementData.createdAt
+                    };
+                    
+                    // Check if announcement has been read
+                    checkAnnouncementRead();
+                }
+            } catch (error) {
+                console.error('Error loading announcements:', error);
+            }
+        }
+        
+        // Check if announcement has been read
+        function checkAnnouncementRead() {
+            if (!announcementId) return;
+            
+            const readAnnouncements = JSON.parse(localStorage.getItem('jnjReadAnnouncements') || '[]');
+            const isRead = readAnnouncements.includes(announcementId);
+            
+            const bubble = document.getElementById('announcementBubble');
+            if (bubble) {
+                if (!isRead) {
+                    bubble.style.display = 'inline-block';
+                    bubble.classList.add('unread');
+                } else {
+                    bubble.style.display = 'inline-block';
+                    bubble.classList.remove('unread');
+                }
+            }
+        }
+        
+        // Toggle announcement panel
+        function toggleAnnouncement() {
+            const panel = document.getElementById('announcementPanel');
+            const bubble = document.getElementById('announcementBubble');
+            
+            if (!panel || !currentAnnouncement) return;
+            
+            if (panel.style.display === 'none' || panel.style.display === '') {
+                // Show panel
+                panel.style.display = 'block';
+                document.getElementById('announcementPanelText').textContent = currentAnnouncement.text;
+                document.getElementById('announcementPanelAuthor').textContent = `- ${currentAnnouncement.createdBy}`;
+                
+                // Mark as read
+                if (announcementId) {
+                    const readAnnouncements = JSON.parse(localStorage.getItem('jnjReadAnnouncements') || '[]');
+                    if (!readAnnouncements.includes(announcementId)) {
+                        readAnnouncements.push(announcementId);
+                        localStorage.setItem('jnjReadAnnouncements', JSON.stringify(readAnnouncements));
+                        if (bubble) bubble.classList.remove('unread');
+                    }
+                }
+            } else {
+                // Hide panel
+                panel.style.display = 'none';
+            }
+        }
+        
+        // Make toggleAnnouncement available globally
+        window.toggleAnnouncement = toggleAnnouncement;
+        
+        // Load announcements on page load
+        loadAnnouncements();
         
         // Show Events button if user has visited events or account created before tomorrow
         async function checkAndShowEventsButton() {

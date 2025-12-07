@@ -60,6 +60,14 @@ service cloud.firestore {
       );
     }
     
+    // Announcements - allow anyone to read active announcements, only authenticated users (devs) can create
+    match /announcements/{announcementId} {
+      allow read: if true; // Anyone can read announcements (for public display)
+      allow create: if request.auth != null; // Only authenticated users (devs) can create
+      allow update: if request.auth != null; // Only authenticated users (devs) can update (to deactivate)
+      allow delete: if request.auth != null; // Only authenticated users (devs) can delete
+    }
+    
   }
 }
 
