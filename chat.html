@@ -2278,6 +2278,31 @@
             }
         }
         
+        // Show help (zero reads)
+        function showHelp() {
+            const helpMessage = `📚 Developer Commands
+
+/announce [message]
+   Send site-wide announcement
+
+/mystats
+   Show your statistics
+
+/user [username]
+   View user by username
+
+/ping
+   Test response time
+
+/rainbow
+   Toggle rainbow text mode
+
+/help
+   Show this help message`;
+
+            showNotification('info', 'Command Help', helpMessage);
+        }
+        
         // Ping test (zero reads - no Firebase)
         function pingTest() {
             const startTime = performance.now();
