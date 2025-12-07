@@ -161,6 +161,15 @@
         </div>
     </div>
 
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <span class="notification-icon" id="notificationIcon">✅</span>
+        <div class="notification-content">
+            <div class="notification-title" id="notificationTitle">Success</div>
+            <div class="notification-message" id="notificationMessage"></div>
+        </div>
+    </div>
+
     <!-- Message Actions Modal (for dev users) -->
     <div id="messageActionsModal" class="modal" style="display: none;">
         <div class="modal-content" style="max-width: 400px;">
@@ -1520,7 +1529,7 @@
             if (message.startsWith('/')) {
                 // Check if user is a dev
                 if (!isDev()) {
-                    alert('Only developers can use commands.');
+                    showNotification('error', 'Access Denied', 'Only developers can use commands.');
                     messageInput.value = '';
                     return;
                 }
@@ -1529,25 +1538,25 @@
                 if (message.startsWith('/announce ')) {
                     const announcementText = message.substring(10).trim(); // Remove '/announce '
                     if (announcementText === '') {
-                        alert('Please provide an announcement message. Usage: /announce Your message here');
+                        showNotification('error', 'Invalid Command', 'Please provide an announcement message.\n\nUsage: /announce Your message here');
                         messageInput.value = '';
                         return;
                     }
                     
                     // Save announcement to Firestore
                     saveAnnouncement(announcementText).then(() => {
-                        alert('✅ Announcement sent successfully!');
+                        showNotification('success', 'Announcement Sent', 'Your announcement has been sent successfully!');
                         messageInput.value = '';
                     }).catch((error) => {
                         console.error('Error saving announcement:', error);
-                        alert('❌ Error saving announcement. Please try again.');
+                        showNotification('error', 'Error', 'Failed to save announcement. Please try again.');
                         messageInput.value = '';
                     });
                     return;
                 }
                 
                 // Unknown command
-                alert('Unknown command. Available commands:\n/announce [message] - Send site-wide announcement');
+                showNotification('info', 'Unknown Command', 'Available commands:\n/announce [message] - Send site-wide announcement');
                 messageInput.value = '';
                 return;
             }
@@ -2078,6 +2087,36 @@
             return false;
         }
         
+        // Show notification (like shop)
+        function showNotification(type, title, message) {
+            const notification = document.getElementById('notification');
+            const notificationIcon = document.getElementById('notificationIcon');
+            const notificationTitle = document.getElementById('notificationTitle');
+            const notificationMessage = document.getElementById('notificationMessage');
+
+            if (!notification) return;
+
+            // Set icon based on type
+            if (type === 'success') {
+                notificationIcon.textContent = '✅';
+                notification.className = 'notification success show';
+            } else if (type === 'error') {
+                notificationIcon.textContent = '❌';
+                notification.className = 'notification error show';
+            } else {
+                notificationIcon.textContent = 'ℹ️';
+                notification.className = 'notification info show';
+            }
+
+            notificationTitle.textContent = title;
+            notificationMessage.textContent = message;
+
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 5000);
+        }
+        
         // Save announcement to Firestore
         async function saveAnnouncement(text) {
             if (!db) {
@@ -2135,10 +2174,18 @@
             return db.collection('announcements').add(announcementData);
         }
         
+        // Real-time announcement listener
+        let announcementUnsubscribe = null;
+        
         // Load and display announcements (only in main chat, not in private rooms)
-        async function loadAnnouncements() {
+        function loadAnnouncements() {
             // Don't show announcements in private rooms
             if (currentRoomCode) {
+                // Unsubscribe if in a room
+                if (announcementUnsubscribe) {
+                    announcementUnsubscribe();
+                    announcementUnsubscribe = null;
+                }
                 return;
             }
             
@@ -2158,17 +2205,38 @@
                 }
             }
             
+            // Unsubscribe from previous listener if exists
+            if (announcementUnsubscribe) {
+                announcementUnsubscribe();
+            }
+            
             try {
-                const snapshot = await db.collection('announcements')
+                // Set up real-time listener for announcements
+                announcementUnsubscribe = db.collection('announcements')
                     .where('active', '==', true)
                     .orderBy('createdAt', 'desc')
                     .limit(1)
-                    .get();
-                
+                    .onSnapshot((snapshot) => {
                 if (!snapshot.empty) {
                     const doc = snapshot.docs[0];
-                    announcementId = doc.id;
+                    const newAnnouncementId = doc.id;
                     const announcementData = doc.data();
+                    
+                    // Check if this is a genuinely new announcement (ID changed, not just initial load)
+                    const isNewAnnouncement = announcementId !== null && newAnnouncementId !== announcementId;
+                    
+                    // Only clear read status if it's actually a different announcement
+                    if (isNewAnnouncement) {
+                        // Clear read status for new announcement
+                        const readAnnouncements = JSON.parse(localStorage.getItem('jnjReadAnnouncements') || '[]');
+                        const index = readAnnouncements.indexOf(newAnnouncementId);
+                        if (index > -1) {
+                            readAnnouncements.splice(index, 1);
+                            localStorage.setItem('jnjReadAnnouncements', JSON.stringify(readAnnouncements));
+                        }
+                    }
+                    
+                    announcementId = newAnnouncementId;
                     currentAnnouncement = {
                         text: announcementData.text,
                         createdBy: announcementData.createdBy || 'Developer',
@@ -2177,9 +2245,24 @@
                     
                     // Check if announcement has been read
                     checkAnnouncementRead();
-                }
+                        } else {
+                            // No active announcements
+                            announcementId = null;
+                            currentAnnouncement = null;
+                            const bubble = document.getElementById('announcementBubble');
+                            if (bubble) {
+                                bubble.style.display = 'none';
+                            }
+                            const panel = document.getElementById('announcementPanel');
+                            if (panel) {
+                                panel.style.display = 'none';
+                            }
+                        }
+                    }, (error) => {
+                        console.error('Error listening to announcements:', error);
+                    });
             } catch (error) {
-                console.error('Error loading announcements:', error);
+                console.error('Error setting up announcement listener:', error);
             }
         }
         
@@ -2191,18 +2274,22 @@
         function checkAnnouncementRead() {
             if (!announcementId) return;
             
-            const readAnnouncements = JSON.parse(localStorage.getItem('jnjReadAnnouncements') || '[]');
-            const isRead = readAnnouncements.includes(announcementId);
-            
-            const bubble = document.getElementById('announcementBubble');
-            if (bubble) {
-                if (!isRead) {
-                    bubble.style.display = 'inline-block';
-                    bubble.classList.add('unread');
-                } else {
-                    bubble.style.display = 'inline-block';
-                    bubble.classList.remove('unread');
+            try {
+                const readAnnouncements = JSON.parse(localStorage.getItem('jnjReadAnnouncements') || '[]');
+                const isRead = readAnnouncements.includes(announcementId);
+                
+                const bubble = document.getElementById('announcementBubble');
+                if (bubble) {
+                    if (!isRead) {
+                        bubble.style.display = 'inline-block';
+                        bubble.classList.add('unread');
+                    } else {
+                        bubble.style.display = 'inline-block';
+                        bubble.classList.remove('unread');
+                    }
                 }
+            } catch (e) {
+                console.error('Error checking announcement read status:', e);
             }
         }
         
@@ -2512,7 +2599,7 @@
                 loadMessages();
             }
             
-            // Load announcements when returning to main chat
+            // Load announcements when returning to main chat (real-time listener)
             loadAnnouncements();
         }
         

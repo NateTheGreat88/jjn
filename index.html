@@ -340,8 +340,11 @@
         let currentAnnouncement = null;
         let announcementId = null;
         
+        // Real-time announcement listener
+        let announcementUnsubscribe = null;
+        
         // Load and check announcements
-        async function loadAnnouncements() {
+        function loadAnnouncements() {
             try {
                 if (typeof firebaseConfig === 'undefined' || typeof firebase === 'undefined') {
                     return;
@@ -353,16 +356,38 @@
                 }
                 
                 const db = firebase.firestore();
-                const snapshot = await db.collection('announcements')
+                
+                // Unsubscribe from previous listener if exists
+                if (announcementUnsubscribe) {
+                    announcementUnsubscribe();
+                }
+                
+                // Set up real-time listener for announcements
+                announcementUnsubscribe = db.collection('announcements')
                     .where('active', '==', true)
                     .orderBy('createdAt', 'desc')
                     .limit(1)
-                    .get();
-                
+                    .onSnapshot((snapshot) => {
                 if (!snapshot.empty) {
                     const doc = snapshot.docs[0];
-                    announcementId = doc.id;
+                    const newAnnouncementId = doc.id;
                     const announcementData = doc.data();
+                    
+                    // Check if this is a genuinely new announcement (ID changed, not just initial load)
+                    const isNewAnnouncement = announcementId !== null && newAnnouncementId !== announcementId;
+                    
+                    // Only clear read status if it's actually a different announcement
+                    if (isNewAnnouncement) {
+                        // Clear read status for new announcement
+                        const readAnnouncements = JSON.parse(localStorage.getItem('jnjReadAnnouncements') || '[]');
+                        const index = readAnnouncements.indexOf(newAnnouncementId);
+                        if (index > -1) {
+                            readAnnouncements.splice(index, 1);
+                            localStorage.setItem('jnjReadAnnouncements', JSON.stringify(readAnnouncements));
+                        }
+                    }
+                    
+                    announcementId = newAnnouncementId;
                     currentAnnouncement = {
                         text: announcementData.text,
                         createdBy: announcementData.createdBy || 'Developer',
@@ -371,9 +396,24 @@
                     
                     // Check if announcement has been read
                     checkAnnouncementRead();
-                }
+                        } else {
+                            // No active announcements
+                            announcementId = null;
+                            currentAnnouncement = null;
+                            const bubble = document.getElementById('announcementBubble');
+                            if (bubble) {
+                                bubble.style.display = 'none';
+                            }
+                            const panel = document.getElementById('announcementPanel');
+                            if (panel) {
+                                panel.style.display = 'none';
+                            }
+                        }
+                    }, (error) => {
+                        console.error('Error listening to announcements:', error);
+                    });
             } catch (error) {
-                console.error('Error loading announcements:', error);
+                console.error('Error setting up announcement listener:', error);
             }
         }
         
@@ -381,18 +421,22 @@
         function checkAnnouncementRead() {
             if (!announcementId) return;
             
-            const readAnnouncements = JSON.parse(localStorage.getItem('jnjReadAnnouncements') || '[]');
-            const isRead = readAnnouncements.includes(announcementId);
-            
-            const bubble = document.getElementById('announcementBubble');
-            if (bubble) {
-                if (!isRead) {
-                    bubble.style.display = 'inline-block';
-                    bubble.classList.add('unread');
-                } else {
-                    bubble.style.display = 'inline-block';
-                    bubble.classList.remove('unread');
+            try {
+                const readAnnouncements = JSON.parse(localStorage.getItem('jnjReadAnnouncements') || '[]');
+                const isRead = readAnnouncements.includes(announcementId);
+                
+                const bubble = document.getElementById('announcementBubble');
+                if (bubble) {
+                    if (!isRead) {
+                        bubble.style.display = 'inline-block';
+                        bubble.classList.add('unread');
+                    } else {
+                        bubble.style.display = 'inline-block';
+                        bubble.classList.remove('unread');
+                    }
                 }
+            } catch (e) {
+                console.error('Error checking announcement read status:', e);
             }
         }
         
