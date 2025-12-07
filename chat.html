@@ -1555,8 +1555,15 @@
                     return;
                 }
                 
+                // Handle /mystats command
+                if (message === '/mystats' || message.startsWith('/mystats ')) {
+                    showMyStats();
+                    messageInput.value = '';
+                    return;
+                }
+                
                 // Unknown command
-                showNotification('info', 'Unknown Command', 'Available commands:\n/announce [message] - Send site-wide announcement');
+                showNotification('info', 'Unknown Command', 'Available commands:\n/announce [message] - Send site-wide announcement\n/mystats - Show your statistics');
                 messageInput.value = '';
                 return;
             }
@@ -2115,6 +2122,73 @@
             setTimeout(() => {
                 notification.classList.remove('show');
             }, 5000);
+        }
+        
+        // Show my stats (zero reads - uses localStorage only)
+        function showMyStats() {
+            try {
+                const profileData = localStorage.getItem('jnjUserProfile');
+                const profile = profileData ? JSON.parse(profileData) : {};
+                
+                const messageCount = parseInt(localStorage.getItem('jnjMessageCount') || '0');
+                const kindWordCount = parseInt(localStorage.getItem('jnjKindWordCount') || '0');
+                const unlockedTitles = profile.unlockedTitles || [];
+                const equippedTitle = profile.equippedTitle || 'None';
+                const joinDate = profile.joinDate ? new Date(profile.joinDate).toLocaleDateString() : 'Unknown';
+                const isDev = profile.isDev === true;
+                const isVip = profile.isVip === true;
+                const displayName = profile.displayName || profile.username || 'Unknown';
+                
+                // Calculate days since join
+                let daysSinceJoin = 'Unknown';
+                if (profile.joinDate) {
+                    const join = new Date(profile.joinDate);
+                    const now = new Date();
+                    const days = Math.floor((now - join) / (1000 * 60 * 60 * 24));
+                    daysSinceJoin = days.toString();
+                }
+                
+                // Get title names
+                const TITLES = {
+                    'newbie': 'Newbie',
+                    'tech-wizard': 'Tech Wizard',
+                    'early-bird': 'Early Bird',
+                    'dev': 'Developer',
+                    'veteran': 'Veteran',
+                    'chatterbox': 'Chatterbox',
+                    'legend': 'Legend',
+                    'kind-word-user': 'Kind Word User',
+                    'turkey-king': 'Turkey King',
+                    'lebron': 'Lebron',
+                    'legendary': 'Legendary',
+                    'vip': 'VIP',
+                    'pro': 'Pro',
+                    'elite': 'Elite',
+                    'champion': 'Champion'
+                };
+                
+                const titleNames = unlockedTitles.map(id => TITLES[id] || id).join(', ') || 'None';
+                const equippedTitleName = TITLES[equippedTitle] || equippedTitle || 'None';
+                
+                const statsMessage = `📊 Your Statistics
+
+👤 Name: ${displayName}
+⭐ Status: ${isDev ? 'Developer' : (isVip ? 'VIP' : 'User')}
+📅 Joined: ${joinDate} (${daysSinceJoin} days ago)
+
+💬 Messages Sent: ${messageCount}
+💝 Kind Words: ${kindWordCount}
+
+🏆 Titles Unlocked: ${unlockedTitles.length}
+   ${titleNames}
+   
+👑 Equipped Title: ${equippedTitleName}`;
+
+                showNotification('info', 'Your Stats', statsMessage);
+            } catch (e) {
+                console.error('Error showing stats:', e);
+                showNotification('error', 'Error', 'Failed to load statistics.');
+            }
         }
         
         // Save announcement to Firestore
