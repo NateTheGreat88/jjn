@@ -71,6 +71,7 @@
         <header>
             <h1>JNJ WEBSITE <span id="announcementBubble" class="announcement-bubble" style="display: none;" onclick="toggleAnnouncement()" title="Click to view announcement">📢</span></h1>
             <p class="subtitle">Created by <span class="creator-name">Junhu Choi</span>, <span class="creator-name">Nathan DeLuca</span>, and <span class="creator-name">Jaxon Croskey</span></p>
+            <div id="minecraftTip" class="minecraft-tip"></div>
             <div id="announcementPanel" class="announcement-panel" style="display: none;">
                 <div class="announcement-panel-content">
                     <div class="announcement-panel-header">
@@ -1128,6 +1129,206 @@
             });
         } else {
             setTimeout(resetLeavesParticleType, 500);
+        }
+        
+        // Minecraft-inspired tip system (zero reads - client-side only)
+        const minecraftTips = [
+            "Did you know? The JNJ website was created by three talented developers!",
+            "Tip: Use the search bar to quickly find pages!",
+            "Fun fact: You can unlock secret pages by exploring!",
+            "Pro tip: Check your profile to customize your avatar!",
+            "Did you know? The chat supports real-time messaging!",
+            "Tip: Visit the shop to get exclusive items!",
+            "Fun fact: There are hidden easter eggs throughout the site!",
+            "Pro tip: Use keyboard shortcuts for faster navigation!",
+            "Did you know? You can create private chat rooms!",
+            "Tip: Check out the minigames for some fun!",
+            "Fun fact: The website has both light and dark themes!",
+            "Pro tip: Save your favorite pages for quick access!",
+            "Did you know? You can customize your profile with titles!",
+            "Tip: Explore the secret pages for hidden content!",
+            "Fun fact: The site uses Firebase for real-time features!",
+            "Pro tip: Join the chat to connect with others!",
+            "Did you know? You can purchase exclusive merchandise!",
+            "Tip: Check announcements for important updates!",
+            "Fun fact: The website is constantly being improved!",
+            "Fun fact: The code editor supports multiple languages!",
+            "Fun fact: The image editor has advanced filters!",
+            "Pro tip: Check your profile for unlocked achievements!",
+            "Did you know? Secret pages unlock as you explore!",
+            "Tip: The shop has exclusive limited edition items!",
+            "Fun fact: You can customize your profile image!",
+            "Pro tip: Use the search to find pages instantly!",
+            "Did you know? The chat has room support!",
+            "Fun fact: The website works on mobile devices!",
+            "Pro tip: Dark mode is easier on the eyes!",
+            "Did you know? You can view other users' profiles!",
+            "Tip: The shop accepts virtual currency!",
+            "Fun fact: There are multiple secret pages to discover!",
+            "Pro tip: Check announcements for new features!",
+            "Did you know? The site is optimized for speed!",
+            "Fun fact: The chat saves your message history!",
+            "Pro tip: Try different themes for customization!",
+            "Did you know? You can create custom chat rooms!",
+            "Tip: The minigames collection is always growing!",
+            "Fun fact: The code editor has syntax highlighting!",
+            "Pro tip: Save your favorite shop items to wishlist!",
+            "Did you know? The website uses modern web technologies!",
+            "Tip: Check the events page for special occasions!",
+            "Fun fact: The image editor supports layers!",
+            "Pro tip: Use keyboard shortcuts for efficiency!",
+            "Did you know? The chat supports emoji reactions!",
+            "Tip: Try exploring all the pages to find secrets!",
+            "Fun fact: The shop has seasonal items!",
+            "Pro tip: Your profile shows your activity stats!",
+            "Did you know? The website is mobile responsive!",
+            "Tip: Use the search bar for quick navigation!",
+            "Fun fact: The code editor has auto-complete!",
+            "Pro tip: Check your profile for customization options!",
+            "Fun fact: The image editor has filters and effects!",
+            "Pro tip: Visit the shop for exclusive merchandise!",
+            "Did you know? You can unlock achievements!",
+            "Tip: The website has both light and dark themes!",
+            "Fun fact: The chat supports GIFs and images!",
+            "Did you know? The code editor supports many languages!",
+            "Tip: Check announcements for important updates!",
+            "Fun fact: The shop has subscription items!",
+            "Pro tip: Your profile tracks your activity!",
+            "Did you know? The website is constantly updated!",
+            "Tip: Try exploring to find hidden features!",
+            "Fun fact: The chat has real-time notifications!",
+            "Pro tip: Use the search to find what you need!",
+            "Did you know? The image editor has advanced tools!",
+            "Tip: Check your profile for unlocked items!",
+            "Fun fact: The website supports multiple browsers!",
+            "Pro tip: Try different pages to discover features!",
+            "Did you know? The chat saves your preferences!",
+            "Tip: Use /ping to test your connection!",
+            "Fun fact: The shop has limited edition items!",
+            "Pro tip: Check the events page regularly!",
+            "Did you know? The code editor has error detection!",
+            "Fun fact: The website uses Firebase for data!",
+            "Pro tip: Your profile shows your achievements!",
+            "Did you know? The chat supports private rooms!",
+            "Fun fact: The image editor has undo/redo!",
+            "Pro tip: Check announcements for new features!",
+            "Did you know? The website is open source inspired!",
+            "Tip: Try exploring all the secret pages!",
+            "Fun fact: The shop has virtual and physical items!",
+            "Pro tip: Use keyboard shortcuts to navigate faster!",
+            "Did you know? The chat has message history!",
+            "Tip: Check your profile for customization!",
+            "Fun fact: The code editor supports debugging!",
+            "Pro tip: Visit the shop for exclusive items!",
+            "Did you know? The website has smooth animations!",
+            "Fun fact: The image editor has export options!",
+            "Pro tip: Use the search bar for quick access!",
+            "Did you know? The chat supports markdown formatting!",
+            "Tip: Check announcements for updates!",
+            "Fun fact: The website is optimized for performance!",
+            "Pro tip: Try different themes to personalize!",
+            "Did you know? The shop has wishlist functionality!",
+            "Fun fact: The code editor has code formatting!",
+            "Pro tip: Check your profile for unlocked secrets!",
+            "Did you know? The chat has emoji support!",
+            "Tip: Try exploring to find hidden features!",
+            "Fun fact: The website supports multiple devices!",
+            "Pro tip: Use keyboard shortcuts for efficiency!",
+            "Did you know? The image editor has crop tools!",
+            "Tip: Visit the shop for limited items!",
+            "Fun fact: The chat saves your room preferences!",
+            "Pro tip: Check announcements regularly!",
+            "Did you know? The website uses modern CSS!",
+            "Fun fact: The code editor has syntax validation!",
+            "Pro tip: Your profile tracks your progress!",
+            "Did you know? The shop has subscription options!",
+            "Tip: Use the search to find pages quickly!",
+            "Pro tip: Check your profile for achievements!",
+            "Did you know? The website is mobile friendly!",
+            "Fun fact: The image editor has filters!",
+            "Pro tip: Visit the events page for updates!",
+            "Did you know? The chat supports GIFs!",
+            "Fun fact: The website has smooth transitions!",
+            "Pro tip: Check announcements for news!",
+            "Did you know? The code editor has line numbers!",
+            "Tip: Try exploring all the pages!",
+            "Fun fact: The shop has exclusive merchandise!",
+            "Pro tip: Use keyboard shortcuts!",
+            "Did you know? The chat has room codes!",
+            "Tip: Check your profile for stats!",
+            "Fun fact: The website is constantly improved!",
+            "Did you know? The image editor has layers!",
+            "Tip: Visit the shop for new items!",
+            "Fun fact: The chat saves your history!",
+            "Pro tip: Use the search bar!",
+            "Did you know? The code editor has themes!",
+            "Tip: Check announcements!",
+            "Fun fact: The website supports all browsers!",
+            "Did you know? The shop has virtual currency!",
+            "Tip: Explore to find secrets!",
+            "Fun fact: The chat has notifications!",
+            "Pro tip: Customize your profile!",
+            "Did you know? The website uses Firebase!",
+            "Fun fact: The image editor has tools!",
+            "Pro tip: Check the events page!",
+            "Fun fact: The website has animations!",
+            "Pro tip: Visit the shop!",
+            "Did you know? The code editor is powerful!",
+            "Tip: Check your profile!",
+            "Fun fact: The chat is real-time!",
+            "Pro tip: Use keyboard shortcuts!",
+            "Did you know? The website is awesome!",
+            "Fun fact: The shop has items!",
+            "Pro tip: Explore everything!",
+            "Did you know? The chat is cool!",
+            "Tip: Check announcements!",
+            "Fun fact: The website rocks!",
+            "Pro tip: Have fun exploring!"
+        ];
+        
+        let lastTipIndex = -1;
+        
+        function showMinecraftTip() {
+            const tipElement = document.getElementById('minecraftTip');
+            if (!tipElement) return;
+            
+            // Fade out
+            tipElement.style.opacity = '0';
+            
+            setTimeout(() => {
+                // Random selection (avoid showing the same tip twice in a row)
+                let randomIndex;
+                do {
+                    randomIndex = Math.floor(Math.random() * minecraftTips.length);
+                } while (randomIndex === lastTipIndex && minecraftTips.length > 1);
+                
+                lastTipIndex = randomIndex;
+                tipElement.textContent = minecraftTips[randomIndex];
+                
+                // Fade in
+                tipElement.style.opacity = '1';
+            }, 500);
+        }
+        
+        // Initialize tip on page load
+        function initializeMinecraftTip() {
+            const tipElement = document.getElementById('minecraftTip');
+            if (tipElement) {
+                // Start with a random tip
+                const randomIndex = Math.floor(Math.random() * minecraftTips.length);
+                lastTipIndex = randomIndex;
+                tipElement.textContent = minecraftTips[randomIndex];
+                tipElement.style.opacity = '1';
+                
+                // Change tip every 8 seconds
+                setInterval(showMinecraftTip, 8000);
+            }
+        }
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeMinecraftTip);
+        } else {
+            initializeMinecraftTip();
         }
         
     </script>
