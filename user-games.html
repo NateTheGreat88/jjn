@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code by Other Users - JNJ Website</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="animated-background.css">
+    <link rel="stylesheet" href="background-music.css">
+    <script src="page-transitions.js" defer></script>
+    <script src="animated-background.js" defer></script>
+    <script src="background-music.js" defer></script>
+    <style>
+        body {
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 30px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .page-header h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-header p {
+            font-size: 18px;
+            color: #b0b0b0;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .game-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .game-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            border-color: rgba(102, 126, 234, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .game-item h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #e0e0e0;
+        }
+
+        .game-item .creator {
+            font-size: 16px;
+            color: #b0b0b0;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+
+        .game-item .creator strong {
+            color: #667eea;
+            font-style: normal;
+        }
+
+        .game-item .description {
+            font-size: 14px;
+            color: #888;
+            line-height: 1.6;
+        }
+
+        .game-item .play-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+
+        .game-item:hover .play-button {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 36px;
+            }
+
+            .games-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="minigames.html" class="back-button">← Back to Mini Games</a>
+        
+        <div class="page-header">
+            <h1>👥 Code by Other Users</h1>
+            <p>Amazing games and experiences created by our community members</p>
+        </div>
+
+        <div class="games-grid">
+            <a href="republic-racer.html" class="game-item">
+                <h2>🏎️ Republic Racer</h2>
+                <div class="creator">
+                    Created by <strong>Jonathan Elkins</strong>
+                </div>
+                <div class="description">
+                    A thrilling racing game with fast-paced action and challenging tracks. Race through various environments and compete for the best time!
+                </div>
+                <div class="play-button">Play Game →</div>
+            </a>
+
+            <a href="thebackrooms-multiverse.html" class="game-item">
+                <h2>🚪 The Backrooms Multiverse</h2>
+                <div class="creator">
+                    Created by <strong>Konrad Hansen</strong>
+                </div>
+                <div class="description">
+                    Navigate through the eerie backrooms in this first-person horror experience. Find keys, avoid entities, and escape through multiple levels of the multiverse.
+                </div>
+                <div class="play-button">Play Game →</div>
+            </a>
+
+            <a href="defence.html" class="game-item">
+                <h2>⚔️ Defense Against the Dark Arts</h2>
+                <div class="creator">
+                    Created by <strong>Avacado</strong>
+                </div>
+                <div class="description">
+                    A magical dueling game inspired by the wizarding world. Cast spells, defeat enemies, and level up as you progress through increasingly difficult challenges.
+                </div>
+                <div class="play-button">Play Game →</div>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Defense Against the Dark Arts - Dueling Club</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Playfair+Display:ital@0;1&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gryffindor-red: #740001;
+            --gryffindor-gold: #D3A625;
+            --slytherin-green: #1A472A;
+            --magic-glow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.4);
+        }
+
+        body {
+            font-family: 'Playfair Display', serif;
+            background-color: #0f0f0f;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        h1, h2, h3, .spell-name {
+            font-family: 'Cinzel', serif;
+        }
+
+        /* Ambient Background Animation */
+        .fog-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+            background: linear-gradient(to bottom, #050505, #1a1a1a);
+        }
+
+        .fog-img {
+            position: absolute;
+            height: 100vh;
+            width: 300vw;
+            z-index: 1;
+            opacity: 0.3;
+            background: url('https://raw.githubusercontent.com/danielstuart14/CSS_FOG_ANIMATION/master/fog1.png') repeat-x;
+            background-size: contain;
+            animation: fog 60s linear infinite;
+        }
+
+        .fog-img-2 {
+            z-index: 2;
+            background: url('https://raw.githubusercontent.com/danielstuart14/CSS_FOG_ANIMATION/master/fog2.png') repeat-x;
+            background-size: contain;
+            animation: fog 40s linear infinite;
+            margin-left: -50%;
+        }
+
+        @keyframes fog {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-200vw, 0, 0); }
+        }
+
+        /* Enemy Float Animation */
+        .float-animation {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Shake Animation for Damage */
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-4px, 0, 0); }
+            20%, 80% { transform: translate3d(8px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-16px, 0, 0); }
+            40%, 60% { transform: translate3d(16px, 0, 0); }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+
+        .glass-panel {
+            background: rgba(20, 20, 20, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .spell-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(100%);
+        }
+
+        .enemy-hit-flash {
+            filter: brightness(1000%) sepia(100%) hue-rotate(300deg) saturate(500%);
+            transition: filter 0.1s;
+        }
+    </style>
+</head>
+<body class="text-gray-200 h-screen w-screen flex flex-col relative select-none">
+
+    <!-- Background Fog -->
+    <div class="fog-container">
+        <div class="fog-img"></div>
+        <div class="fog-img-2"></div>
+    </div>
+
+    <!-- Canvas for Magic Particles -->
+    <canvas id="magicCanvas" class="absolute top-0 left-0 w-full h-full pointer-events-none z-20"></canvas>
+
+    <!-- Start Screen -->
+    <div id="startScreen" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/90 transition-opacity duration-1000">
+        <div class="text-center space-y-8 p-8 border-4 border-[#D3A625] rounded-lg bg-[#0a0a0a] max-w-md w-full shadow-[0_0_50px_rgba(211,166,37,0.3)]">
+            <h1 class="text-4xl md:text-5xl text-[#D3A625] mb-2">Defense Against the<br>Dark Arts</h1>
+            <div class="w-full h-px bg-gradient-to-r from-transparent via-[#D3A625] to-transparent my-4"></div>
+            <p class="text-gray-400 italic">"Constant Vigilance!"</p>
+           
+            <div class="space-y-4 pt-4">
+                <button onclick="startGame()" class="w-full py-4 text-xl border border-[#D3A625] text-[#D3A625] hover:bg-[#D3A625] hover:text-black transition-all duration-300 font-bold tracking-widest uppercase">
+                    Begin Duel
+                </button>
+            </div>
+            <p class="text-xs text-gray-600 mt-8">Prepare your wand. Protect Hogwarts.</p>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameOverScreen" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95">
+        <h2 id="endTitle" class="text-5xl text-red-600 mb-4 animate-pulse">Defeated</h2>
+        <p id="endScore" class="text-2xl text-gray-300 mb-8">Level Reached: 1</p>
+        <button onclick="location.reload()" class="px-8 py-3 bg-gray-800 border border-gray-600 hover:border-white transition-all text-white font-serif">
+            Try Again
+        </button>
+    </div>
+
+    <!-- Main Game Interface -->
+    <div id="gameUI" class="relative z-10 w-full h-full flex flex-col opacity-0 transition-opacity duration-1000 hidden">
+       
+        <!-- Header / Stats -->
+        <div class="flex justify-between items-start p-4 md:p-6 w-full max-w-5xl mx-auto">
+            <!-- Player Stats -->
+            <div class="glass-panel p-4 rounded-lg w-48 border-l-4 border-[#D3A625]">
+                <div class="text-[#D3A625] text-sm tracking-wider mb-1">WIZARD</div>
+                <div class="h-4 bg-gray-900 rounded-full overflow-hidden mb-2 border border-gray-700">
+                    <div id="playerHealthBar" class="h-full bg-green-600 transition-all duration-300" style="width: 100%"></div>
+                </div>
+                <div class="h-2 bg-gray-900 rounded-full overflow-hidden border border-gray-700">
+                    <div id="playerManaBar" class="h-full bg-blue-500 transition-all duration-300" style="width: 100%"></div>
+                </div>
+                <div class="flex justify-between mt-2 text-xs text-gray-400">
+                    <span id="playerHPText">100 HP</span>
+                    <span id="playerManaText">100 MP</span>
+                </div>
+            </div>
+
+            <!-- Level Info -->
+            <div class="text-center pt-2">
+                <h2 class="text-3xl text-gray-200" id="levelIndicator">Level 1</h2>
+                <div class="text-xs text-gray-500 uppercase tracking-widest mt-1">Difficulty: <span id="difficultyText" class="text-red-400">Novice</span></div>
+            </div>
+
+            <!-- Enemy Stats -->
+            <div class="glass-panel p-4 rounded-lg w-48 border-r-4 border-red-800 text-right">
+                <div id="enemyName" class="text-red-500 text-sm tracking-wider mb-1">DEATH EATER</div>
+                <div class="h-4 bg-gray-900 rounded-full overflow-hidden mb-2 border border-gray-700">
+                    <div id="enemyHealthBar" class="h-full bg-red-700 transition-all duration-300" style="width: 100%"></div>
+                </div>
+                <div class="text-xs text-gray-400 mt-1" id="enemyHPText">200 HP</div>
+            </div>
+        </div>
+
+        <!-- Battle Arena -->
+        <div class="flex-1 flex items-center justify-center relative perspective-1000">
+           
+            <!-- Enemy Sprite -->
+            <div id="enemyContainer" class="relative w-64 h-64 md:w-80 md:h-80 float-animation transition-transform duration-200">
+                <!-- SVG Enemy Placeholder (Dementor-like) -->
+                <svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]">
+                    <defs>
+                        <radialGradient id="cloakGrad" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                            <stop offset="0%" style="stop-color:#333;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#000;stop-opacity:1" />
+                        </radialGradient>
+                        <filter id="glow">
+                            <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    <g id="enemySpriteGroup">
+                        <!-- Cloak -->
+                        <path d="M100,20 C 70,20 60,50 50,180 L 150,180 C 140,50 130,20 100,20" fill="url(#cloakGrad)" />
+                        <!-- Hood interior -->
+                        <ellipse cx="100" cy="55" rx="20" ry="25" fill="#000" />
+                        <!-- Eyes (Glowing) -->
+                        <circle cx="92" cy="55" r="2" fill="#ff0000" opacity="0.8" class="enemy-eye">
+                            <animate attributeName="opacity" values="0.4;1;0.4" dur="3s" repeatCount="indefinite" />
+                        </circle>
+                        <circle cx="108" cy="55" r="2" fill="#ff0000" opacity="0.8" class="enemy-eye">
+                            <animate attributeName="opacity" values="0.4;1;0.4" dur="3s" repeatCount="indefinite" />
+                        </circle>
+                    </g>
+                </svg>
+               
+                <!-- Damage Text Container -->
+                <div id="damageTextContainer" class="absolute top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none"></div>
+            </div>
+
+            <!-- Player Wand (Fixed at bottom) -->
+            <div class="absolute bottom-0 md:bottom-[-50px] left-1/2 transform -translate-x-1/2 z-30 transition-transform duration-100" id="playerWand">
+                 <svg width="60" height="400" viewBox="0 0 60 400">
+                    <defs>
+                        <linearGradient id="wandGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#3e2723;stop-opacity:1" />
+                            <stop offset="50%" style="stop-color:#5d4037;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#281815;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M25,400 L35,400 L32,100 Q30,0 30,0 Q30,0 28,100 Z" fill="url(#wandGrad)" />
+                 </svg>
+            </div>
+        </div>
+
+        <!-- Combat Log (Floating) -->
+        <div id="combatLog" class="absolute top-1/4 left-4 md:left-10 w-64 h-48 overflow-hidden pointer-events-none text-xs md:text-sm font-sans text-gray-400 space-y-1 opacity-70">
+            <!-- Logs appear here -->
+        </div>
+
+        <!-- Spell Controls -->
+        <div class="glass-panel w-full p-4 md:p-6 border-t border-gray-700 z-40">
+            <div class="max-w-5xl mx-auto">
+                <div class="flex flex-wrap justify-center gap-3 md:gap-6" id="spellContainer">
+                    <!-- Spells injected by JS -->
+                </div>
+                <div class="text-center mt-4 text-xs text-gray-500 font-mono">
+                    Wait for mana regeneration • Defeat enemy to heal
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // --- Configuration ---
+    const CONFIG = {
+        playerMaxHP: 100,
+        playerMaxMana: 100,
+        manaRegenRate: 5, // Per second
+        difficultyScaler: 1.2
+    };
+
+    // --- Game State ---
+    let state = {
+        level: 1,
+        hp: CONFIG.playerMaxHP,
+        mana: CONFIG.playerMaxMana,
+        enemyHp: 100,
+        enemyMaxHp: 100,
+        isPlaying: false,
+        enemyAttackInterval: null,
+        manaInterval: null
+    };
+
+    // --- Spells Database ---
+    const SPELLS = [
+        {
+            id: 'stupefy',
+            name: 'Stupefy',
+            type: 'damage',
+            cost: 15,
+            damage: 15,
+            color: '#ff3333',
+            desc: 'Basic stunning spell.',
+            cooldown: 500
+        },
+        {
+            id: 'expelliarmus',
+            name: 'Expelliarmus',
+            type: 'damage',
+            cost: 25,
+            damage: 25,
+            color: '#ffaa00',
+            desc: 'Disarming charm.',
+            cooldown: 1200
+        },
+        {
+            id: 'sectumsempra',
+            name: 'Sectumsempra',
+            type: 'damage',
+            cost: 40,
+            damage: 45,
+            color: '#a020f0',
+            desc: 'Dark cutting curse.',
+            cooldown: 2000
+        },
+        {
+            id: 'protego',
+            name: 'Protego',
+            type: 'heal',
+            cost: 20,
+            heal: 15,
+            color: '#00ffff',
+            desc: 'Shield charm (Restores HP).',
+            cooldown: 3000
+        },
+        {
+            id: 'patronus',
+            name: 'Expecto Patronum',
+            type: 'damage',
+            cost: 80,
+            damage: 100,
+            color: '#ffffff',
+            desc: 'Powerful light charm.',
+            cooldown: 8000
+        }
+    ];
+
+    const ENEMIES = [
+        { name: "Snatcher", hp: 80, dmg: 5, color: "#5c4033" },
+        { name: "Death Eater", hp: 120, dmg: 10, color: "#1a1a1a" },
+        { name: "Werewolf", hp: 180, dmg: 15, color: "#4a3b2a" },
+        { name: "Dementor", hp: 250, dmg: 20, color: "#000000" },
+        { name: "Dark Lord's Shadow", hp: 500, dmg: 30, color: "#0f3d0f" }
+    ];
+
+    // --- Particle System ---
+    const canvas = document.getElementById('magicCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+   
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class Particle {
+        constructor(x, y, color, targetX, targetY, isEnemyAttack = false) {
+            this.x = x;
+            this.y = y;
+            this.color = color;
+            this.size = Math.random() * 4 + 2;
+            this.speedX = (Math.random() - 0.5) * 2;
+            this.speedY = (Math.random() - 0.5) * 2;
+           
+            // Movement logic
+            this.targetX = targetX;
+            this.targetY = targetY;
+            this.isProjectile = true;
+            this.life = 100;
+           
+            // Calculate velocity towards target
+            const angle = Math.atan2(targetY - y, targetX - x);
+            const speed = isEnemyAttack ? 15 : 20; // Enemy attacks are slightly slower
+            this.vx = Math.cos(angle) * speed;
+            this.vy = Math.sin(angle) * speed;
+        }
+
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.life -= 2;
+            this.size *= 0.95;
+           
+            // Trailing effect
+            particles.push(new TrailParticle(this.x, this.y, this.color));
+        }
+
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = this.color;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+    }
+
+    class TrailParticle {
+        constructor(x, y, color) {
+            this.x = x + (Math.random() - 0.5) * 10;
+            this.y = y + (Math.random() - 0.5) * 10;
+            this.color = color;
+            this.size = Math.random() * 3;
+            this.life = 1.0;
+        }
+
+        update() {
+            this.life -= 0.05;
+            this.size *= 0.9;
+        }
+
+        draw() {
+            ctx.save();
+            ctx.globalAlpha = this.life;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+       
+        for (let i = particles.length - 1; i >= 0; i--) {
+            particles[i].update();
+            particles[i].draw();
+
+            // Collision Detection (Simple proximity check)
+            if (particles[i].isProjectile) {
+                const dist = Math.hypot(particles[i].x - particles[i].targetX, particles[i].y - particles[i].targetY);
+                if (dist < 30 || particles[i].life <= 0) {
+                    particles.splice(i, 1);
+                }
+            } else if (particles[i].life <= 0) {
+                particles.splice(i, 1);
+            }
+        }
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // --- Core Game Logic ---
+
+    function initSpells() {
+        const container = document.getElementById('spellContainer');
+        container.innerHTML = '';
+       
+        SPELLS.forEach((spell, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'spell-btn group relative px-4 py-3 bg-gray-900 border border-gray-600 rounded hover:border-white transition-all overflow-hidden';
+            btn.id = `btn-${spell.id}`;
+            btn.onclick = () => castSpell(spell);
+           
+            btn.innerHTML = `
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500"></div>
+                <div class="text-left">
+                    <div class="spell-name font-bold text-sm md:text-base" style="color: ${spell.color}">
+                        <span class="text-gray-500 mr-2 font-mono text-xs">[${index + 1}]</span>${spell.name}
+                    </div>
+                    <div class="text-[10px] text-gray-400 font-sans flex justify-between w-28 md:w-32 mt-1">
+                        <span>MP: ${spell.cost}</span>
+                        <span>${spell.type === 'heal' ? 'Heal' : 'Dmg'}: ${spell.type === 'heal' ? spell.heal : spell.damage}</span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(btn);
+        });
+    }
+
+    // Add Keybind Listeners
+    window.addEventListener('keydown', (e) => {
+        if (!state.isPlaying) return;
+       
+        const key = parseInt(e.key);
+        if (key >= 1 && key <= 5) {
+            const spellIndex = key - 1;
+            if (SPELLS[spellIndex]) {
+                const btn = document.getElementById(`btn-${SPELLS[spellIndex].id}`);
+                // Only cast if button exists and isn't disabled (cooldown/mana check)
+                if (btn && !btn.disabled && !btn.classList.contains('opacity-50')) {
+                    castSpell(SPELLS[spellIndex]);
+                   
+                    // Add visual feedback to button
+                    btn.classList.add('ring-2', 'ring-white');
+                    setTimeout(() => btn.classList.remove('ring-2', 'ring-white'), 150);
+                } else if (state.mana < SPELLS[spellIndex].cost) {
+                     // Still shake mana bar if they try to cast without mana via keyboard
+                     shakeElement(document.getElementById('playerManaBar').parentElement);
+                }
+            }
+        }
+    });
+
+    function startGame() {
+        document.getElementById('startScreen').classList.add('opacity-0', 'pointer-events-none');
+        document.getElementById('gameUI').classList.remove('hidden');
+        setTimeout(() => document.getElementById('gameUI').classList.remove('opacity-0'), 100);
+       
+        state.level = 1;
+        state.hp = CONFIG.playerMaxHP;
+        state.mana = CONFIG.playerMaxMana;
+        state.isPlaying = true;
+       
+        initSpells();
+        setupLevel();
+        startLoops();
+        updateUI();
+    }
+
+    function setupLevel() {
+        const difficultyMultiplier = Math.pow(CONFIG.difficultyScaler, state.level - 1);
+       
+        // Pick enemy based on level (cycle through types)
+        const enemyTemplate = ENEMIES[Math.min(state.level - 1, ENEMIES.length - 1)] || ENEMIES[ENEMIES.length - 1];
+       
+        state.enemyMaxHp = Math.floor(enemyTemplate.hp * difficultyMultiplier);
+        state.enemyHp = state.enemyMaxHp;
+       
+        // Visuals
+        document.getElementById('levelIndicator').innerText = `Level ${state.level}`;
+        document.getElementById('enemyName').innerText = enemyTemplate.name.toUpperCase();
+        document.getElementById('difficultyText').innerText = state.level < 3 ? 'Novice' : (state.level < 6 ? 'Adept' : 'Auror');
+       
+        // Change eye color based on enemy
+        const eyes = document.querySelectorAll('.enemy-eye');
+        eyes.forEach(eye => eye.setAttribute('fill', state.level > 3 ? '#00ff00' : '#ff0000'));
+       
+        log(`A ${enemyTemplate.name} appears!`);
+    }
+
+    function startLoops() {
+        // Mana Regen
+        if (state.manaInterval) clearInterval(state.manaInterval);
+        state.manaInterval = setInterval(() => {
+            if (!state.isPlaying) return;
+            if (state.mana < CONFIG.playerMaxMana) {
+                state.mana = Math.min(CONFIG.playerMaxMana, state.mana + 1);
+                updateUI();
+            }
+        }, 200); // Fast ticks for smooth visual
+
+        // Enemy Attack
+        if (state.enemyAttackInterval) clearInterval(state.enemyAttackInterval);
+        state.enemyAttackInterval = setInterval(() => {
+            if (!state.isPlaying) return;
+            enemyAttack();
+        }, 2500 - (Math.min(state.level * 100, 1500))); // Faster attacks at higher levels
+    }
+
+    function castSpell(spell) {
+        if (!state.isPlaying) return;
+        if (state.mana < spell.cost) {
+            log("Not enough mana!", "text-red-400");
+            shakeElement(document.getElementById('playerManaBar').parentElement);
+            return;
+        }
+
+        // Apply Cooldown
+        const btn = document.getElementById(`btn-${spell.id}`);
+        btn.disabled = true;
+        setTimeout(() => btn.disabled = false, spell.cooldown);
+
+        // Deduct Mana
+        state.mana -= spell.cost;
+       
+        // Visuals
+        const wandRect = document.getElementById('playerWand').getBoundingClientRect();
+        const enemyRect = document.getElementById('enemyContainer').getBoundingClientRect();
+       
+        // Spawn Spell Particle
+        const startX = wandRect.left + wandRect.width / 2;
+        const startY = wandRect.top;
+        const targetX = enemyRect.left + enemyRect.width / 2;
+        const targetY = enemyRect.top + enemyRect.height / 2;
+       
+        // Shoot particle (Visual only delay before damage)
+        particles.push(new Particle(startX, startY, spell.color, targetX, targetY));
+       
+        // Wand animation
+        const wand = document.getElementById('playerWand');
+        wand.style.transform = `translate(-50%, -20px) rotate(${Math.random() * 20 - 10}deg)`;
+        setTimeout(() => wand.style.transform = `translate(-50%, 0) rotate(0deg)`, 100);
+
+        // Effect logic after short delay (travel time)
+        setTimeout(() => {
+            if (spell.type === 'damage') {
+                damageEnemy(spell.damage);
+                createFloatingText(spell.damage, targetX, targetY, spell.color);
+                enemyHitEffect();
+            } else if (spell.type === 'heal') {
+                state.hp = Math.min(CONFIG.playerMaxHP, state.hp + spell.heal);
+                createFloatingText("+" + spell.heal, startX, startY - 100, '#00ff00');
+            }
+            log(`You cast ${spell.name}!`);
+            updateUI();
+        }, 300);
+
+        updateUI();
+    }
+
+    function enemyAttack() {
+        const damage = 5 + (state.level * 2);
+       
+        // Visuals
+        const enemyRect = document.getElementById('enemyContainer').getBoundingClientRect();
+        const playerRect = document.getElementById('playerHealthBar').getBoundingClientRect(); // Target health bar visually
+       
+        const startX = enemyRect.left + enemyRect.width / 2;
+        const startY = enemyRect.top + enemyRect.height / 2;
+       
+        particles.push(new Particle(startX, startY, '#00ff00', window.innerWidth/2, window.innerHeight));
+
+        setTimeout(() => {
+            state.hp -= damage;
+            document.body.classList.add('shake');
+            setTimeout(() => document.body.classList.remove('shake'), 500);
+           
+            // Red flash overlay
+            const flash = document.createElement('div');
+            flash.className = 'fixed inset-0 bg-red-900/30 z-40 pointer-events-none';
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 100);
+
+            log(`Enemy hits you for ${damage} dmg!`, "text-red-400");
+           
+            if (state.hp <= 0) {
+                state.hp = 0;
+                gameOver();
+            }
+            updateUI();
+        }, 400);
+    }
+
+    function damageEnemy(amount) {
+        state.enemyHp -= amount;
+        if (state.enemyHp <= 0) {
+            state.enemyHp = 0;
+            levelUp();
+        }
+    }
+
+    function enemyHitEffect() {
+        const enemy = document.getElementById('enemyContainer');
+        const sprite = document.getElementById('enemySpriteGroup');
+        enemy.classList.remove('float-animation');
+        enemy.classList.add('shake');
+        document.querySelector('#enemyContainer svg').classList.add('enemy-hit-flash');
+       
+        setTimeout(() => {
+            enemy.classList.remove('shake');
+            enemy.classList.add('float-animation');
+            document.querySelector('#enemyContainer svg').classList.remove('enemy-hit-flash');
+        }, 500);
+    }
+
+    function levelUp() {
+        log(`Enemy Defeated! Level Up!`, "text-[#D3A625]");
+        state.level++;
+       
+        // Heal player slightly
+        state.hp = Math.min(CONFIG.playerMaxHP, state.hp + 30);
+        state.mana = CONFIG.playerMaxMana;
+       
+        // Animate Enemy Death
+        const enemy = document.getElementById('enemyContainer');
+        enemy.style.opacity = '0';
+        enemy.style.transform = 'scale(0.5)';
+       
+        setTimeout(() => {
+            enemy.style.opacity = '1';
+            enemy.style.transform = 'scale(1)';
+            setupLevel();
+            updateUI();
+        }, 1500);
+    }
+
+    function gameOver() {
+        state.isPlaying = false;
+        clearInterval(state.enemyAttackInterval);
+        clearInterval(state.manaInterval);
+       
+        document.getElementById('gameOverScreen').classList.remove('hidden');
+        document.getElementById('endScore').innerText = `You reached Level ${state.level}`;
+    }
+
+    // --- UI Helpers ---
+
+    function updateUI() {
+        // Player HP
+        const hpPct = (state.hp / CONFIG.playerMaxHP) * 100;
+        document.getElementById('playerHealthBar').style.width = `${hpPct}%`;
+        document.getElementById('playerHPText').innerText = `${Math.floor(state.hp)} HP`;
+       
+        // Player Mana
+        const manaPct = (state.mana / CONFIG.playerMaxMana) * 100;
+        document.getElementById('playerManaBar').style.width = `${manaPct}%`;
+        document.getElementById('playerManaText').innerText = `${Math.floor(state.mana)} MP`;
+       
+        // Enemy HP
+        const enemyHpPct = (state.enemyHp / state.enemyMaxHp) * 100;
+        document.getElementById('enemyHealthBar').style.width = `${enemyHpPct}%`;
+        document.getElementById('enemyHPText').innerText = `${state.enemyHp}/${state.enemyMaxHp}`;
+
+        // Spell availability
+        SPELLS.forEach(spell => {
+            const btn = document.getElementById(`btn-${spell.id}`);
+            if (btn && !btn.disabled) { // Don't override cooldown disable
+                if (state.mana < spell.cost) {
+                    btn.classList.add('opacity-50');
+                } else {
+                    btn.classList.remove('opacity-50');
+                }
+            }
+        });
+    }
+
+    function createFloatingText(text, x, y, color) {
+        const el = document.createElement('div');
+        el.innerText = text;
+        el.style.position = 'absolute';
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        el.style.color = color;
+        el.style.fontWeight = 'bold';
+        el.style.fontSize = '24px';
+        el.style.pointerEvents = 'none';
+        el.style.zIndex = '100';
+        el.style.textShadow = '0 0 5px black';
+        el.style.transition = 'all 1s ease-out';
+       
+        document.body.appendChild(el);
+       
+        requestAnimationFrame(() => {
+            el.style.transform = 'translateY(-100px) scale(1.2)';
+            el.style.opacity = '0';
+        });
+
+        setTimeout(() => el.remove(), 1000);
+    }
+
+    function log(msg, className = "text-gray-400") {
+        const logEl = document.getElementById('combatLog');
+        const entry = document.createElement('div');
+        entry.className = className;
+        entry.innerText = `> ${msg}`;
+        logEl.prepend(entry);
+       
+        if (logEl.children.length > 5) {
+            logEl.removeChild(logEl.lastChild);
+        }
+    }
+
+    function shakeElement(el) {
+        el.classList.add('shake');
+        setTimeout(() => el.classList.remove('shake'), 500);
+    }
+
+</script>
+</body>
+</html>
