@@ -61,7 +61,10 @@ function showMenu() {
     document.getElementById('doodlejumpGame').style.display = 'none';
     document.getElementById('typingGame').style.display = 'none';
     document.getElementById('hangmanGame').style.display = 'none';
-    document.getElementById('asteroidsGame').style.display = 'none';
+    document.getElementById('connect4Game').style.display = 'none';
+    document.getElementById('solitaireGame').style.display = 'none';
+    document.getElementById('bubbleshooterGame').style.display = 'none';
+    document.getElementById('fruitslicerGame').style.display = 'none';
 }
 
 function showGame(gameName) {

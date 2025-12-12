@@ -170,18 +170,6 @@
                     <span class="recent-indicator" title="Recently visited">⭐</span>
                 </a>
             </div>
-            <div id="asteroidsCard" class="song-card" data-title="asteroids game" data-description="game space asteroids play" style="display: none;">
-                <a href="game.html" class="song-link">
-                    <div class="song-button">
-                        <div class="song-image" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); display: flex; align-items: center; justify-content: center; font-size: 48px; color: white;">🛸</div>
-                        <div class="song-info">
-                            <h2>Asteroids</h2>
-                            <p>Space shooter game</p>
-                        </div>
-                    </div>
-                    <span class="recent-indicator" title="Recently visited">⭐</span>
-                </a>
-            </div>
             <div id="minigamesCard" class="song-card" data-title="mini games" data-description="games collection snake tetris pong memory reaction" style="display: none;">
                 <a href="minigames.html" class="song-link">
                     <div class="song-button">
@@ -189,18 +177,6 @@
                         <div class="song-info">
                             <h2>Mini Games</h2>
                             <p>Collection of classic games</p>
-                        </div>
-                    </div>
-                    <span class="recent-indicator" title="Recently visited">⭐</span>
-                </a>
-            </div>
-            <div class="song-card" data-title="scratch games" data-description="game scratch games collection">
-                <a href="scratch-games.html" class="song-link">
-                    <div class="song-button">
-                        <div class="song-image" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); display: flex; align-items: center; justify-content: center; font-size: 48px; color: white;">🎮</div>
-                        <div class="song-info">
-                            <h2>Scratch Games</h2>
-                            <p>Collection of Scratch games</p>
                         </div>
                     </div>
                     <span class="recent-indicator" title="Recently visited">⭐</span>
@@ -301,9 +277,7 @@
                 'codeeditor.html': 'code editor',
                 'chat.html': 'chat',
                 'imageeditor.html': 'image editor',
-                'game.html': 'asteroids game',
                 'minigames.html': 'mini games',
-                'scratch-games.html': 'scratch games',
                 'lost-scampton-fight.html': 'lost spamton fight',
                 'dino-game.html': 'dino game',
                 'profile.html': 'profile',
@@ -527,9 +501,7 @@
         function checkGamesUnlocked() {
             const gamesUnlocked = localStorage.getItem('jnjGamesUnlocked') === 'true';
             if (gamesUnlocked) {
-                const asteroidsCard = document.getElementById('asteroidsCard');
                 const minigamesCard = document.getElementById('minigamesCard');
-                if (asteroidsCard) asteroidsCard.style.display = 'block';
                 if (minigamesCard) minigamesCard.style.display = 'block';
             }
         }
