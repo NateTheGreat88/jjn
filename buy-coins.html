@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buy JNJ Coins - JNJ Website</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="animated-background.css">
+    <link rel="stylesheet" href="background-music.css">
+    <script src="animated-background.js" defer></script>
+    <script src="page-transitions.js" defer></script>
+    <script src="background-music.js" defer></script>
+    <script src="firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="auth.js" defer></script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-color: #22c55e;
+            --error-color: #ef4444;
+            --warning-color: #f59e0b;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-primary: rgba(255, 255, 255, 0.9);
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --hover-glow: rgba(102, 126, 234, 0.3);
+            --gold-gradient: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+
+        .shop-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .shop-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .shop-title {
+            font-size: 56px;
+            font-weight: 800;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+            letter-spacing: -1px;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .shop-subtitle {
+            font-size: 20px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .coins-display {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 215, 0, 0.5);
+            border-radius: 50px;
+            padding: 12px 24px;
+            margin-top: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .coins-icon {
+            font-size: 24px;
+            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
+        }
+
+        .coins-amount {
+            font-size: 24px;
+            font-weight: 700;
+            color: #FFD700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .coins-label {
+            font-size: 16px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .shop-item {
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shop-item:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 215, 0, 0.5);
+        }
+
+        .shop-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .shop-name {
+            font-size: 26px;
+            font-weight: 700;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+        }
+
+        .shop-description {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .shop-price-container {
+            margin: 20px 0;
+        }
+
+        .shop-price {
+            font-size: 32px;
+            font-weight: bold;
+            color: #22c55e;
+            text-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+        }
+
+        .coins-granted {
+            font-size: 18px;
+            color: #FFD700;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .shop-button {
+            width: 100%;
+            padding: 15px;
+            background: var(--gold-gradient);
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .shop-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.4);
+        }
+
+        .back-to-shop {
+            display: inline-block;
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .back-to-shop:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .dev-purchases {
+            margin-top: 60px;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            display: none;
+        }
+
+        .dev-purchases.visible {
+            display: block;
+        }
+
+        .dev-purchases h2 {
+            color: #FFD700;
+            margin-bottom: 20px;
+        }
+
+        .purchases-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .purchase-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .grant-button {
+            padding: 10px 20px;
+            background: var(--success-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .grant-button:disabled {
+            background: rgba(255, 255, 255, 0.2);
+            cursor: not-allowed;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            max-width: 400px;
+            transform: translateX(500px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background: rgba(20, 20, 20, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 32px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px;
+        }
+
+        .modal-btn-primary {
+            background: var(--gold-gradient);
+            color: #000;
+        }
+
+        .modal-btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="mainContainer">
+        <div class="shop-container">
+            <div class="shop-header">
+                <h1 class="shop-title">🪙 Buy JNJ Coins 🪙</h1>
+                <p class="shop-subtitle">Purchase coins to use in the JNJ Shop!</p>
+                <div class="coins-display" id="coinsDisplay">
+                    <span class="coins-icon">🪙</span>
+                    <span class="coins-amount" id="coinsAmount">0</span>
+                    <span class="coins-label">JNJ Coins</span>
+                </div>
+                <a href="merch.html" class="back-to-shop">← Back to Shop</a>
+            </div>
+
+            <div class="shop-grid" id="shopGrid">
+                <!-- Coin items will be dynamically added here -->
+            </div>
+
+            <!-- Dev purchases section -->
+            <div class="dev-purchases" id="devPurchases">
+                <h2>⭐ Dev Purchase Management</h2>
+                <div id="purchasesList" class="purchases-list">
+                    <div class="no-purchases">Loading purchases...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchase Confirmation Modal -->
+    <div class="modal-overlay" id="purchaseModal">
+        <div class="modal">
+            <button class="close-modal" onclick="closePurchaseModal()">×</button>
+            <div class="modal-header">
+                <div class="modal-icon" id="purchaseModalIcon">🛒</div>
+                <h2 class="modal-title">Confirm Purchase</h2>
+            </div>
+            <div class="modal-content">
+                <div class="modal-item-info" id="purchaseModalInfo">
+                    <!-- Item info will be inserted here -->
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-secondary" onclick="closePurchaseModal()">Cancel</button>
+                <button class="modal-btn modal-btn-primary" id="confirmPurchaseBtn">Confirm Purchase</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <div id="notificationIcon">ℹ️</div>
+        <div id="notificationTitle"></div>
+        <div id="notificationMessage"></div>
+    </div>
+
+    <script>
+        const PROFILE_STORAGE_KEY = 'jnjUserProfile';
+        const COINS_STORAGE_KEY = 'jnjCoins';
+        
+        // Coin purchase items
+        const COIN_ITEMS = [
+            {
+                id: 'coins-5',
+                name: '5 JNJ Coins',
+                icon: '🪙',
+                description: 'Purchase 5 JNJ Coins for $0.50. Use coins to buy items in the shop!',
+                price: '0.50',
+                coinsGranted: 5,
+                type: 'coins',
+                grantType: 'coins',
+                grantValue: 5
+            },
+            {
+                id: 'coins-10',
+                name: '10 JNJ Coins',
+                icon: '🪙',
+                description: 'Purchase 10 JNJ Coins for $1.00. Use coins to buy items in the shop!',
+                price: '1.00',
+                coinsGranted: 10,
+                type: 'coins',
+                grantType: 'coins',
+                grantValue: 10
+            },
+            {
+                id: 'coins-25',
+                name: '25 JNJ Coins',
+                icon: '🪙',
+                description: 'Purchase 25 JNJ Coins for $2.50. Best value! Use coins to buy items in the shop!',
+                price: '2.50',
+                coinsGranted: 25,
+                type: 'coins',
+                grantType: 'coins',
+                grantValue: 25
+            },
+            {
+                id: 'coins-50',
+                name: '50 JNJ Coins',
+                icon: '🪙',
+                description: 'Purchase 50 JNJ Coins for $5.00. Great value! Use coins to buy items in the shop!',
+                price: '5.00',
+                coinsGranted: 50,
+                type: 'coins',
+                grantType: 'coins',
+                grantValue: 50
+            }
+        ];
+
+        // Initialize Firebase
+        let db = null;
+        function initFirebase() {
+            try {
+                if (typeof firebase === 'undefined' || !firebaseConfig) {
+                    console.warn('Firebase not available');
+                    return false;
+                }
+                
+                if (!firebase.apps || firebase.apps.length === 0) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                
+                db = firebase.firestore();
+                return true;
+            } catch (error) {
+                console.error('Firebase initialization error:', error);
+                return false;
+            }
+        }
+
+        // Check if user is dev
+        function isDev() {
+            try {
+                const profileData = localStorage.getItem(PROFILE_STORAGE_KEY);
+                if (profileData) {
+                    const profile = JSON.parse(profileData);
+                    return profile.isDev === true;
+                }
+            } catch (e) {
+                console.error('Error checking dev status:', e);
+            }
+            return false;
+        }
+
+        // Coin management
+        function loadCoins() {
+            try {
+                const coins = parseInt(localStorage.getItem(COINS_STORAGE_KEY) || '0');
+                updateCoinsDisplay(coins);
+                return coins;
+            } catch (e) {
+                console.error('Error loading coins:', e);
+                return 0;
+            }
+        }
+        
+        function saveCoins(coins) {
+            try {
+                localStorage.setItem(COINS_STORAGE_KEY, coins.toString());
+                updateCoinsDisplay(coins);
+            } catch (e) {
+                console.error('Error saving coins:', e);
+            }
+        }
+        
+        async function loadCoinsFromFirebase() {
+            try {
+                if (!window.authSystem || !window.authSystem.isAuthenticated()) {
+                    const localCoins = parseInt(localStorage.getItem(COINS_STORAGE_KEY) || '0');
+                    updateCoinsDisplay(localCoins);
+                    return;
+                }
+                
+                const user = window.authSystem.getUser();
+                if (!user || !user.uid) {
+                    return;
+                }
+                
+                if (!db) {
+                    initFirebase();
+                }
+                
+                if (!db) {
+                    const localCoins = parseInt(localStorage.getItem(COINS_STORAGE_KEY) || '0');
+                    updateCoinsDisplay(localCoins);
+                    return;
+                }
+                
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    const profile = userData.profile || {};
+                    const coins = profile.coins || 0;
+                    saveCoins(coins);
+                } else {
+                    saveCoins(0);
+                }
+            } catch (e) {
+                console.error('Error loading coins from Firebase:', e);
+                const localCoins = parseInt(localStorage.getItem(COINS_STORAGE_KEY) || '0');
+                updateCoinsDisplay(localCoins);
+            }
+        }
+        
+        function updateCoinsDisplay(coins) {
+            const coinsAmount = document.getElementById('coinsAmount');
+            if (coinsAmount) {
+                coinsAmount.textContent = coins.toLocaleString();
+            }
+        }
+
+        // Render coin items
+        function renderCoinItems() {
+            const shopGrid = document.getElementById('shopGrid');
+            if (!shopGrid) return;
+
+            shopGrid.innerHTML = '';
+
+            for (const item of COIN_ITEMS) {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'shop-item';
+                
+                itemDiv.innerHTML = `
+                    <span class="shop-icon">${item.icon}</span>
+                    <h2 class="shop-name">${item.name}</h2>
+                    <p class="shop-description">${item.description}</p>
+                    <div class="shop-price-container">
+                        <span class="shop-price">$${item.price}</span>
+                        <span class="coins-granted">→ +${item.coinsGranted} 🪙</span>
+                    </div>
+                    <button class="shop-button" onclick="openPurchaseModal('${item.id}')">Purchase ${item.name}</button>
+                `;
+
+                shopGrid.appendChild(itemDiv);
+            }
+        }
+
+        // Purchase modal
+        let currentPurchaseItemId = null;
+
+        function openPurchaseModal(itemId) {
+            if (!itemId) {
+                showNotification('error', '❌ Error', 'No item selected!');
+                return;
+            }
+
+            itemId = String(itemId).trim();
+            const item = COIN_ITEMS.find(i => i.id === itemId);
+            if (!item) {
+                showNotification('error', '❌ Error', `Item not found: ${itemId}`);
+                return;
+            }
+
+            currentPurchaseItemId = itemId;
+            const modal = document.getElementById('purchaseModal');
+            const modalIcon = document.getElementById('purchaseModalIcon');
+            const modalInfo = document.getElementById('purchaseModalInfo');
+
+            modalIcon.textContent = item.icon;
+            
+            modalInfo.innerHTML = `
+                <div style="text-align: center;">
+                    <h3 style="color: white; margin-bottom: 15px;">${item.name}</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px;">${item.description}</p>
+                    <div style="font-size: 32px; color: #22c55e; font-weight: bold; margin-bottom: 10px;">
+                        $${item.price}
+                    </div>
+                    <div style="font-size: 24px; color: #FFD700; font-weight: 600;">
+                        You'll receive: +${item.coinsGranted} 🪙
+                    </div>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin-top: 20px;">
+                        💰 Please bring the money to one of the developers. Coins will be granted after payment is received.
+                    </p>
+                </div>
+            `;
+
+            modal.classList.add('active');
+        }
+
+        function closePurchaseModal() {
+            const modal = document.getElementById('purchaseModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+            setTimeout(() => {
+                currentPurchaseItemId = null;
+            }, 100);
+        }
+
+        // Confirm purchase
+        document.getElementById('confirmPurchaseBtn')?.addEventListener('click', () => {
+            if (currentPurchaseItemId) {
+                const itemId = String(currentPurchaseItemId).trim();
+                closePurchaseModal();
+                purchaseItem(itemId);
+            } else {
+                showNotification('error', '❌ Error', 'No item selected! Please try again.');
+            }
+        });
+
+        // Purchase item
+        async function purchaseItem(itemId) {
+            if (!itemId) {
+                showNotification('error', '❌ Error', 'No item selected!');
+                return;
+            }
+
+            itemId = String(itemId).trim();
+            const item = COIN_ITEMS.find(i => i.id === itemId);
+            if (!item) {
+                showNotification('error', '❌ Error', `Item not found: ${itemId}`);
+                return;
+            }
+
+            let customerEmail = 'Not provided';
+            let userId = null;
+            let username = 'Not provided';
+            try {
+                if (window.authSystem && window.authSystem.isAuthenticated()) {
+                    const user = window.authSystem.getUser();
+                    if (user) {
+                        if (user.email) customerEmail = user.email;
+                        if (user.uid) userId = user.uid;
+                    }
+                    
+                    const profileData = localStorage.getItem(PROFILE_STORAGE_KEY);
+                    if (profileData) {
+                        try {
+                            const profile = JSON.parse(profileData);
+                            if (profile.username && profile.username.trim() !== '') {
+                                username = profile.username.trim();
+                            } else if (profile.displayName && profile.displayName.trim() !== '') {
+                                username = profile.displayName.trim();
+                            }
+                        } catch (e) {
+                            console.warn('Error parsing profile:', e);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.warn('Could not get user info:', error);
+            }
+
+            const loadingMsg = document.createElement('div');
+            loadingMsg.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0, 0, 0, 0.9);
+                color: white;
+                padding: 30px;
+                border-radius: 10px;
+                z-index: 10000;
+                text-align: center;
+                font-size: 18px;
+            `;
+            loadingMsg.textContent = 'Processing purchase...';
+            document.body.appendChild(loadingMsg);
+
+            try {
+                if (!db) {
+                    initFirebase();
+                }
+
+                if (!db) {
+                    throw new Error('Firebase not available');
+                }
+
+                // Save purchase to Firestore (requires dev grant)
+                const purchaseData = {
+                    itemId: item.id,
+                    itemName: item.name,
+                    itemType: item.type,
+                    price: item.price,
+                    grantType: item.grantType,
+                    grantValue: item.grantValue,
+                    coinsGranted: item.coinsGranted,
+                    customerEmail: customerEmail,
+                    userId: userId,
+                    username: username,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: 'pending',
+                    granted: false
+                };
+
+                await db.collection('purchases').add(purchaseData);
+                console.log('Coin purchase saved to Firestore');
+
+                document.body.removeChild(loadingMsg);
+
+                showNotification(
+                    'success',
+                    '✅ Purchase Confirmed!',
+                    `Thank you for purchasing ${item.name} for $${item.price}.\n\n💰 Please bring the money to one of the developers. Coins will be granted after payment is received!`
+                );
+
+                // Refresh purchases if dev
+                if (isDev()) {
+                    loadPurchases();
+                }
+            } catch (error) {
+                console.error('Purchase error:', error);
+                if (document.body.contains(loadingMsg)) {
+                    document.body.removeChild(loadingMsg);
+                }
+                showNotification(
+                    'error',
+                    '❌ Purchase Error',
+                    'Error processing purchase. Please try again.'
+                );
+            }
+        }
+
+        // Load purchases for dev view
+        async function loadPurchases() {
+            const devPurchases = document.getElementById('devPurchases');
+            const purchasesList = document.getElementById('purchasesList');
+            
+            if (!isDev()) {
+                if (devPurchases) devPurchases.classList.remove('visible');
+                return;
+            }
+
+            if (!devPurchases || !purchasesList) return;
+
+            devPurchases.classList.add('visible');
+            purchasesList.innerHTML = '<div class="no-purchases">Loading purchases...</div>';
+
+            try {
+                if (!db) {
+                    initFirebase();
+                }
+
+                if (!db) {
+                    purchasesList.innerHTML = '<div class="no-purchases">Firebase not available</div>';
+                    return;
+                }
+
+                // Get all purchases, ordered by timestamp
+                const purchasesSnapshot = await db.collection('purchases')
+                    .orderBy('timestamp', 'desc')
+                    .get();
+
+                if (purchasesSnapshot.empty) {
+                    purchasesList.innerHTML = '<div class="no-purchases">No purchases yet</div>';
+                    return;
+                }
+
+                purchasesList.innerHTML = '';
+
+                purchasesSnapshot.forEach(doc => {
+                    const purchase = doc.data();
+                    const purchaseId = doc.id;
+                    const purchaseDiv = document.createElement('div');
+                    purchaseDiv.className = 'purchase-item';
+                    
+                    const timestamp = purchase.timestamp ? (purchase.timestamp.toDate ? purchase.timestamp.toDate() : new Date(purchase.timestamp.seconds * 1000)) : new Date();
+                    const dateStr = timestamp.toLocaleString();
+
+                    purchaseDiv.innerHTML = `
+                        <div style="margin-bottom: 10px;">
+                            <strong>${purchase.itemName || 'Unknown Item'}</strong>
+                        </div>
+                        <div style="color: var(--text-secondary); font-size: 14px; margin-bottom: 10px;">
+                            User: ${purchase.username || purchase.customerEmail || 'N/A'}<br>
+                            Price: $${purchase.price || '0.00'}<br>
+                            ${purchase.coinsGranted ? `Coins: +${purchase.coinsGranted} 🪙<br>` : ''}
+                            Date: ${dateStr}
+                        </div>
+                        <button class="grant-button" 
+                                onclick="grantItem('${purchaseId}', '${purchase.userId || ''}', '${purchase.grantType}', '${purchase.grantValue}', ${purchase.coinsGranted || 0})"
+                                ${purchase.granted ? 'disabled' : ''}>
+                            ${purchase.granted ? 'Already Granted' : 'Grant Coins'}
+                        </button>
+                    `;
+
+                    purchasesList.appendChild(purchaseDiv);
+                });
+            } catch (error) {
+                console.error('Error loading purchases:', error);
+                purchasesList.innerHTML = '<div class="no-purchases">Error loading purchases</div>';
+            }
+        }
+
+        // Grant coins to user
+        async function grantItem(purchaseId, userId, grantType, grantValue, coinsGranted) {
+            if (!confirm(`Grant ${coinsGranted} coins to user ${userId || 'N/A'}?`)) {
+                return;
+            }
+
+            try {
+                if (!db) {
+                    initFirebase();
+                }
+
+                if (!db) {
+                    throw new Error('Firebase not available');
+                }
+
+                // Mark purchase as granted
+                await db.collection('purchases').doc(purchaseId).update({
+                    granted: true,
+                    grantedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // Add coins to user's profile
+                if (userId && grantType === 'coins') {
+                    const userDoc = await db.collection('users').doc(userId).get();
+                    let userData = {};
+                    let profile = {};
+                    
+                    if (userDoc.exists) {
+                        userData = userDoc.data();
+                        profile = { ...(userData.profile || {}) };
+                    }
+                    
+                    const currentCoins = profile.coins || 0;
+                    profile.coins = currentCoins + coinsGranted;
+                    
+                    if (userDoc.exists) {
+                        await db.collection('users').doc(userId).update({
+                            profile: profile
+                        });
+                    } else {
+                        await db.collection('users').doc(userId).set({
+                            profile: profile,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+                    
+                    // Update localStorage if this is the current user
+                    if (window.authSystem && window.authSystem.isAuthenticated()) {
+                        const currentUser = window.authSystem.getUser();
+                        if (currentUser && currentUser.uid === userId) {
+                            localStorage.setItem(COINS_STORAGE_KEY, profile.coins.toString());
+                            updateCoinsDisplay(profile.coins);
+                        }
+                    }
+                }
+
+                showNotification('success', '✅ Coins Granted', 'Coins granted successfully!');
+                loadPurchases(); // Refresh the list
+            } catch (error) {
+                console.error('Error granting coins:', error);
+                showNotification('error', '❌ Error', 'Error granting coins. Please try again.');
+            }
+        }
+
+        // Show notification
+        function showNotification(type, title, message) {
+            const notification = document.getElementById('notification');
+            const notificationIcon = document.getElementById('notificationIcon');
+            const notificationTitle = document.getElementById('notificationTitle');
+            const notificationMessage = document.getElementById('notificationMessage');
+
+            if (!notification) return;
+
+            if (type === 'success') {
+                notificationIcon.textContent = '✅';
+                notification.className = 'notification success show';
+            } else if (type === 'error') {
+                notificationIcon.textContent = '❌';
+                notification.className = 'notification error show';
+            } else {
+                notificationIcon.textContent = 'ℹ️';
+                notification.className = 'notification show';
+            }
+
+            notificationTitle.textContent = title;
+            notificationMessage.textContent = message;
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 5000);
+        }
+
+        // Close modal on overlay click
+        document.getElementById('purchaseModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'purchaseModal') {
+                closePurchaseModal();
+            }
+        });
+
+        // Initialize page
+        function initPage() {
+            // Load coins from Firebase profile
+            loadCoinsFromFirebase().then(() => {
+                const coins = loadCoins();
+                if (coins === 0) {
+                    const localCoins = parseInt(localStorage.getItem(COINS_STORAGE_KEY) || '0');
+                    if (localCoins > 0) {
+                        updateCoinsDisplay(localCoins);
+                    }
+                }
+            });
+            
+            renderCoinItems();
+            
+            // Load purchases if dev
+            if (isDev()) {
+                loadPurchases();
+            }
+            
+            // Listen for auth state changes
+            window.addEventListener('authStateChanged', () => {
+                setTimeout(() => {
+                    loadCoinsFromFirebase();
+                    if (isDev()) {
+                        loadPurchases();
+                    }
+                }, 500);
+            });
+        }
+
+        // Wait for DOM and auth system
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(initPage, 500);
+            });
+        } else {
+            setTimeout(initPage, 500);
+        }
+    </script>
+</body>
+</html>
+

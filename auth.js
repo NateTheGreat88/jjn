@@ -327,6 +327,11 @@
             localStorage.setItem('jnjSecretPages', JSON.stringify(userData.secrets));
         }
         
+        // Sync coins
+        if (userData.profile && userData.profile.coins !== undefined) {
+            localStorage.setItem('jnjCoins', userData.profile.coins.toString());
+        }
+        
         // Sync profile
         if (userData.profile) {
             const profileData = {

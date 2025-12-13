@@ -20,6 +20,7 @@
     <!-- Firebase Config -->
     <script src="firebase-config.js"></script>
     <script src="auth.js" defer></script>
+    <script src="quest-tracker.js" defer></script>
 </head>
 <body>
     <a href="index.html" class="back-button">← Back to Home</a>
@@ -1743,6 +1744,11 @@
                 }
             }
 
+            // Track quest progress for chat messages
+            if (typeof window.trackChatMessage === 'function') {
+                window.trackChatMessage();
+            }
+            
             const timestamp = Date.now();
             const imageData = selectedImage;
             const gifData = selectedGif;

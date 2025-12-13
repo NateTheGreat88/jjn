@@ -16,6 +16,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="auth.js" defer></script>
+    <script src="quest-tracker.js" defer></script>
     <style>
         :root {
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -98,7 +99,41 @@
         .shop-subtitle {
             font-size: 20px;
             color: var(--text-secondary);
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+        }
+
+        .coins-display {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 215, 0, 0.5);
+            border-radius: 50px;
+            padding: 12px 24px;
+            margin-top: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .coins-icon {
+            font-size: 24px;
+            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
+        }
+
+        .coins-amount {
+            font-size: 24px;
+            font-weight: 700;
+            color: #FFD700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .coins-label {
+            font-size: 16px;
+            color: var(--text-secondary);
+            font-weight: 500;
         }
 
         /* Search and Filter Bar */
@@ -712,6 +747,13 @@
             margin-right: 10px;
         }
 
+        .coins-granted {
+            font-size: 18px;
+            color: #FFD700;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
         .shop-discount-badge {
             display: inline-block;
             background: rgba(239, 68, 68, 0.3);
@@ -1236,6 +1278,16 @@
             <div class="shop-header">
                 <h1 class="shop-title">🛍️ JNJ Shop 🛍️</h1>
                 <p class="shop-subtitle">Exclusive limited edition items and merchandise!</p>
+                <div style="display: flex; gap: 15px; justify-content: center; align-items: center; margin-top: 20px; flex-wrap: wrap;">
+                    <div class="coins-display" id="coinsDisplay">
+                        <span class="coins-icon">🪙</span>
+                        <span class="coins-amount" id="coinsAmount">0</span>
+                        <span class="coins-label">JNJ Coins</span>
+                    </div>
+                    <a href="buy-coins.html" class="buy-coins-button" style="padding: 12px 24px; background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: #000; text-decoration: none; border-radius: 50px; font-weight: 600; font-size: 16px; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);">
+                        Buy Coins 🪙
+                    </a>
+                </div>
             </div>
 
             <!-- Featured Banner -->
@@ -1247,7 +1299,7 @@
                         <p class="featured-description" id="featuredDescription">Check out our featured item!</p>
                     </div>
                 </div>
-            </div>
+                    </div>
 
             <div class="shop-controls">
                 <div class="search-box">
@@ -1279,13 +1331,7 @@
                 <!-- Items will be dynamically added here -->
                     </div>
 
-            <!-- Dev purchases section -->
-            <div class="dev-purchases" id="devPurchases">
-                <h2>⭐ Dev Purchase Management</h2>
-                <div id="purchasesList" class="purchases-list">
-                    <div class="no-purchases">Loading purchases...</div>
-                </div>
-            </div>
+            <!-- Dev purchases section removed - only available on buy-coins page -->
 
             <div style="text-align: center;">
                 <a href="index.html" class="back-button">← Back to Home</a>
@@ -1346,6 +1392,16 @@
         const PROFILE_STORAGE_KEY = 'jnjUserProfile';
         
         // Shop items configuration
+        // Helper function to convert dollars to coins (10 cents = 1 coin)
+        function dollarsToCoins(dollars) {
+            return Math.round(parseFloat(dollars) * 10);
+        }
+
+        // Helper function to convert coins to dollars
+        function coinsToDollars(coins) {
+            return (coins / 10).toFixed(2);
+        }
+
         const SHOP_ITEMS = [
             {
                 id: 'cd',
@@ -1353,7 +1409,9 @@
                 icon: '💿',
                 description: 'Physical CD containing all original JNJ compositions. High-quality audio with exclusive artwork and liner notes.',
                 price: '5.00',
+                priceInCoins: 50,
                 originalPrice: '7.00',
+                originalPriceInCoins: 70,
                 type: 'item',
                 grantType: 'item',
                 grantValue: 'cd',
@@ -1366,6 +1424,7 @@
                 icon: '⚡',
                 description: 'Become legendary! Get an exclusive Legendary title that shows your elite status.',
                 price: '1.50',
+                priceInCoins: 15,
                 type: 'title',
                 grantType: 'title',
                 grantValue: 'legendary',
@@ -1377,7 +1436,9 @@
                 icon: '👑',
                 description: 'Become a VIP member! Get exclusive benefits: Exclusive VIP Title, Special VIP Icon (💎), Priority support, Early access to new features, and Exclusive VIP badge on profile.',
                 price: '5.00',
+                priceInCoins: 50,
                 originalPrice: null,
+                originalPriceInCoins: null,
                 type: 'vip',
                 grantType: 'vip',
                 grantValue: 'vip',
@@ -1391,6 +1452,7 @@
                 icon: '🔥',
                 description: 'Unlock a fire profile emoji to customize your avatar!',
                 price: '0.50',
+                priceInCoins: 5,
                 type: 'profile-image',
                 grantType: 'profile-image',
                 grantValue: 'fire-emoji'
@@ -1401,6 +1463,7 @@
                 icon: '⭐',
                 description: 'Show off your professional status with the Pro title!',
                 price: '2.00',
+                priceInCoins: 20,
                 type: 'title',
                 grantType: 'title',
                 grantValue: 'pro',
@@ -1412,6 +1475,7 @@
                 icon: '💫',
                 description: 'Join the elite! Get an exclusive Elite title that shows your superior status.',
                 price: '3.00',
+                priceInCoins: 30,
                 type: 'title',
                 grantType: 'title',
                 grantValue: 'elite',
@@ -1423,6 +1487,7 @@
                 icon: '⭐',
                 description: 'Unlock a star emoji to brighten up your profile!',
                 price: '0.50',
+                priceInCoins: 5,
                 type: 'profile-image',
                 grantType: 'profile-image',
                 grantValue: 'star-emoji'
@@ -1433,6 +1498,7 @@
                 icon: '👑',
                 description: 'Unlock a crown emoji to show your royal status!',
                 price: '0.75',
+                priceInCoins: 8,
                 type: 'profile-image',
                 grantType: 'profile-image',
                 grantValue: 'crown-emoji'
@@ -1443,6 +1509,7 @@
                 icon: '🚀',
                 description: 'Unlock a rocket emoji to show you\'re going places!',
                 price: '0.50',
+                priceInCoins: 5,
                 type: 'profile-image',
                 grantType: 'profile-image',
                 grantValue: 'rocket-emoji'
@@ -1453,6 +1520,7 @@
                 icon: '🏆',
                 description: 'Become a champion! Get an exclusive Champion title that shows your victory.',
                 price: '2.50',
+                priceInCoins: 25,
                 type: 'title',
                 grantType: 'title',
                 grantValue: 'champion',
@@ -1465,6 +1533,7 @@
                 iconType: 'image',
                 description: 'Support the JNJ website with a donation! Get a special Donate Box icon to show your support.',
                 price: '5.00',
+                priceInCoins: 50,
                 type: 'profile-image',
                 grantType: 'profile-image',
                 grantValue: 'donate-box',
@@ -1583,6 +1652,155 @@
             }
         }
 
+        // Coin management
+        const COINS_STORAGE_KEY = 'jnjCoins';
+        
+        // Load coins from localStorage
+        function loadCoins() {
+            try {
+                const coins = parseInt(localStorage.getItem(COINS_STORAGE_KEY) || '0');
+                updateCoinsDisplay(coins);
+                return coins;
+            } catch (e) {
+                console.error('Error loading coins:', e);
+                return 0;
+            }
+        }
+        
+        // Save coins to localStorage
+        function saveCoins(coins) {
+            try {
+                localStorage.setItem(COINS_STORAGE_KEY, coins.toString());
+                updateCoinsDisplay(coins);
+            } catch (e) {
+                console.error('Error saving coins:', e);
+            }
+        }
+        
+        // Save coins to Firebase
+        async function saveCoinsToFirebase(coins) {
+            try {
+                if (!window.authSystem || !window.authSystem.isAuthenticated()) {
+                    return;
+                }
+                
+                const user = window.authSystem.getUser();
+                if (!user || !user.uid) {
+                    return;
+                }
+                
+                if (!db) {
+                    initFirebase();
+                }
+                
+                if (!db) {
+                    return;
+                }
+                
+                // Update user profile with coins
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                const userData = userDoc.exists ? userDoc.data() : {};
+                const profile = { ...(userData.profile || {}) };
+                profile.coins = coins;
+                
+                if (userDoc.exists) {
+                    await db.collection('users').doc(user.uid).update({
+                        profile: profile
+                    });
+                } else {
+                    await db.collection('users').doc(user.uid).set({
+                        profile: profile,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                
+                // Also sync via authSystem
+                try {
+                    await window.authSystem.saveUserData({ profile: profile });
+                } catch (e) {
+                    console.error('Error syncing coins via authSystem:', e);
+                }
+            } catch (e) {
+                console.error('Error saving coins to Firebase:', e);
+            }
+        }
+        
+        // Load coins from Firebase profile (minimal reads - only when entering shop)
+        async function loadCoinsFromFirebase() {
+            try {
+                if (!window.authSystem || !window.authSystem.isAuthenticated()) {
+                    // Fallback to localStorage if not authenticated
+                    const localCoins = parseInt(localStorage.getItem(COINS_STORAGE_KEY) || '0');
+                    updateCoinsDisplay(localCoins);
+                    return;
+                }
+                
+                const user = window.authSystem.getUser();
+                if (!user || !user.uid) {
+                    return;
+                }
+                
+                if (!db) {
+                    initFirebase();
+                }
+                
+                if (!db) {
+                    // Fallback to localStorage if Firebase not available
+                    const localCoins = parseInt(localStorage.getItem(COINS_STORAGE_KEY) || '0');
+                    updateCoinsDisplay(localCoins);
+                    return;
+                }
+                
+                // Single read from user profile
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    const profile = userData.profile || {};
+                    const coins = profile.coins || 0;
+                    // Save to both localStorage and update display
+                    localStorage.setItem(COINS_STORAGE_KEY, coins.toString());
+                    saveCoins(coins);
+                } else {
+                    // No profile yet, default to 0
+                    localStorage.setItem(COINS_STORAGE_KEY, '0');
+                    saveCoins(0);
+                }
+            } catch (e) {
+                console.error('Error loading coins from Firebase:', e);
+                // Fallback to localStorage on error
+                const localCoins = parseInt(localStorage.getItem(COINS_STORAGE_KEY) || '0');
+                updateCoinsDisplay(localCoins);
+            }
+        }
+        
+        // Update coins display
+        function updateCoinsDisplay(coins) {
+            const coinsAmount = document.getElementById('coinsAmount');
+            if (coinsAmount) {
+                coinsAmount.textContent = coins.toLocaleString();
+            }
+        }
+        
+        // Add coins (for coin purchases)
+        async function addCoins(amount) {
+            const currentCoins = loadCoins();
+            const newCoins = currentCoins + amount;
+            saveCoins(newCoins);
+            await saveCoinsToFirebase(newCoins);
+        }
+        
+        // Deduct coins (for purchases)
+        async function deductCoins(amount) {
+            const currentCoins = loadCoins();
+            if (currentCoins < amount) {
+                return false; // Not enough coins
+            }
+            const newCoins = currentCoins - amount;
+            saveCoins(newCoins);
+            await saveCoinsToFirebase(newCoins);
+            return true;
+        }
+
         // Filter and search state
         let currentCategory = 'all';
         let searchQuery = '';
@@ -1624,9 +1842,17 @@
             const sorted = [...items];
             switch(sortBy) {
                 case 'price-low':
-                    return sorted.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+                    return sorted.sort((a, b) => {
+                        const priceA = a.type === 'coins' ? parseFloat(a.price) : (a.priceInCoins || 0);
+                        const priceB = b.type === 'coins' ? parseFloat(b.price) : (b.priceInCoins || 0);
+                        return priceA - priceB;
+                    });
                 case 'price-high':
-                    return sorted.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+                    return sorted.sort((a, b) => {
+                        const priceA = a.type === 'coins' ? parseFloat(a.price) : (a.priceInCoins || 0);
+                        const priceB = b.type === 'coins' ? parseFloat(b.price) : (b.priceInCoins || 0);
+                        return priceB - priceA;
+                    });
                 case 'name-asc':
                     return sorted.sort((a, b) => a.name.localeCompare(b.name));
                 case 'name-desc':
@@ -1842,10 +2068,18 @@
                 }
 
                 let priceHTML = '';
-                if (isSubscription) {
+                // Coin purchase items show dollar price, regular items show coin price
+                if (item.type === 'coins') {
+                    priceHTML = `
+                    <div class="shop-price-container">
+                        <span class="shop-price">$${item.price}</span>
+                        <span class="coins-granted">+${item.coinsGranted} 🪙</span>
+                    </div>
+                    `;
+                } else if (isSubscription) {
                     priceHTML = `
                         <div class="subscription-price">
-                            <span class="shop-price">$${item.price}</span>
+                            <span class="shop-price">${item.priceInCoins} 🪙</span>
                             <span class="subscription-period">/ ${item.subscriptionPeriod || 'month'}</span>
                             <span class="subscription-badge">Subscription</span>
                         </div>
@@ -1853,9 +2087,9 @@
                 } else {
                     priceHTML = `
                     <div class="shop-price-container">
-                        ${hasDiscount ? `<span class="shop-price-original">$${item.originalPrice}</span>` : ''}
-                        <span class="shop-price">$${item.price}</span>
-                        ${hasDiscount ? `<span class="shop-discount-badge">Save $${discountAmount}!</span>` : ''}
+                        ${hasDiscount ? `<span class="shop-price-original">${item.originalPriceInCoins} 🪙</span>` : ''}
+                        <span class="shop-price">${item.priceInCoins} 🪙</span>
+                        ${hasDiscount ? `<span class="shop-discount-badge">Save ${item.originalPriceInCoins - item.priceInCoins} 🪙!</span>` : ''}
                     </div>
                     `;
                 }
@@ -1923,10 +2157,13 @@
                 modalIcon.textContent = item.icon;
             }
             
-            const hasDiscount = item.originalPrice && parseFloat(item.originalPrice) > parseFloat(item.price);
+                const hasDiscount = item.originalPrice && parseFloat(item.originalPrice) > parseFloat(item.price);
             const discountAmount = hasDiscount ? (parseFloat(item.originalPrice) - parseFloat(item.price)).toFixed(2) : null;
+            const discountCoins = hasDiscount ? (item.originalPriceInCoins - item.priceInCoins) : null;
 
                 const isSubscription = item.subscription === true;
+                const isCoinPurchase = item.type === 'coins';
+                const currentCoins = loadCoins();
                 
                 modalInfo.innerHTML = `
                 <div class="modal-item-info-row">
@@ -1935,7 +2172,7 @@
                 </div>
                 <div class="modal-item-info-row">
                     <span class="modal-item-info-label">Type:</span>
-                    <span class="modal-item-info-value">${item.type === 'title' ? 'Title' : item.type === 'profile-image' ? 'Emoji' : item.type === 'vip' ? 'VIP Pass (Subscription)' : 'Physical Item'}</span>
+                    <span class="modal-item-info-value">${item.type === 'title' ? 'Title' : item.type === 'profile-image' ? 'Emoji' : item.type === 'vip' ? 'VIP Pass (Subscription)' : item.type === 'coins' ? 'Coin Purchase' : 'Physical Item'}</span>
                 </div>
                 ${isSubscription ? `
                 <div class="modal-item-info-row">
@@ -1943,20 +2180,39 @@
                     <span class="modal-item-info-value" style="color: var(--warning-color);">Recurring Monthly</span>
                 </div>
                 ` : ''}
-                ${hasDiscount ? `
+                ${!isCoinPurchase ? `
+                <div class="modal-item-info-row">
+                    <span class="modal-item-info-label">Your Coins:</span>
+                    <span class="modal-item-info-value">${currentCoins} 🪙</span>
+                </div>
+                ` : ''}
+                ${hasDiscount && !isCoinPurchase ? `
                 <div class="modal-item-info-row">
                     <span class="modal-item-info-label">Original Price:</span>
-                    <span class="modal-item-info-value" style="text-decoration: line-through; opacity: 0.6;">$${item.originalPrice}</span>
+                    <span class="modal-item-info-value" style="text-decoration: line-through; opacity: 0.6;">${item.originalPriceInCoins} 🪙</span>
                 </div>
                 <div class="modal-item-info-row">
                     <span class="modal-item-info-label">Discount:</span>
-                    <span class="modal-item-info-value" style="color: var(--error-color);">Save $${discountAmount}!</span>
+                    <span class="modal-item-info-value" style="color: var(--error-color);">Save ${discountCoins} 🪙!</span>
                 </div>
                 ` : ''}
                 <div class="modal-item-info-row">
-                    <span class="modal-item-info-label">${isSubscription ? 'Monthly Price:' : 'Price:'}</span>
-                    <span class="modal-item-info-value" style="color: var(--success-color); font-size: 24px;">$${item.price}${isSubscription ? ' <span style="font-size: 16px; color: var(--text-secondary);">/month</span>' : ''}</span>
+                    <span class="modal-item-info-label">${isCoinPurchase ? 'Price:' : isSubscription ? 'Monthly Price:' : 'Price:'}</span>
+                    <span class="modal-item-info-value" style="color: var(--success-color); font-size: 24px;">
+                        ${isCoinPurchase ? `$${item.price}` : `${item.priceInCoins} 🪙`}${isSubscription ? ' <span style="font-size: 16px; color: var(--text-secondary);">/month</span>' : ''}
+                    </span>
                 </div>
+                ${isCoinPurchase ? `
+                <div class="modal-item-info-row">
+                    <span class="modal-item-info-label">You'll Receive:</span>
+                    <span class="modal-item-info-value" style="color: #FFD700; font-size: 20px;">+${item.coinsGranted} 🪙</span>
+                </div>
+                ` : ''}
+                ${!isCoinPurchase && currentCoins < item.priceInCoins ? `
+                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 12px; margin-top: 15px; text-align: center;">
+                    <p style="color: var(--error-color); font-size: 13px; margin: 0;">⚠️ You need ${item.priceInCoins - currentCoins} more coins to purchase this item</p>
+                </div>
+                ` : ''}
                 ${isSubscription ? `
                 <div style="background: rgba(102, 126, 234, 0.1); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; padding: 12px; margin-top: 15px; text-align: center;">
                     <p style="color: var(--text-secondary); font-size: 13px; margin: 0;">⚠️ This is a monthly subscription that will renew automatically</p>
@@ -2024,20 +2280,30 @@
             }
 
             let priceHTML = '';
-            if (isSubscription) {
+            const isCoinPurchase = item.type === 'coins';
+            const discountCoins = hasDiscount ? (item.originalPriceInCoins - item.priceInCoins) : null;
+            
+            if (isCoinPurchase) {
+                priceHTML = `
+                    <div class="shop-price-container" style="justify-content: center; margin: 20px 0;">
+                        <span class="shop-price" style="font-size: 36px;">$${item.price}</span>
+                        <span style="font-size: 24px; color: #FFD700; margin-left: 10px;">→ +${item.coinsGranted} 🪙</span>
+                    </div>
+                `;
+            } else if (isSubscription) {
                 priceHTML = `
                     <div class="subscription-price" style="justify-content: center; margin: 20px 0;">
-                        <span class="shop-price" style="font-size: 36px;">$${item.price}</span>
+                        <span class="shop-price" style="font-size: 36px;">${item.priceInCoins} 🪙</span>
                         <span class="subscription-period" style="font-size: 18px;">/ ${item.subscriptionPeriod || 'month'}</span>
                         <span class="subscription-badge" style="font-size: 14px; padding: 8px 16px;">Subscription</span>
                     </div>
                 `;
             } else {
                 priceHTML = `
-                    <div class="shop-price-container">
-                        ${hasDiscount ? `<span class="shop-price-original">$${item.originalPrice}</span>` : ''}
-                        <span class="shop-price">$${item.price}</span>
-                        ${hasDiscount ? `<span class="shop-discount-badge">Save $${discountAmount}!</span>` : ''}
+                    <div class="shop-price-container" style="justify-content: center; margin: 20px 0;">
+                        ${hasDiscount ? `<span class="shop-price-original" style="font-size: 24px;">${item.originalPriceInCoins} 🪙</span>` : ''}
+                        <span class="shop-price" style="font-size: 36px;">${item.priceInCoins} 🪙</span>
+                        ${hasDiscount ? `<span class="shop-discount-badge">Save ${discountCoins} 🪙!</span>` : ''}
                     </div>
                 `;
             }
@@ -2175,12 +2441,29 @@
                 console.warn('Could not get user info:', error);
             }
 
-            // Check if already purchased
+            // Check if already purchased (skip for coin purchases)
+            if (item.type !== 'coins') {
             const alreadyPurchased = await hasPurchasedItem(itemId);
             if (alreadyPurchased) {
                 showNotification('error', '❌ Already Purchased', 'You have already purchased this item!');
                 renderShopItems(); // Refresh to show purchased status
                 return;
+                }
+            }
+            
+            // Handle coin purchases (add coins)
+            if (item.type === 'coins') {
+                // For coin purchases, we still need payment, but we grant coins
+                // The actual payment is still handled the same way
+                // After payment is confirmed, coins will be added
+            } else {
+                // For regular items, check if user has enough coins
+                const currentCoins = loadCoins();
+                if (currentCoins < item.priceInCoins) {
+                    const needed = item.priceInCoins - currentCoins;
+                    showNotification('error', '❌ Insufficient Coins', `You need ${needed} more coins to purchase this item.\n\nYou have: ${currentCoins} 🪙\nRequired: ${item.priceInCoins} 🪙`);
+                    return;
+                }
             }
 
             // Purchase confirmation is now handled by modal
@@ -2232,7 +2515,16 @@
                 await db.collection('purchases').add(purchaseData);
                 console.log('Purchase saved to Firestore');
 
-                // Add to user's purchasedItems in profile
+                // For coin purchases, coins are handled on the buy-coins page
+                // For regular items, deduct coins and instantly grant the item
+                if (item.type !== 'coins') {
+                    // Deduct coins for regular purchases
+                    const coinsDeducted = await deductCoins(item.priceInCoins);
+                    if (!coinsDeducted) {
+                        throw new Error('Failed to deduct coins');
+                    }
+                    
+                    // Instantly grant the item (no dev approval needed for coin purchases)
                 if (userId) {
                     try {
                         const userDoc = await db.collection('users').doc(userId).get();
@@ -2249,6 +2541,23 @@
                         if (!purchasedItems.includes(item.id)) {
                             purchasedItems.push(item.id);
                             profile.purchasedItems = purchasedItems;
+                                
+                                // Grant the item based on type
+                                if (item.grantType === 'title') {
+                                    const titles = profile.unlockedTitles || [];
+                                    if (!titles.includes(item.grantValue)) {
+                                        titles.push(item.grantValue);
+                                        profile.unlockedTitles = titles;
+                                    }
+                                } else if (item.grantType === 'profile-image') {
+                                    const images = profile.unlockedImages || [];
+                                    if (!images.includes(item.grantValue)) {
+                                        images.push(item.grantValue);
+                                        profile.unlockedImages = images;
+                                    }
+                                } else if (item.grantType === 'vip') {
+                                    profile.isVip = true;
+                                }
                             
                             // Update user profile in Firestore
                             if (userDoc.exists) {
@@ -2268,6 +2577,13 @@
                                 if (currentUser && currentUser.uid === userId) {
                                     const localProfile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
                                     localProfile.purchasedItems = purchasedItems;
+                                        if (item.grantType === 'title') {
+                                            localProfile.unlockedTitles = profile.unlockedTitles;
+                                        } else if (item.grantType === 'profile-image') {
+                                            localProfile.unlockedImages = profile.unlockedImages;
+                                        } else if (item.grantType === 'vip') {
+                                            localProfile.isVip = true;
+                                        }
                                     localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(localProfile));
                                     
                                     // Sync to Firestore via authSystem
@@ -2280,8 +2596,9 @@
                             }
                         }
                     } catch (e) {
-                        console.error('Error updating purchasedItems:', e);
+                            console.error('Error granting item:', e);
                         // Don't block the purchase if this fails
+                        }
                     }
                 }
 
@@ -2291,20 +2608,20 @@
                 // Show purchase success animation
                 showPurchaseSuccess(item.name);
 
+                // Track quest progress
+                if (typeof window.trackPurchase === 'function') {
+                    window.trackPurchase();
+                }
+                
                 // Also show notification
                 showNotification(
                     'success',
-                    '✅ Purchase Confirmed!',
-                    `Thank you for purchasing ${item.name} for $${item.price}.\n\n💰 Please bring the money ($${item.price}) to one of the developers.\n\nYour purchase has been recorded. A developer will grant your item once payment is received!`
+                    '✅ Purchase Successful!',
+                    `Thank you for purchasing ${item.name} for ${item.priceInCoins} 🪙.\n\n🎉 Your item has been instantly granted! Check your profile to see it.`
                 );
 
                 // Refresh shop items to show purchased status
                 renderShopItems();
-
-                // Refresh purchases if dev
-                if (isDev()) {
-                    loadPurchases();
-                }
             } catch (error) {
                 console.error('Purchase error:', error);
                 if (document.body.contains(loadingMsg)) {
@@ -2672,30 +2989,29 @@
         function initPage() {
             initFilters();
             showFeaturedItem();
+            
+            // Load coins from Firebase profile on page load (minimal reads - only when entering shop)
+            loadCoinsFromFirebase().then(() => {
+                // If Firebase load fails or user not authenticated, fallback to localStorage
+                const coins = loadCoins();
+                if (coins === 0) {
+                    // Try localStorage as fallback
+                    const localCoins = parseInt(localStorage.getItem(COINS_STORAGE_KEY) || '0');
+                    if (localCoins > 0) {
+                        updateCoinsDisplay(localCoins);
+                    }
+                }
+            });
+            
             renderShopItems();
             
-            // Wait for auth system to be ready, then check dev status
-            function checkDevStatus() {
-                if (window.authSystem) {
-                    if (isDev()) {
-                        loadPurchases();
-                    }
-                } else {
-                    setTimeout(checkDevStatus, 100);
-                }
-            }
-            
-            // Also check when auth state changes
+            // Listen for auth state changes to reload coins
             window.addEventListener('authStateChanged', () => {
                 setTimeout(() => {
-                    if (isDev()) {
-                        loadPurchases();
-                    }
+                    loadCoinsFromFirebase();
                     renderShopItems(); // Refresh to update purchase status
                 }, 500);
             });
-            
-            checkDevStatus();
         }
 
         // Initialize Firebase and page when ready
