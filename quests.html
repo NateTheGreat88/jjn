@@ -387,6 +387,38 @@
             }
         }
 
+        // Get daily quest count (resets each day)
+        function getDailyQuestCount() {
+            try {
+                const dailyData = localStorage.getItem('jnjDailyQuestCount');
+                if (dailyData) {
+                    const data = JSON.parse(dailyData);
+                    const today = new Date().toDateString();
+                    if (data.date === today) {
+                        return data.count || 0;
+                    }
+                }
+                return 0;
+            } catch (e) {
+                return 0;
+            }
+        }
+        
+        // Increment daily quest count
+        function incrementDailyQuestCount() {
+            try {
+                const today = new Date().toDateString();
+                const count = getDailyQuestCount() + 1;
+                localStorage.setItem('jnjDailyQuestCount', JSON.stringify({
+                    date: today,
+                    count: count
+                }));
+                return count;
+            } catch (e) {
+                return 0;
+            }
+        }
+        
         // Select 3 random active quests
         function selectActiveQuests() {
             try {
@@ -421,6 +453,53 @@
                 // Fallback to first 3
                 QUESTS = ALL_QUESTS.slice(0, 3);
             }
+        }
+        
+        // Add a new quest when one is completed (capped at 4 per day)
+        function addNewQuestAfterCompletion() {
+            const dailyCount = getDailyQuestCount();
+            if (dailyCount >= 4) {
+                // Already got 4 new quests today
+                return false;
+            }
+            
+            // Check if we have less than 3 active quests
+            const activeQuests = QUESTS.filter(q => !(q.completed && q.claimed));
+            if (activeQuests.length >= 3) {
+                // Already have 3 active quests
+                return false;
+            }
+            
+            // Find available quests that aren't already active
+            const currentActiveIds = QUESTS.map(q => q.id);
+            const availableQuests = ALL_QUESTS.filter(q => 
+                !(q.completed && q.claimed) && 
+                !currentActiveIds.includes(q.id)
+            );
+            
+            if (availableQuests.length === 0) {
+                return false; // No more quests available
+            }
+            
+            // Select a random available quest
+            const shuffled = availableQuests.sort(() => 0.5 - Math.random());
+            const newQuest = shuffled[0];
+            
+            // Add to active quests (make sure we have the full quest object from ALL_QUESTS)
+            const fullQuest = ALL_QUESTS.find(q => q.id === newQuest.id);
+            if (fullQuest) {
+                QUESTS.push(fullQuest);
+                
+                // Increment daily count
+                incrementDailyQuestCount();
+                
+                // Save active quest IDs
+                localStorage.setItem('jnjActiveQuests', JSON.stringify(QUESTS.map(q => q.id)));
+                
+                return true;
+            }
+            
+            return false;
         }
         
         // Load quest progress
@@ -660,14 +739,23 @@
                 // Mark as claimed
                 quest.claimed = true;
                 
-                // If this was an active quest, replace it with a new one
+                // If this was an active quest, try to add a new one (capped at 4 per day)
                 if (wasActive) {
-                    selectActiveQuests();
+                    const addedNew = addNewQuestAfterCompletion();
+                    if (!addedNew) {
+                        // Couldn't add new quest (either at daily limit or no more available)
+                        // Just refresh the active quests list
+                        selectActiveQuests();
+                    }
                 }
                 
                 saveQuestProgress();
 
-                showNotification(`✅ Quest completed! You earned ${quest.reward} 🪙 coins!`, 'success');
+                const dailyCount = getDailyQuestCount();
+                const notificationMsg = dailyCount >= 4 
+                    ? `✅ Quest completed! You earned ${quest.reward} 🪙 coins! (Daily limit reached - no new quests today)`
+                    : `✅ Quest completed! You earned ${quest.reward} 🪙 coins!`;
+                showNotification(notificationMsg, 'success');
                 renderQuests();
             } catch (e) {
                 console.error('Error claiming quest reward:', e);
