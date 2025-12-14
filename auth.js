@@ -332,6 +332,22 @@
             localStorage.setItem('jnjCoins', userData.profile.coins.toString());
         }
         
+        // Sync login streak data
+        if (userData.profile) {
+            if (userData.profile.loginStreak !== undefined) {
+                localStorage.setItem('jnjLoginStreak', userData.profile.loginStreak.toString());
+            }
+            if (userData.profile.lastLogin) {
+                localStorage.setItem('jnjLastLogin', userData.profile.lastLogin);
+            }
+            if (userData.profile.totalLogins !== undefined) {
+                localStorage.setItem('jnjTotalLogins', userData.profile.totalLogins.toString());
+            }
+            if (userData.profile.loginMilestones) {
+                localStorage.setItem('jnjLoginMilestones', JSON.stringify(userData.profile.loginMilestones));
+            }
+        }
+        
         // Sync profile
         if (userData.profile) {
             const profileData = {

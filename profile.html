@@ -18,6 +18,7 @@
     <script src="firebase-config.js"></script>
     <script src="auth.js" defer></script>
     <script src="quest-tracker.js" defer></script>
+    <script src="daily-login.js" defer></script>
     <style>
         .profile-container {
             max-width: 800px;
@@ -397,6 +398,17 @@
                             No claimed icons yet. Purchase icons from the shop!
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Login Streak Section -->
+            <div id="streakSection" class="streak-section" style="margin-bottom: 30px; padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 15px; border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);">
+                <h3 style="margin: 0 0 15px 0; color: white; font-size: 20px; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;">🔥</span>
+                    Daily Login Streak
+                </h3>
+                <div id="streakInfo" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                    <!-- Streak info will be populated here -->
                 </div>
             </div>
 
@@ -824,7 +836,7 @@
                             selectedEmoji = '👤'; // Reset emoji
                         } else {
                             selectedEmoji = iconValue || '👤';
-                            selectedImage = null;
+                        selectedImage = null;
                         }
                         updateAvatarPreview();
                         saveProfile();
@@ -920,6 +932,9 @@
                     if (devStarBadge && profile.isDev === true) {
                         devStarBadge.style.display = 'inline-block';
                     }
+                    
+                    // Load streak display
+                    loadStreakDisplay();
                             
                             // Save to localStorage for compatibility
                             localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
@@ -1350,30 +1365,90 @@
         }
         
         // Listen for auth state changes
-        window.addEventListener('authStateChanged', () => {
+        window.addEventListener('authStateChanged', async () => {
             updateSignOutButton();
-            loadProfile();
+            await loadProfile();
+            loadStreakDisplay();
         });
         
-        // Load profile on page load
-        document.addEventListener('DOMContentLoaded', async () => {
-            // Wait for auth system to be ready
-            let attempts = 0;
-            while (!window.authSystem && attempts < 30) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-                attempts++;
+            // Load and display streak info
+            async function loadStreakDisplay() {
+                // Wait for daily login system to load
+                if (!window.dailyLoginSystem) {
+                    setTimeout(loadStreakDisplay, 100);
+                    return;
+                }
+                
+                try {
+                    // Load streak from Firebase if authenticated
+                    if (window.authSystem && window.authSystem.isAuthenticated()) {
+                        await window.dailyLoginSystem.loadStreakFromFirebase();
+                    }
+                    
+                    const streakInfo = window.dailyLoginSystem.getStreakInfo();
+                    const streakInfoDiv = document.getElementById('streakInfo');
+                    const streakSection = document.getElementById('streakSection');
+                    
+                    if (!streakInfoDiv || !streakSection) return;
+                    
+                    const today = window.dailyLoginSystem.getTodayString();
+                    const claimedToday = streakInfo.claimedToday;
+                    const nextMilestone = streakInfo.nextMilestone;
+                    
+                    streakInfoDiv.innerHTML = `
+                        <div style="padding: 15px; background: rgba(255, 140, 0, 0.1); border: 2px solid rgba(255, 140, 0, 0.3); border-radius: 10px; text-align: center;">
+                            <div style="font-size: 32px; margin-bottom: 5px;">🔥</div>
+                            <div style="font-size: 28px; font-weight: 700; color: #FF8C00; margin-bottom: 5px;">${streakInfo.streak}</div>
+                            <div style="font-size: 14px; color: rgba(255, 255, 255, 0.7);">Day Streak</div>
+                            ${claimedToday ? '<div style="font-size: 12px; color: #22c55e; margin-top: 5px;">✓ Claimed today</div>' : '<div style="font-size: 12px; color: #f59e0b; margin-top: 5px;">Visit homepage to claim</div>'}
+                        </div>
+                        <div style="padding: 15px; background: rgba(102, 126, 234, 0.1); border: 2px solid rgba(102, 126, 234, 0.3); border-radius: 10px; text-align: center;">
+                            <div style="font-size: 32px; margin-bottom: 5px;">📅</div>
+                            <div style="font-size: 20px; font-weight: 700; color: white; margin-bottom: 5px;">${streakInfo.totalLogins}</div>
+                            <div style="font-size: 14px; color: rgba(255, 255, 255, 0.7);">Total Logins</div>
+                        </div>
+                        ${nextMilestone ? `
+                            <div style="padding: 15px; background: rgba(255, 215, 0, 0.1); border: 2px solid rgba(255, 215, 0, 0.3); border-radius: 10px; text-align: center;">
+                                <div style="font-size: 32px; margin-bottom: 5px;">🎯</div>
+                                <div style="font-size: 18px; font-weight: 700; color: #FFD700; margin-bottom: 5px;">${nextMilestone.daysRemaining} days</div>
+                                <div style="font-size: 14px; color: rgba(255, 255, 255, 0.7);">Until ${nextMilestone.days} day milestone</div>
+                                <div style="font-size: 12px; color: #FFD700; margin-top: 5px;">+${nextMilestone.reward} coins reward</div>
+                            </div>
+                        ` : `
+                            <div style="padding: 15px; background: rgba(255, 215, 0, 0.1); border: 2px solid rgba(255, 215, 0, 0.3); border-radius: 10px; text-align: center;">
+                                <div style="font-size: 32px; margin-bottom: 5px;">🏆</div>
+                                <div style="font-size: 16px; font-weight: 700; color: #FFD700; margin-bottom: 5px;">All Milestones</div>
+                                <div style="font-size: 14px; color: rgba(255, 255, 255, 0.7);">Completed!</div>
+                            </div>
+                        `}
+                    `;
+                } catch (e) {
+                    console.error('Error loading streak display:', e);
+                }
             }
             
-            // Load profile (will try Firestore first if authenticated)
-            await loadProfile();
-            
-            // Check leaves option and upload button visibility after profile loads
-            const profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
-            checkLeavesClaimed(profile);
-            checkUploadButtonVisibility(profile);
-            
-            // Check auth state and update sign out button
-            updateSignOutButton();
+            // Load profile on page load
+            document.addEventListener('DOMContentLoaded', async () => {
+                // Wait for auth system to be ready
+                let attempts = 0;
+                while (!window.authSystem && attempts < 30) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+                
+                // Load profile (will try Firestore first if authenticated)
+                await loadProfile();
+                
+                // Check leaves option and upload button visibility after profile loads
+                const profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
+                checkLeavesClaimed(profile);
+                checkUploadButtonVisibility(profile);
+                
+                // Check auth state and update sign out button
+                updateSignOutButton();
+                
+                // Load streak display
+                loadStreakDisplay();
             
             // Listen for particle type changes
             const particleTypeSelect = document.getElementById('particleType');

@@ -16,6 +16,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="auth.js" defer></script>
+    <script src="daily-login.js" defer></script>
     <style>
         :root {
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -244,6 +245,206 @@
         .notification.success {
             border-left: 4px solid var(--success-color);
         }
+
+        /* Daily Login Streak Track */
+        .streak-track-section {
+            margin-bottom: 40px;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            border: 2px solid rgba(255, 140, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .streak-track-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .streak-track-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .streak-track-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .streak-track-container {
+            position: relative;
+            padding: 40px 20px;
+            overflow-x: auto;
+        }
+
+        .streak-track {
+            position: relative;
+            height: 200px;
+            background: linear-gradient(to right, 
+                rgba(102, 126, 234, 0.2) 0%,
+                rgba(102, 126, 234, 0.3) 50%,
+                rgba(102, 126, 234, 0.2) 100%);
+            border-radius: 15px;
+            border: 2px solid rgba(102, 126, 234, 0.4);
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            position: relative;
+            min-width: 800px;
+        }
+
+        .streak-track::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: repeating-linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.3) 0px,
+                rgba(255, 255, 255, 0.3) 10px,
+                transparent 10px,
+                transparent 20px
+            );
+            transform: translateY(-50%);
+            z-index: 1;
+        }
+
+        .streak-milestone {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .milestone-marker {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            position: relative;
+            transition: all 0.3s ease;
+            border: 3px solid;
+        }
+
+        .milestone-marker.current {
+            background: linear-gradient(135deg, #FF8C00 0%, #FF6B00 100%);
+            border-color: #FFD700;
+            box-shadow: 0 0 20px rgba(255, 140, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.5);
+            animation: pulse-glow 2s ease-in-out infinite;
+            transform: scale(1.1);
+        }
+
+        .milestone-marker.completed {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            border-color: #86efac;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.6);
+        }
+
+        .milestone-marker.upcoming {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+            opacity: 0.6;
+        }
+
+        .milestone-marker.upcoming.locked {
+            background: rgba(100, 100, 100, 0.2);
+            border-color: rgba(100, 100, 100, 0.4);
+            opacity: 0.4;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(255, 140, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(255, 140, 0, 1), 0 0 60px rgba(255, 215, 0, 0.8);
+            }
+        }
+
+        .milestone-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        .milestone-reward {
+            font-size: 12px;
+            color: #FFD700;
+            font-weight: 700;
+            text-align: center;
+            margin-top: 2px;
+        }
+
+        .milestone-days {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 2px;
+        }
+
+        .streak-current-info {
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 2px solid rgba(255, 140, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .streak-current-text {
+            font-size: 18px;
+            font-weight: 700;
+            color: #FF8C00;
+        }
+
+        .streak-current-number {
+            font-size: 24px;
+            font-weight: 800;
+            color: #FFD700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+        }
+
+        @media (max-width: 768px) {
+            .streak-track {
+                min-width: 600px;
+                padding: 0 15px;
+            }
+
+            .milestone-marker {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+
+            .milestone-label {
+                font-size: 12px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -258,6 +459,27 @@
                     <span class="coins-label">JNJ Coins</span>
                 </div>
                 <a href="index.html" class="back-button">← Back to Home</a>
+            </div>
+
+            <!-- Daily Login Streak Track -->
+            <div class="streak-track-section" id="streakTrackSection" style="display: none;">
+                <div class="streak-track-header">
+                    <h2 class="streak-track-title">
+                        <span>🔥</span>
+                        Daily Login Streak
+                    </h2>
+                    <p class="streak-track-subtitle">Log in daily to maintain your streak and earn bonus coins!</p>
+                </div>
+                <div class="streak-track-container">
+                    <div class="streak-current-info" id="streakCurrentInfo">
+                        <span class="streak-current-text">Current Streak:</span>
+                        <span class="streak-current-number" id="streakCurrentNumber">0</span>
+                        <span style="font-size: 20px;">🔥</span>
+                    </div>
+                    <div class="streak-track" id="streakTrack">
+                        <!-- Milestones will be dynamically added here -->
+                    </div>
+                </div>
             </div>
 
             <div class="quests-grid" id="questsGrid">
@@ -635,6 +857,7 @@
                     selectActiveQuests();
                     
                     saveQuestProgress();
+                    renderStreakTrack();
                 }
             } catch (e) {
                 console.error('Error loading quest progress from Firebase:', e);
@@ -764,6 +987,145 @@
         }
 
         // Render quests
+        // Render streak track
+        async function renderStreakTrack() {
+            // Wait for daily login system to load
+            if (!window.dailyLoginSystem) {
+                setTimeout(renderStreakTrack, 100);
+                return;
+            }
+            
+            try {
+                const streakSection = document.getElementById('streakTrackSection');
+                const streakTrack = document.getElementById('streakTrack');
+                const streakCurrentNumber = document.getElementById('streakCurrentNumber');
+                
+                if (!streakSection || !streakTrack || !streakCurrentNumber) return;
+                
+                // Load streak from Firebase if authenticated
+                if (window.authSystem && window.authSystem.isAuthenticated()) {
+                    await window.dailyLoginSystem.loadStreakFromFirebase();
+                }
+                
+                const streakInfo = window.dailyLoginSystem.getStreakInfo();
+                const currentStreak = streakInfo.streak;
+                const milestones = streakInfo.milestones || [];
+                const nextMilestone = streakInfo.nextMilestone;
+                
+                // Show section
+                streakSection.style.display = 'block';
+                
+                // Update current streak number
+                streakCurrentNumber.textContent = currentStreak;
+                
+                // Define all milestones
+                const allMilestones = [
+                    { days: 7, reward: 5 },
+                    { days: 14, reward: 10 },
+                    { days: 30, reward: 25 },
+                    { days: 60, reward: 50 },
+                    { days: 100, reward: 100 }
+                ];
+                
+                // Find current position and next 3 milestones
+                const upcomingMilestones = [];
+                
+                // Find the next uncompleted milestone
+                let nextMilestoneIndex = -1;
+                for (let i = 0; i < allMilestones.length; i++) {
+                    const milestone = allMilestones[i];
+                    const isCompleted = milestones.includes(milestone.days);
+                    if (!isCompleted) {
+                        nextMilestoneIndex = i;
+                        break;
+                    }
+                }
+                
+                // If all milestones are completed, show the last 3
+                if (nextMilestoneIndex === -1) {
+                    upcomingMilestones.push(...allMilestones.slice(-3).map(m => ({
+                        ...m,
+                        isCompleted: true,
+                        isCurrent: false,
+                        daysRemaining: 0
+                    })));
+                } else {
+                    // Show current milestone (if we've reached it) and next 3 upcoming
+                    let startIndex = nextMilestoneIndex;
+                    
+                    // If we've reached the next milestone, include it as current
+                    if (currentStreak >= allMilestones[nextMilestoneIndex].days) {
+                        upcomingMilestones.push({
+                            ...allMilestones[nextMilestoneIndex],
+                            isCompleted: false,
+                            isCurrent: true,
+                            daysRemaining: 0
+                        });
+                        startIndex = nextMilestoneIndex + 1;
+                    }
+                    
+                    // Add next 3 upcoming milestones
+                    for (let i = startIndex; i < allMilestones.length && upcomingMilestones.length < 4; i++) {
+                        const milestone = allMilestones[i];
+                        const isCompleted = milestones.includes(milestone.days);
+                        if (!isCompleted) {
+                            upcomingMilestones.push({
+                                ...milestone,
+                                isCompleted: false,
+                                isCurrent: false,
+                                daysRemaining: Math.max(0, milestone.days - currentStreak)
+                            });
+                        }
+                    }
+                    
+                    // Limit to 4 total (1 current + 3 upcoming, or just 3 upcoming)
+                    if (upcomingMilestones.length > 4) {
+                        upcomingMilestones.splice(4);
+                    }
+                }
+                
+                // Clear track
+                streakTrack.innerHTML = '';
+                
+                // Render milestones
+                upcomingMilestones.forEach((milestone, index) => {
+                    const milestoneDiv = document.createElement('div');
+                    milestoneDiv.className = 'streak-milestone';
+                    
+                    let markerClass = 'upcoming';
+                    let markerText = milestone.days;
+                    let markerIcon = '🎯';
+                    
+                    if (milestone.isCompleted) {
+                        markerClass = 'completed';
+                        markerIcon = '✓';
+                    } else if (milestone.isCurrent || currentStreak >= milestone.days) {
+                        markerClass = 'current';
+                        markerIcon = '🔥';
+                    } else if (currentStreak < milestone.days - 10) {
+                        markerClass = 'upcoming locked';
+                    }
+                    
+                    milestoneDiv.innerHTML = `
+                        <div class="milestone-marker ${markerClass}">
+                            ${markerIcon}
+                        </div>
+                        <div class="milestone-label">Day ${milestone.days}</div>
+                        <div class="milestone-reward">+${milestone.reward} 🪙</div>
+                        ${!milestone.isCompleted && milestone.daysRemaining > 0 ? `
+                            <div class="milestone-days">${milestone.daysRemaining} days left</div>
+                        ` : milestone.isCompleted ? `
+                            <div class="milestone-days" style="color: #22c55e;">Completed!</div>
+                        ` : ''}
+                    `;
+                    
+                    streakTrack.appendChild(milestoneDiv);
+                });
+            } catch (e) {
+                console.error('Error rendering streak track:', e);
+            }
+        }
+        
         function renderQuests() {
             const questsGrid = document.getElementById('questsGrid');
             if (!questsGrid) return;
@@ -913,6 +1275,7 @@
             checkQuestProgress();
             
             renderQuests();
+            renderStreakTrack();
         }
 
         // Check quest progress from user data

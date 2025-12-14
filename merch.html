@@ -2448,7 +2448,7 @@
                 showNotification('error', '❌ Already Purchased', 'You have already purchased this item!');
                 renderShopItems(); // Refresh to show purchased status
                 return;
-                }
+            }
             }
             
             // Handle coin purchases (add coins)
@@ -2999,8 +2999,8 @@
                     const localCoins = parseInt(localStorage.getItem(COINS_STORAGE_KEY) || '0');
                     if (localCoins > 0) {
                         updateCoinsDisplay(localCoins);
-                    }
                 }
+            }
             });
             
             renderShopItems();

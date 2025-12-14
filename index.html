@@ -20,6 +20,7 @@
     <script src="firebase-config.js"></script>
     <link rel="stylesheet" href="auth.css">
     <script src="auth.js" defer></script>
+    <script src="daily-login.js" defer></script>
 </head>
 <body>
     <!-- Loading Screen -->
@@ -381,7 +382,7 @@
         
         // Check for announcements (polling function)
         async function checkAnnouncements(db) {
-            try {
+                        try {
                 const snapshot = await db.collection('announcements')
                     .where('active', '==', true)
                     .orderBy('createdAt', 'desc')
@@ -427,12 +428,12 @@
                     const panel = document.getElementById('announcementPanel');
                     if (panel) {
                         panel.style.display = 'none';
-                    }
-                }
+                                            }
+                                        }
             } catch (error) {
                 console.error('Error checking announcements:', error);
-            }
-        }
+                                    }
+                                }
         
         // Check if announcement has been read
         function checkAnnouncementRead() {
@@ -451,12 +452,12 @@
                         bubble.style.display = 'inline-block';
                         bubble.classList.remove('unread');
                     }
-                }
-            } catch (e) {
+                            }
+                        } catch (e) {
                 console.error('Error checking announcement read status:', e);
-            }
-        }
-        
+                        }
+                    }
+                    
         // Toggle announcement panel
         function toggleAnnouncement() {
             const panel = document.getElementById('announcementPanel');
@@ -495,7 +496,7 @@
         function checkAndShowEventsButton() {
             const eventsButton = document.getElementById('eventsButton');
             if (eventsButton) {
-                eventsButton.style.display = 'inline-block';
+                    eventsButton.style.display = 'inline-block';
             }
         }
         
@@ -956,6 +957,10 @@
                 // Small delay to ensure the auth state is fully set
                 setTimeout(() => {
                     checkAuthState(true);
+                    // Check for daily login reward after authentication
+                    if (window.authSystem && window.authSystem.isAuthenticated()) {
+                        checkDailyLoginReward();
+                    }
                 }, 50);
             });
             
@@ -1214,6 +1219,242 @@
             document.addEventListener('DOMContentLoaded', initializeMinecraftTip);
         } else {
             initializeMinecraftTip();
+        }
+        
+        // Daily Login Reward System
+        async function checkDailyLoginReward() {
+            // Wait for daily login system to load
+            if (!window.dailyLoginSystem) {
+                setTimeout(checkDailyLoginReward, 100);
+                return;
+            }
+            
+            try {
+                // Load streak from Firebase first
+                await window.dailyLoginSystem.loadStreakFromFirebase();
+                
+                // Check for daily login reward
+                const result = await window.dailyLoginSystem.checkDailyLogin();
+                
+                if (!result.claimed && result.reward > 0) {
+                    // Show notification
+                    showDailyLoginNotification(result);
+                }
+            } catch (e) {
+                console.error('Error checking daily login:', e);
+            }
+        }
+        
+        // Show daily login notification
+        function showDailyLoginNotification(result) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = 'daily-login-notification';
+            notification.innerHTML = `
+                <div class="daily-login-content">
+                    <div class="daily-login-header">
+                        <span class="daily-login-icon">🎁</span>
+                        <h3>Daily Login Reward!</h3>
+                        <button class="daily-login-close" onclick="this.parentElement.parentElement.parentElement.remove()">×</button>
+                    </div>
+                    <div class="daily-login-body">
+                        <div class="streak-display">
+                            <span class="streak-icon">🔥</span>
+                            <span class="streak-text">${result.streak} day streak!</span>
+                        </div>
+                        <div class="reward-display">
+                            <span class="reward-icon">💰</span>
+                            <span class="reward-amount">+${result.reward} coins</span>
+                        </div>
+                        ${result.milestoneReward > 0 ? `
+                            <div class="milestone-display">
+                                <span class="milestone-icon">🎉</span>
+                                <span class="milestone-text">Milestone bonus: +${result.milestoneReward} coins!</span>
+                            </div>
+                        ` : ''}
+                        <div class="total-coins-display">
+                            <span class="total-coins-text">Total: ${result.totalCoins} coins</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add styles if not already added
+            if (!document.getElementById('daily-login-styles')) {
+                const style = document.createElement('style');
+                style.id = 'daily-login-styles';
+                style.textContent = `
+                    .daily-login-notification {
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        z-index: 10000;
+                        background: rgba(0, 0, 0, 0.9);
+                        border: 2px solid rgba(102, 126, 234, 0.5);
+                        border-radius: 15px;
+                        padding: 0;
+                        backdrop-filter: blur(10px);
+                        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+                        animation: slideInRight 0.5s ease-out;
+                        max-width: 350px;
+                        min-width: 300px;
+                    }
+                    
+                    @keyframes slideInRight {
+                        from {
+                            transform: translateX(400px);
+                            opacity: 0;
+                        }
+                        to {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                    }
+                    
+                    .daily-login-content {
+                        padding: 20px;
+                    }
+                    
+                    .daily-login-header {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        margin-bottom: 15px;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                        padding-bottom: 10px;
+                    }
+                    
+                    .daily-login-icon {
+                        font-size: 28px;
+                        animation: bounce 1s ease-in-out infinite;
+                    }
+                    
+                    @keyframes bounce {
+                        0%, 100% { transform: translateY(0); }
+                        50% { transform: translateY(-5px); }
+                    }
+                    
+                    .daily-login-header h3 {
+                        margin: 0;
+                        flex: 1;
+                        color: white;
+                        font-size: 20px;
+                        font-weight: 700;
+                    }
+                    
+                    .daily-login-close {
+                        background: transparent;
+                        border: none;
+                        color: rgba(255, 255, 255, 0.7);
+                        font-size: 24px;
+                        cursor: pointer;
+                        padding: 0;
+                        width: 30px;
+                        height: 30px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        border-radius: 50%;
+                        transition: all 0.2s;
+                    }
+                    
+                    .daily-login-close:hover {
+                        background: rgba(255, 255, 255, 0.1);
+                        color: white;
+                    }
+                    
+                    .daily-login-body {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 12px;
+                    }
+                    
+                    .streak-display, .reward-display, .milestone-display, .total-coins-display {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        padding: 10px;
+                        background: rgba(255, 255, 255, 0.05);
+                        border-radius: 10px;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                    }
+                    
+                    .streak-icon {
+                        font-size: 24px;
+                        animation: pulse 2s ease-in-out infinite;
+                    }
+                    
+                    .streak-text {
+                        color: white;
+                        font-size: 16px;
+                        font-weight: 600;
+                    }
+                    
+                    .reward-icon {
+                        font-size: 24px;
+                    }
+                    
+                    .reward-amount {
+                        color: #FFD700;
+                        font-size: 18px;
+                        font-weight: 700;
+                    }
+                    
+                    .milestone-display {
+                        background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 165, 0, 0.2) 100%);
+                        border-color: rgba(255, 215, 0, 0.5);
+                        animation: glow 2s ease-in-out infinite;
+                    }
+                    
+                    @keyframes glow {
+                        0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+                        50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); }
+                    }
+                    
+                    .milestone-icon {
+                        font-size: 24px;
+                        animation: sparkle 1.5s ease-in-out infinite;
+                    }
+                    
+                    @keyframes sparkle {
+                        0%, 100% { transform: scale(1) rotate(0deg); }
+                        50% { transform: scale(1.2) rotate(180deg); }
+                    }
+                    
+                    .milestone-text {
+                        color: #FFD700;
+                        font-size: 16px;
+                        font-weight: 700;
+                    }
+                    
+                    .total-coins-text {
+                        color: rgba(255, 255, 255, 0.8);
+                        font-size: 14px;
+                    }
+                    
+                    @media (max-width: 768px) {
+                        .daily-login-notification {
+                            top: 10px;
+                            right: 10px;
+                            left: 10px;
+                            max-width: none;
+                            min-width: auto;
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            // Add to page
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 10 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.style.animation = 'slideInRight 0.5s ease-out reverse';
+                    setTimeout(() => notification.remove(), 500);
+                }
+            }, 10000);
         }
         
     </script>
