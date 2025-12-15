@@ -7,6 +7,7 @@
     let ripples = [];
     let piledLeaves = []; // Leaves that have piled up at the bottom
     let fallingBoxes = []; // Falling box.png images
+    let snowflakes = []; // Gentle falling snowflakes
     let mouseX = 0;
     let mouseY = 0;
     let time = 0;
@@ -320,6 +321,21 @@
             });
         }
         
+        // Create snowflakes (separate from particle type so they always show during winter)
+        const maxSnowflakes = 120;
+        for (let i = 0; i < maxSnowflakes; i++) {
+            snowflakes.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: Math.random() * 2 + 1, // 1–3px
+                speedY: Math.random() * 0.7 + 0.3, // 0.3–1.0
+                speedX: (Math.random() - 0.5) * 0.3, // gentle horizontal drift
+                wobbleAngle: Math.random() * Math.PI * 2,
+                wobbleSpeed: Math.random() * 0.02 + 0.005,
+                opacity: Math.random() * 0.5 + 0.3
+            });
+        }
+        
         // Initialize particle type
         particleType = getParticleType();
         
@@ -368,6 +384,35 @@
                 ctx.fillStyle = radialGradient;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
+            
+            // Update and draw snowflakes (always on – subtle winter effect)
+            snowflakes.forEach((flake) => {
+                // Slight horizontal wobble
+                flake.wobbleAngle += flake.wobbleSpeed;
+                const wobble = Math.sin(flake.wobbleAngle) * 0.4;
+                
+                flake.x += flake.speedX + wobble;
+                flake.y += flake.speedY;
+                
+                // Wrap horizontally
+                if (flake.x < -20) flake.x = canvas.width + 20;
+                if (flake.x > canvas.width + 20) flake.x = -20;
+                
+                // Respawn at top when reaching bottom
+                if (flake.y > canvas.height + 20) {
+                    flake.y = -20;
+                    flake.x = Math.random() * canvas.width;
+                    flake.speedY = Math.random() * 0.7 + 0.3;
+                    flake.speedX = (Math.random() - 0.5) * 0.3;
+                    flake.radius = Math.random() * 2 + 1;
+                    flake.opacity = Math.random() * 0.5 + 0.3;
+                }
+                
+                ctx.fillStyle = `rgba(255, 255, 255, ${flake.opacity})`;
+                ctx.beginPath();
+                ctx.arc(flake.x, flake.y, flake.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
             
             // Update and draw ripples
             ripples = ripples.filter(ripple => {
