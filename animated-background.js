@@ -7,7 +7,7 @@
     let ripples = [];
     let piledLeaves = []; // Leaves that have piled up at the bottom
     let fallingBoxes = []; // Falling box.png images
-    let snowflakes = []; // Gentle falling snowflakes
+    let snowflakes = []; // Falling snowflakes for Christmas event
     let mouseX = 0;
     let mouseY = 0;
     let time = 0;
@@ -322,19 +322,22 @@
         }
         
         // Create snowflakes (separate from particle type so they always show during winter)
-        const maxSnowflakes = 120;
+        // Clear existing snowflakes first
+        snowflakes = [];
+        const maxSnowflakes = 200; // More snowflakes
         for (let i = 0; i < maxSnowflakes; i++) {
             snowflakes.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
-                radius: Math.random() * 2 + 1, // 1–3px
+                radius: Math.random() * 2 + 1, // 1–3px (small snowflakes)
                 speedY: Math.random() * 0.7 + 0.3, // 0.3–1.0
                 speedX: (Math.random() - 0.5) * 0.3, // gentle horizontal drift
                 wobbleAngle: Math.random() * Math.PI * 2,
                 wobbleSpeed: Math.random() * 0.02 + 0.005,
-                opacity: Math.random() * 0.5 + 0.3
+                opacity: 1.0 // FULLY OPAQUE - no transparency at all!
             });
         }
+        console.log('Snowflakes initialized:', snowflakes.length);
         
         // Initialize particle type
         particleType = getParticleType();
@@ -344,10 +347,17 @@
             time += 0.01;
             frameCount++;
             
+            // Check if Christmas event is active (disable particles, only show snowflakes)
+            const isChristmasEvent = localStorage.getItem('jnjChristmasEventActive') === 'true' || 
+                                     window.location.pathname.includes('christmas-event.html');
+            
             // Update particle type from storage (in case it changed)
             // Always reset leaves to follow
+            // During Christmas event, disable all particles except snowflakes
             const newParticleType = getParticleType();
-            if (newParticleType === 'leaves' || particleType === 'leaves') {
+            if (isChristmasEvent) {
+                particleType = 'none'; // Disable particles during Christmas event
+            } else if (newParticleType === 'leaves' || particleType === 'leaves') {
                 particleType = 'follow';
             } else {
                 particleType = newParticleType;
@@ -357,62 +367,46 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
             // Draw base gradient background
+            // Christmas event: red and green gradient with gold accents
             const gradient = ctx.createLinearGradient(
                 0, 0, 
                 canvas.width, 
                 canvas.height
             );
             
-            gradient.addColorStop(0, `rgba(${26 + Math.sin(time) * 20}, ${26 + Math.cos(time * 0.7) * 20}, ${46 + Math.sin(time * 1.3) * 20}, 0.95)`);
-            gradient.addColorStop(0.3, `rgba(${22 + Math.sin(time * 1.2) * 15}, ${33 + Math.cos(time * 0.9) * 15}, ${62 + Math.sin(time * 1.1) * 15}, 0.95)`);
-            gradient.addColorStop(0.6, `rgba(${15 + Math.sin(time * 0.8) * 25}, ${52 + Math.cos(time * 1.1) * 25}, ${96 + Math.sin(time * 0.9) * 25}, 0.95)`);
-            gradient.addColorStop(1, `rgba(${74 + Math.sin(time * 1.3) * 30}, ${158 + Math.cos(time * 0.7) * 30}, ${255 + Math.sin(time * 1.2) * 30}, 0.95)`);
+            if (isChristmasEvent) {
+                // Christmas gradient: subtle red to green with gold (less distracting)
+                gradient.addColorStop(0, 'rgba(139, 69, 19, 0.95)'); // Dark red-brown
+                gradient.addColorStop(0.3, 'rgba(180, 83, 9, 0.95)'); // Muted red-orange
+                gradient.addColorStop(0.5, 'rgba(217, 119, 6, 0.9)'); // Subtle gold
+                gradient.addColorStop(0.7, 'rgba(5, 150, 105, 0.95)'); // Muted green
+                gradient.addColorStop(1, 'rgba(6, 95, 70, 0.95)'); // Dark green
+            } else {
+                // Regular gradient
+                gradient.addColorStop(0, `rgba(${26 + Math.sin(time) * 20}, ${26 + Math.cos(time * 0.7) * 20}, ${46 + Math.sin(time * 1.3) * 20}, 0.95)`);
+                gradient.addColorStop(0.3, `rgba(${22 + Math.sin(time * 1.2) * 15}, ${33 + Math.cos(time * 0.9) * 15}, ${62 + Math.sin(time * 1.1) * 15}, 0.95)`);
+                gradient.addColorStop(0.6, `rgba(${15 + Math.sin(time * 0.8) * 25}, ${52 + Math.cos(time * 1.1) * 25}, ${96 + Math.sin(time * 0.9) * 25}, 0.95)`);
+                gradient.addColorStop(1, `rgba(${74 + Math.sin(time * 1.3) * 30}, ${158 + Math.cos(time * 0.7) * 30}, ${255 + Math.sin(time * 1.2) * 30}, 0.95)`);
+            }
             
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Draw radial gradient overlays
-            for (let i = 0; i < 3; i++) {
-                const x = canvas.width * (0.2 + i * 0.3) + Math.sin(time + i) * 100;
-                const y = canvas.height * (0.3 + i * 0.2) + Math.cos(time * 0.8 + i) * 80;
-                const radius = 300 + Math.sin(time * 0.5 + i) * 100;
-                
-                const radialGradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-                radialGradient.addColorStop(0, `rgba(${74 + Math.sin(time + i) * 50}, ${158 + Math.cos(time * 0.7 + i) * 50}, ${255 + Math.sin(time * 1.2 + i) * 50}, 0.3)`);
-                radialGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-                
-                ctx.fillStyle = radialGradient;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }
-            
-            // Update and draw snowflakes (always on – subtle winter effect)
-            snowflakes.forEach((flake) => {
-                // Slight horizontal wobble
-                flake.wobbleAngle += flake.wobbleSpeed;
-                const wobble = Math.sin(flake.wobbleAngle) * 0.4;
-                
-                flake.x += flake.speedX + wobble;
-                flake.y += flake.speedY;
-                
-                // Wrap horizontally
-                if (flake.x < -20) flake.x = canvas.width + 20;
-                if (flake.x > canvas.width + 20) flake.x = -20;
-                
-                // Respawn at top when reaching bottom
-                if (flake.y > canvas.height + 20) {
-                    flake.y = -20;
-                    flake.x = Math.random() * canvas.width;
-                    flake.speedY = Math.random() * 0.7 + 0.3;
-                    flake.speedX = (Math.random() - 0.5) * 0.3;
-                    flake.radius = Math.random() * 2 + 1;
-                    flake.opacity = Math.random() * 0.5 + 0.3;
+            // Draw radial gradient overlays (only if not Christmas event, or make them more transparent)
+            if (!isChristmasEvent) {
+                for (let i = 0; i < 3; i++) {
+                    const x = canvas.width * (0.2 + i * 0.3) + Math.sin(time + i) * 100;
+                    const y = canvas.height * (0.3 + i * 0.2) + Math.cos(time * 0.8 + i) * 80;
+                    const radius = 300 + Math.sin(time * 0.5 + i) * 100;
+                    
+                    const radialGradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+                    radialGradient.addColorStop(0, `rgba(${74 + Math.sin(time + i) * 50}, ${158 + Math.cos(time * 0.7 + i) * 50}, ${255 + Math.sin(time * 1.2 + i) * 50}, 0.3)`);
+                    radialGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                    
+                    ctx.fillStyle = radialGradient;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
                 }
-                
-                ctx.fillStyle = `rgba(255, 255, 255, ${flake.opacity})`;
-                ctx.beginPath();
-                ctx.arc(flake.x, flake.y, flake.radius, 0, Math.PI * 2);
-                ctx.fill();
-            });
+            }
             
             // Update and draw ripples
             ripples = ripples.filter(ripple => {
@@ -444,7 +438,8 @@
             // Update and draw independent floating particles
             // Show all for 'follow' and 'none', show fewer for 'small'
             // Note: 'leaves' is disabled (Thanksgiving event is over)
-            if (particleType === 'small' || particleType === 'follow' || particleType === 'none') {
+            // Skip during Christmas event (particles disabled, only snowflakes)
+            if (!isChristmasEvent && (particleType === 'small' || particleType === 'follow' || particleType === 'none')) {
                 const particlesToShow = particleType === 'small' 
                     ? floatingParticles.slice(0, 15) // Only show 15 for 'small'
                     : floatingParticles; // Show all for 'follow' and 'none'
@@ -554,7 +549,8 @@
             }
             
             // Draw simple dots for 'none' option (instead of cursor-following particles)
-            if (particleType === 'none') {
+            // Skip during Christmas event
+            if (!isChristmasEvent && particleType === 'none') {
                 simpleDots.forEach(dot => {
                     // Update position - falling motion
                     dot.x += dot.vx;
@@ -588,7 +584,8 @@
             
             // Update and draw cursor-following particles (only if particleType is 'follow')
             // Note: 'leaves' mode is disabled (Thanksgiving event is over)
-            if (particleType === 'follow') {
+            // Skip during Christmas event (particles disabled)
+            if (!isChristmasEvent && particleType === 'follow') {
                 cursorParticles.forEach((particle, i) => {
                 // Always drifting - particles are always shifting
                 particle.driftAngle += particle.driftSpeed;
@@ -694,7 +691,8 @@
             
             // Draw connecting lines between nearby particles
             // Note: 'leaves' mode is disabled (Thanksgiving event is over)
-            if (particleType === 'follow' || particleType === 'small') {
+            // Skip during Christmas event (particles disabled)
+            if (!isChristmasEvent && (particleType === 'follow' || particleType === 'small')) {
                 const allParticles = particleType === 'follow' 
                     ? [...cursorParticles, ...floatingParticles]
                     : floatingParticles.slice(0, 15); // Only first 15 for 'small'
@@ -715,7 +713,7 @@
                     }
                 });
             });
-            } else if (particleType === 'none') {
+            } else if (!isChristmasEvent && particleType === 'none') {
                 // Draw connecting lines for dots and floating particles in 'none' mode
                 const allParticles = [...simpleDots, ...floatingParticles];
                 allParticles.forEach((particle, i) => {
@@ -736,6 +734,77 @@
                     });
                 });
             }
+            
+            // Update and draw snowflakes LAST (ALWAYS enabled - drawn after everything else so they're visible)
+            // ALWAYS draw snowflakes - they should be visible no matter what!
+            if (snowflakes.length === 0) {
+                // Re-initialize if somehow empty
+                console.warn('Snowflakes array is empty, re-initializing...');
+                for (let i = 0; i < 200; i++) {
+                    snowflakes.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        radius: Math.random() * 2 + 1, // 1–3px
+                        speedY: Math.random() * 0.7 + 0.3,
+                        speedX: (Math.random() - 0.5) * 0.3,
+                        wobbleAngle: Math.random() * Math.PI * 2,
+                        wobbleSpeed: Math.random() * 0.02 + 0.005,
+                        opacity: 1.0
+                    });
+                }
+            }
+            
+            snowflakes.forEach((flake, index) => {
+                // Slight horizontal wobble
+                flake.wobbleAngle += flake.wobbleSpeed;
+                const wobble = Math.sin(flake.wobbleAngle) * 0.4;
+                
+                flake.x += flake.speedX + wobble;
+                flake.y += flake.speedY;
+                
+                // Wrap horizontally
+                if (flake.x < -20) flake.x = canvas.width + 20;
+                if (flake.x > canvas.width + 20) flake.x = -20;
+                
+                // Respawn at top when reaching bottom
+                if (flake.y > canvas.height + 20) {
+                    flake.y = -20;
+                    flake.x = Math.random() * canvas.width;
+                    flake.speedY = Math.random() * 0.7 + 0.3;
+                    flake.speedX = (Math.random() - 0.5) * 0.3;
+                    flake.radius = Math.random() * 2 + 1; // 1–3px
+                    flake.opacity = 1.0; // Always fully opaque
+                }
+                
+                // Draw snowflake - small and visible
+                const drawRadius = flake.radius; // Use actual radius (1-3px)
+                const drawOpacity = 1.0; // FULL opacity - completely opaque!
+                
+                // Draw with bright white - NO transparency
+                ctx.save();
+                ctx.globalAlpha = 1.0; // Force full opacity
+                ctx.fillStyle = 'rgb(255, 255, 255)'; // Pure white, no rgba
+                ctx.shadowColor = 'rgba(255, 255, 255, 1)';
+                ctx.shadowBlur = 3;
+                ctx.beginPath();
+                ctx.arc(flake.x, flake.y, drawRadius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw a second brighter layer for extra visibility
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.beginPath();
+                ctx.arc(flake.x, flake.y, drawRadius * 1.5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw a third even larger glow layer
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.beginPath();
+                ctx.arc(flake.x, flake.y, drawRadius * 2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+                ctx.shadowBlur = 0;
+            });
             
             requestAnimationFrame(animate);
         }

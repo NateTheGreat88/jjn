@@ -871,22 +871,22 @@
                                             fallbackInitialLoad = false;
                                         } else {
                                             // After initial load, ONLY process docChanges() - dramatically reduces reads
-                                            snapshot.docChanges().forEach((change) => {
+                                        snapshot.docChanges().forEach((change) => {
                                                 const messageId = change.doc.id;
                                                 const data = change.doc.data();
                                                 
                                                 if (change.type === 'added' && !loadedMessageIds.has(messageId)) {
-                                                    // Skip deleted messages
-                                                    if (data.deleted === true) {
+                                                // Skip deleted messages
+                                                if (data.deleted === true) {
                                                         loadedMessageIds.add(messageId);
-                                                        return;
-                                                    }
-                                                    console.log('Fallback listener - New message:', { user: data.user, hasGif: !!data.gif, gifUrl: data.gif, fullData: data });
-                                                    if (data.roomCode === roomCode) {
+                                                    return;
+                                                }
+                                                console.log('Fallback listener - New message:', { user: data.user, hasGif: !!data.gif, gifUrl: data.gif, fullData: data });
+                                                if (data.roomCode === roomCode) {
                                                         addMessageToChat(data.user, data.message || '', data.timestamp, false, data.image || null, data.gif || null, data.avatar, data.avatarImage, messageId, data.userId, data.title);
                                                         loadedMessageIds.add(messageId);
-                                                    }
-                                                } else if (change.type === 'modified') {
+                                                }
+                                            } else if (change.type === 'modified') {
                                                     // Only process if message is already loaded
                                                     if (!loadedMessageIds.has(messageId)) {
                                                         // Not loaded yet, treat as new
@@ -898,35 +898,35 @@
                                                     }
                                                     
                                                     // Message is loaded, check for deletion
-                                                    if (data.deleted === true) {
-                                                        const messageElement = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
-                                                        if (messageElement) {
-                                                            console.log('Fallback listener - Removing deleted message from DOM:', messageId);
-                                                            messageElement.style.transition = 'opacity 0.3s';
-                                                            messageElement.style.opacity = '0';
-                                                            setTimeout(() => {
-                                                                messageElement.remove();
-                                                            }, 300);
-                                                            loadedMessageIds.delete(messageId);
-                                                        }
-                                                    }
-                                                } else if (change.type === 'removed') {
-                                                    // Message was actually deleted - remove it from DOM
+                                                if (data.deleted === true) {
                                                     const messageElement = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
                                                     if (messageElement) {
                                                         console.log('Fallback listener - Removing deleted message from DOM:', messageId);
-                                                        messageElement.style.transition = 'opacity 0.3s';
-                                                        messageElement.style.opacity = '0';
-                                                        setTimeout(() => {
-                                                            messageElement.remove();
-                                                        }, 300);
-                                                        loadedMessageIds.delete(messageId);
-                                                    } else {
+                                                            messageElement.style.transition = 'opacity 0.3s';
+                                                            messageElement.style.opacity = '0';
+                                                            setTimeout(() => {
+                                                        messageElement.remove();
+                                                            }, 300);
                                                         loadedMessageIds.delete(messageId);
                                                     }
                                                 }
-                                            });
-                                            scrollToBottom();
+                                            } else if (change.type === 'removed') {
+                                                // Message was actually deleted - remove it from DOM
+                                                const messageElement = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
+                                                if (messageElement) {
+                                                    console.log('Fallback listener - Removing deleted message from DOM:', messageId);
+                                                        messageElement.style.transition = 'opacity 0.3s';
+                                                        messageElement.style.opacity = '0';
+                                                        setTimeout(() => {
+                                                    messageElement.remove();
+                                                        }, 300);
+                                                        loadedMessageIds.delete(messageId);
+                                                    } else {
+                                                    loadedMessageIds.delete(messageId);
+                                                }
+                                            }
+                                        });
+                                        scrollToBottom();
                                         }
                                     });
                             })
@@ -1789,7 +1789,7 @@
             if (typeof window.trackChatMessage === 'function') {
                 window.trackChatMessage();
             }
-            
+
             const timestamp = Date.now();
             const imageData = selectedImage;
             const gifData = selectedGif;

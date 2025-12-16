@@ -624,6 +624,38 @@
                     const unlockedTitles = profile.unlockedTitles || [];
                     return unlockedTitles.includes('champion');
                 }
+            },
+            'snowflake-master': {
+                name: 'Snowflake Master',
+                description: 'Master of winter\'s beauty',
+                unlockCondition: (profile) => {
+                    const unlockedTitles = profile.unlockedTitles || [];
+                    return unlockedTitles.includes('snowflake-master');
+                }
+            },
+            'holiday-hero': {
+                name: 'Holiday Hero',
+                description: 'Champion of the holidays',
+                unlockCondition: (profile) => {
+                    const unlockedTitles = profile.unlockedTitles || [];
+                    return unlockedTitles.includes('holiday-hero');
+                }
+            },
+            'winter-warrior': {
+                name: 'Winter Warrior',
+                description: 'Brave the cold',
+                unlockCondition: (profile) => {
+                    const unlockedTitles = profile.unlockedTitles || [];
+                    return unlockedTitles.includes('winter-warrior');
+                }
+            },
+            'festive-spirit': {
+                name: 'Festive Spirit',
+                description: 'Full of holiday cheer',
+                unlockCondition: (profile) => {
+                    const unlockedTitles = profile.unlockedTitles || [];
+                    return unlockedTitles.includes('festive-spirit');
+                }
             }
         };
         
@@ -761,7 +793,9 @@
                 'crown-emoji': '👑',
                 'rocket-emoji': '🚀',
                 'diamond-emoji': '💎',
-                'donate-box': 'box.png' // Image icon
+                'donate-box': 'box.png', // Image icon
+                'christmas-gift-icon': '🎁',
+                'christmas-snowflake-icon': '❄️'
             };
             
             // Make sure unlockedImages is an array
@@ -1426,26 +1460,26 @@
                     console.error('Error loading streak display:', e);
                 }
             }
+        
+        // Load profile on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Wait for auth system to be ready
+            let attempts = 0;
+            while (!window.authSystem && attempts < 30) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
             
-            // Load profile on page load
-            document.addEventListener('DOMContentLoaded', async () => {
-                // Wait for auth system to be ready
-                let attempts = 0;
-                while (!window.authSystem && attempts < 30) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    attempts++;
-                }
-                
-                // Load profile (will try Firestore first if authenticated)
-                await loadProfile();
-                
-                // Check leaves option and upload button visibility after profile loads
-                const profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
-                checkLeavesClaimed(profile);
-                checkUploadButtonVisibility(profile);
-                
-                // Check auth state and update sign out button
-                updateSignOutButton();
+            // Load profile (will try Firestore first if authenticated)
+            await loadProfile();
+            
+            // Check leaves option and upload button visibility after profile loads
+            const profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
+            checkLeavesClaimed(profile);
+            checkUploadButtonVisibility(profile);
+            
+            // Check auth state and update sign out button
+            updateSignOutButton();
                 
                 // Load streak display
                 loadStreakDisplay();

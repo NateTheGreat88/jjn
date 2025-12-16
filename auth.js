@@ -287,9 +287,30 @@
         try {
             if (!db) return;
             
+            // First, check localStorage for visitedEvents to sync to Firebase
+            const localProfile = JSON.parse(localStorage.getItem('jnjUserProfile') || '{}');
+            const localVisitedEvents = localProfile.visitedEvents || [];
+            
             const userDoc = await db.collection('users').doc(userId).get();
             if (userDoc.exists) {
                 const userData = userDoc.data();
+                
+                // Merge visitedEvents from localStorage with Firebase
+                if (localVisitedEvents.length > 0 && userData.profile) {
+                    const firebaseVisitedEvents = userData.profile.visitedEvents || [];
+                    const mergedEvents = [...new Set([...firebaseVisitedEvents, ...localVisitedEvents])];
+                    
+                    if (mergedEvents.length > firebaseVisitedEvents.length) {
+                        // Update Firebase with merged events
+                        userData.profile.visitedEvents = mergedEvents;
+                        await db.collection('users').doc(userId).update({
+                            'profile.visitedEvents': mergedEvents,
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        console.log('Synced visitedEvents to Firebase:', mergedEvents);
+                    }
+                }
+                
                 syncToLocalStorage(userData);
                 return userData;
             } else {
@@ -304,7 +325,8 @@
                         bio: '',
                         themeColor: '#667eea',
                         avatar: '👤',
-                        avatarImage: null
+                        avatarImage: null,
+                        visitedEvents: localVisitedEvents.length > 0 ? localVisitedEvents : []
                     },
                     isDev: false
                 };

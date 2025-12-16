@@ -111,15 +111,17 @@
         </section>
         
         <main>
-            <section class="christmas-banner">
-                <div class="christmas-icon">🎄</div>
-                <div class="christmas-text">
-                    <div class="christmas-title">Christmas Event</div>
-                    <div class="christmas-subtitle">Coming Soon...</div>
-                    <div class="christmas-tagline">Stay tuned for limited-time quests, rewards, and surprises.</div>
-                </div>
-                <div class="christmas-badge">Holiday 2025</div>
-            </section>
+            <a href="christmas-event.html" style="text-decoration: none; display: block;">
+                <section class="christmas-banner">
+                    <div class="christmas-icon">🎄</div>
+                    <div class="christmas-text">
+                        <div class="christmas-title">Christmas Event</div>
+                        <div class="christmas-subtitle">Now Live!</div>
+                        <div class="christmas-tagline">Click to explore limited-time quests, rewards, and surprises.</div>
+                    </div>
+                    <div class="christmas-badge">Holiday 2025</div>
+                </section>
+            </a>
 
             <div class="song-card" data-title="songs" data-description="music songs nathan jaxon junhu">
                 <a href="songs.html" class="song-link">
@@ -276,6 +278,8 @@
         // Update profile button on page load
         document.addEventListener('DOMContentLoaded', () => {
             updateProfileButton();
+            // Activate Christmas event
+            localStorage.setItem('jnjChristmasEventActive', 'true');
         });
         
         // Also update when returning to page (in case profile was updated)

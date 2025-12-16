@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Christmas Event - JNJ Website</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="animated-background.css">
+    <link rel="stylesheet" href="background-music.css">
+    <script src="animated-background.js" defer></script>
+    <script src="background-music.js" defer></script>
+    <script src="page-transitions.js" defer></script>
+    <script src="firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="auth.js" defer></script>
+    <style>
+        .event-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .event-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .event-title {
+            font-size: 56px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 50%, #16a34a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(252, 211, 77, 0.5);
+        }
+
+        .event-subtitle {
+            font-size: 22px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 40px;
+        }
+
+        .event-content {
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(252, 211, 77, 0.4);
+            border-radius: 20px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #000;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 700;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+        }
+
+        .back-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(251, 191, 36, 0.6);
+        }
+
+        .rewards-section {
+            margin-bottom: 40px;
+        }
+
+        .rewards-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #fbbf24;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+        }
+
+        .reward-group {
+            background: rgba(0, 0, 0, 0.2);
+            border: 2px solid rgba(252, 211, 77, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .reward-group-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #fbbf24;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .choice-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .choice-item {
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(252, 211, 77, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .choice-item:hover {
+            border-color: rgba(252, 211, 77, 0.6);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);
+        }
+
+        .choice-item.selected {
+            border-color: #fbbf24;
+            background: rgba(251, 191, 36, 0.1);
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
+        }
+
+        .choice-emoji {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .choice-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .choice-description {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .claim-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #000;
+            text-decoration: none;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+            margin-top: 30px;
+        }
+
+        .claim-button:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(251, 191, 36, 0.6);
+        }
+
+        .claim-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .reward-item {
+            background: rgba(0, 0, 0, 0.2);
+            border: 2px solid rgba(252, 211, 77, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .reward-icon {
+            font-size: 36px;
+        }
+
+        .reward-info {
+            flex: 1;
+        }
+
+        .reward-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .reward-description {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .already-claimed {
+            text-align: center;
+            padding: 30px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 2px solid rgba(16, 185, 129, 0.3);
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .already-claimed-icon {
+            font-size: 64px;
+            margin-bottom: 15px;
+        }
+
+        .already-claimed-text {
+            font-size: 20px;
+            color: #10b981;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="mainContainer">
+        <div class="event-container">
+            <div class="event-header">
+                <h1 class="event-title">🎄 Christmas Event 🎄</h1>
+                <p class="event-subtitle">Welcome to the JNJ Christmas Celebration!</p>
+            </div>
+
+            <div class="event-content">
+                <div id="rewardsContainer">
+                    <h2 class="rewards-title">🎁 Claim Your Christmas Rewards!</h2>
+                    
+                    <div class="reward-group">
+                        <div class="reward-group-title">
+                            <span>👑</span>
+                            <span>Choose Your Title</span>
+                        </div>
+                        <div class="choice-grid" id="titleChoices">
+                            <div class="choice-item" data-title="snowflake-master">
+                                <div class="choice-emoji">❄️</div>
+                                <div class="choice-title">Snowflake Master</div>
+                                <div class="choice-description">Master of winter's beauty</div>
+                            </div>
+                            <div class="choice-item" data-title="holiday-hero">
+                                <div class="choice-emoji">🎅</div>
+                                <div class="choice-title">Holiday Hero</div>
+                                <div class="choice-description">Champion of the holidays</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reward-group">
+                        <div class="reward-group-title">
+                            <span>😊</span>
+                            <span>Choose Your Christmas Emoji</span>
+                        </div>
+                        <div class="choice-grid" id="emojiChoices">
+                            <div class="choice-item" data-emoji="🎄">
+                                <div class="choice-emoji">🎄</div>
+                                <div class="choice-title">Christmas Tree</div>
+                                <div class="choice-description">Classic holiday spirit</div>
+                            </div>
+                            <div class="choice-item" data-emoji="🎅">
+                                <div class="choice-emoji">🎅</div>
+                                <div class="choice-title">Santa Claus</div>
+                                <div class="choice-description">Jolly and festive</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reward-group">
+                        <div class="reward-group-title">
+                            <span>👑</span>
+                            <span>Bonus Title Choice</span>
+                        </div>
+                        <div class="choice-grid" id="bonusTitleChoices">
+                            <div class="choice-item" data-title="winter-warrior">
+                                <div class="choice-emoji">❄️</div>
+                                <div class="choice-title">Winter Warrior</div>
+                                <div class="choice-description">Brave the cold</div>
+                            </div>
+                            <div class="choice-item" data-title="festive-spirit">
+                                <div class="choice-emoji">🎁</div>
+                                <div class="choice-title">Festive Spirit</div>
+                                <div class="choice-description">Full of holiday cheer</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reward-group">
+                        <div class="reward-group-title">
+                            <span>🎁</span>
+                            <span>Free Rewards</span>
+                        </div>
+                        <div class="reward-item">
+                            <div class="reward-icon">🪙</div>
+                            <div class="reward-info">
+                                <div class="reward-name">25 JNJ Coins</div>
+                                <div class="reward-description">Spend them in the shop!</div>
+                            </div>
+                        </div>
+                        <div class="reward-item">
+                            <div class="reward-icon">🎁</div>
+                            <div class="reward-info">
+                                <div class="reward-name">Gift Icon</div>
+                                <div class="reward-description">Unlock exclusive gift profile icon</div>
+                            </div>
+                        </div>
+                        <div class="reward-item">
+                            <div class="reward-icon">❄️</div>
+                            <div class="reward-info">
+                                <div class="reward-name">Snowflake Icon</div>
+                                <div class="reward-description">Unlock snowflake profile icon</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="claim-button" id="claimButton" onclick="claimRewards()">
+                        🎉 Claim All Rewards 🎉
+                    </button>
+                </div>
+
+                <div id="alreadyClaimed" class="already-claimed" style="display: none;">
+                    <div class="already-claimed-icon">✅</div>
+                    <div class="already-claimed-text">You've already claimed your Christmas rewards!</div>
+                    <p style="color: rgba(255, 255, 255, 0.7); margin-top: 10px;">
+                        Check your profile to see your new title, emoji, and coins!
+                    </p>
+                </div>
+            </div>
+
+            <div style="text-align: center;">
+                <a href="index.html" class="back-button">← Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PROFILE_STORAGE_KEY = 'jnjUserProfile';
+        const COINS_STORAGE_KEY = 'jnjCoins';
+        const EVENT_ID = 'christmas-2025';
+        
+        let selectedTitle = null;
+        let selectedEmoji = null;
+        let selectedBonusTitle = null;
+        let rewardsClaimed = false;
+
+        // Check if rewards already claimed
+        function checkRewardsClaimed() {
+            const profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
+            const claimedEvents = profile.claimedEvents || [];
+            return claimedEvents.includes(EVENT_ID);
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Wait for auth system
+            let attempts = 0;
+            while (!window.authSystem && attempts < 20) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+
+            // Track event visit
+            const profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
+            let visitedEvents = profile.visitedEvents || [];
+            
+            if (!visitedEvents.includes(EVENT_ID)) {
+                visitedEvents.push(EVENT_ID);
+                profile.visitedEvents = visitedEvents;
+                localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+                
+                // Sync to Firebase if authenticated
+                if (window.authSystem && window.authSystem.isAuthenticated()) {
+                    try {
+                        await window.authSystem.saveUserData({ profile: profile });
+                    } catch (e) {
+                        console.error('Error syncing visited events:', e);
+                    }
+                }
+            }
+
+            // Check if rewards already claimed
+            rewardsClaimed = checkRewardsClaimed();
+            
+            if (rewardsClaimed) {
+                document.getElementById('rewardsContainer').style.display = 'none';
+                document.getElementById('alreadyClaimed').style.display = 'block';
+            } else {
+                // Setup choice handlers
+                setupChoiceHandlers();
+            }
+        });
+
+        // Setup choice selection handlers
+        function setupChoiceHandlers() {
+            // Title choices
+            document.querySelectorAll('#titleChoices .choice-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('#titleChoices .choice-item').forEach(i => i.classList.remove('selected'));
+                    item.classList.add('selected');
+                    selectedTitle = item.dataset.title;
+                    updateClaimButton();
+                });
+            });
+
+            // Emoji choices
+            document.querySelectorAll('#emojiChoices .choice-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('#emojiChoices .choice-item').forEach(i => i.classList.remove('selected'));
+                    item.classList.add('selected');
+                    selectedEmoji = item.dataset.emoji;
+                    updateClaimButton();
+                });
+            });
+
+            // Bonus title choices
+            document.querySelectorAll('#bonusTitleChoices .choice-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('#bonusTitleChoices .choice-item').forEach(i => i.classList.remove('selected'));
+                    item.classList.add('selected');
+                    selectedBonusTitle = item.dataset.title;
+                    updateClaimButton();
+                });
+            });
+        }
+
+        // Update claim button state
+        function updateClaimButton() {
+            const button = document.getElementById('claimButton');
+            if (selectedTitle && selectedEmoji && selectedBonusTitle) {
+                button.disabled = false;
+            } else {
+                button.disabled = true;
+            }
+        }
+
+        // Add coins helper (from daily-login.js pattern)
+        async function addCoins(amount) {
+            try {
+                // Update localStorage
+                const currentCoins = parseInt(localStorage.getItem(COINS_STORAGE_KEY) || '0');
+                const newCoins = currentCoins + amount;
+                localStorage.setItem(COINS_STORAGE_KEY, newCoins.toString());
+                
+                // Update Firebase if authenticated
+                if (window.authSystem && window.authSystem.isAuthenticated()) {
+                    const user = window.authSystem.getUser();
+                    if (user && user.uid) {
+                        const userData = await window.authSystem.loadUserData(user.uid);
+                        if (userData && userData.profile) {
+                            const profile = userData.profile;
+                            profile.coins = (profile.coins || 0) + amount;
+                            await window.authSystem.saveUserData({ profile: profile });
+                        }
+                    }
+                }
+                
+                return newCoins;
+            } catch (e) {
+                console.error('Error adding coins:', e);
+                return parseInt(localStorage.getItem(COINS_STORAGE_KEY) || '0');
+            }
+        }
+
+        // Claim rewards
+        async function claimRewards() {
+            if (!selectedTitle || !selectedEmoji || !selectedBonusTitle || rewardsClaimed) {
+                return;
+            }
+
+            try {
+                // Load profile
+                const profile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{}');
+                
+                // Add titles to unlocked titles
+                if (!profile.unlockedTitles) {
+                    profile.unlockedTitles = [];
+                }
+                if (!profile.unlockedTitles.includes(selectedTitle)) {
+                    profile.unlockedTitles.push(selectedTitle);
+                }
+                if (!profile.unlockedTitles.includes(selectedBonusTitle)) {
+                    profile.unlockedTitles.push(selectedBonusTitle);
+                }
+                
+                // Set equipped title if none is equipped
+                if (!profile.equippedTitle) {
+                    profile.equippedTitle = selectedTitle;
+                }
+                
+                // Update avatar emoji
+                profile.avatar = selectedEmoji;
+                
+                // Add profile icons to unlockedImages
+                if (!profile.unlockedImages) {
+                    profile.unlockedImages = [];
+                }
+                if (!profile.unlockedImages.includes('christmas-gift-icon')) {
+                    profile.unlockedImages.push('christmas-gift-icon');
+                }
+                if (!profile.unlockedImages.includes('christmas-snowflake-icon')) {
+                    profile.unlockedImages.push('christmas-snowflake-icon');
+                }
+                
+                // Add coins
+                await addCoins(25);
+                
+                // Mark event as claimed
+                if (!profile.claimedEvents) {
+                    profile.claimedEvents = [];
+                }
+                if (!profile.claimedEvents.includes(EVENT_ID)) {
+                    profile.claimedEvents.push(EVENT_ID);
+                }
+                
+                // Save to localStorage
+                localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+                
+                // Save to Firebase if authenticated
+                if (window.authSystem && window.authSystem.isAuthenticated()) {
+                    await window.authSystem.saveUserData({ profile: profile });
+                }
+                
+                // Update UI
+                rewardsClaimed = true;
+                document.getElementById('rewardsContainer').style.display = 'none';
+                document.getElementById('alreadyClaimed').style.display = 'block';
+                
+                // Show success message
+                alert('🎉 Rewards claimed successfully! Check your profile to see your new titles, emoji, icons, and coins!');
+            } catch (e) {
+                console.error('Error claiming rewards:', e);
+                alert('Error claiming rewards. Please try again.');
+            }
+        }
+
+        // Initialize claim button as disabled
+        updateClaimButton();
+    </script>
+</body>
+</html>
+
