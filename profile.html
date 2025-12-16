@@ -656,6 +656,22 @@
                     const unlockedTitles = profile.unlockedTitles || [];
                     return unlockedTitles.includes('festive-spirit');
                 }
+            },
+            'christmas-elf': {
+                name: 'Elf',
+                description: 'Spread holiday cheer',
+                unlockCondition: (profile) => {
+                    const unlockedTitles = profile.unlockedTitles || [];
+                    return unlockedTitles.includes('christmas-elf');
+                }
+            },
+            'christmas-caroler': {
+                name: 'Caroler',
+                description: 'Spread joy with song',
+                unlockCondition: (profile) => {
+                    const unlockedTitles = profile.unlockedTitles || [];
+                    return unlockedTitles.includes('christmas-caroler');
+                }
             }
         };
         
@@ -795,7 +811,11 @@
                 'diamond-emoji': '💎',
                 'donate-box': 'box.png', // Image icon
                 'christmas-gift-icon': '🎁',
-                'christmas-snowflake-icon': '❄️'
+                'christmas-snowflake-icon': '❄️',
+                'christmas-snowman-icon': '⛄',
+                'christmas-reindeer-icon': '🦌',
+                'christmas-gingerbread-icon': '🍪',
+                'christmas-bell-icon': '🔔'
             };
             
             // Make sure unlockedImages is an array
