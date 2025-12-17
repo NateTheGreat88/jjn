@@ -6,11 +6,12 @@
     <title>JNJ Website</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="index.css">
-    <link rel="stylesheet" href="secret-pages.css">
+    <!-- Secrets temporarily disabled on homepage (keep secrets page intact) -->
+    <!-- <link rel="stylesheet" href="secret-pages.css"> -->
     <link rel="stylesheet" href="animated-background.css">
     <link rel="stylesheet" href="background-music.css">
     <script src="page-transitions.js" defer></script>
-    <script src="secret-pages.js" defer></script>
+    <!-- <script src="secret-pages.js" defer></script> -->
     <script src="animated-background.js" defer></script>
     <script src="background-music.js" defer></script>
     <!-- Firebase SDK for Authentication -->
@@ -514,21 +515,11 @@
             }
         }
         
-        // Show Secrets button if any secrets are unlocked
+        // Secrets temporarily disabled on homepage (keep secrets page intact)
         function checkAndShowSecretsButton() {
-            if (window.secretPages) {
-                const secrets = window.secretPages.getAll();
-                const hasUnlocked = Object.values(secrets).some(secret => secret.unlocked);
-                if (hasUnlocked) {
-                    const secretsCard = document.getElementById('secretsCard');
-                    if (secretsCard) {
-                        secretsCard.style.display = 'block';
-                    }
-                }
-            } else {
-                // Retry after a short delay if secretPages isn't loaded yet
-                setTimeout(checkAndShowSecretsButton, 100);
-            }
+            // Intentionally do nothing while disabled.
+            // (Avoids loading/depending on `secret-pages.js` on the homepage.)
+            return;
         }
         
         // Check if games are unlocked
@@ -541,7 +532,6 @@
         }
         
         // Check on page load
-        checkAndShowSecretsButton();
         checkGamesUnlocked();
         
         // Wait for auth system to be ready before checking events button
@@ -554,9 +544,7 @@
         }
         waitForAuthAndCheckEvents();
         
-        // Also check when secretPages becomes available
         window.addEventListener('load', () => {
-            checkAndShowSecretsButton();
             checkGamesUnlocked();
             waitForAuthAndCheckEvents();
         });
