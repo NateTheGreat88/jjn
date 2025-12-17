@@ -776,9 +776,11 @@
                     return;
                 }
 
-                // Get all purchases, ordered by timestamp
+                // Coins-only: do NOT show non-coin purchases here.
+                // IMPORTANT: We intentionally avoid `orderBy('timestamp')` because it requires
+                // a composite index with `where('grantType' == 'coins')`. Instead we sort in JS.
                 const purchasesSnapshot = await db.collection('purchases')
-                    .orderBy('timestamp', 'desc')
+                    .where('grantType', '==', 'coins')
                     .get();
 
                 if (purchasesSnapshot.empty) {
@@ -788,8 +790,50 @@
 
                 purchasesList.innerHTML = '';
 
-                purchasesSnapshot.forEach(doc => {
-                    const purchase = doc.data();
+                // Sort docs by timestamp desc (serverTimestamp -> Date).
+                const docs = (purchasesSnapshot.docs || []).slice();
+                const getMillis = (p) => {
+                    const ts = p && p.timestamp;
+                    if (!ts) return 0;
+                    if (typeof ts.toMillis === 'function') return ts.toMillis();
+                    if (typeof ts.toDate === 'function') return ts.toDate().getTime();
+                    if (ts.seconds) return ts.seconds * 1000;
+                    return 0;
+                };
+                docs.sort((a, b) => getMillis(b.data() || {}) - getMillis(a.data() || {}));
+
+                // Delete all granted coin purchases except the last 2 (newest), from Firestore.
+                const grantedDocs = docs.filter(d => (d.data() || {}).granted === true);
+                const docsToDelete = grantedDocs.slice(2); // sorted desc by timestamp
+
+                if (docsToDelete.length > 0) {
+                    try {
+                        const batch = db.batch();
+                        docsToDelete.forEach(d => batch.delete(d.ref));
+                        await batch.commit();
+                        console.log(`Deleted ${docsToDelete.length} old granted coin purchases (kept last 2).`);
+                    } catch (e) {
+                        console.warn('Failed to delete old granted coin purchases:', e);
+                    }
+                }
+
+                // Show: all ungranted + newest 2 granted
+                const visibleDocs = docs.filter((d) => {
+                    const p = d.data() || {};
+                    if (p.granted === true) {
+                        const idx = grantedDocs.findIndex(g => g.id === d.id);
+                        return idx > -1 && idx < 2;
+                    }
+                    return true;
+                });
+
+                if (visibleDocs.length === 0) {
+                    purchasesList.innerHTML = '<div class="no-purchases">No purchases yet</div>';
+                    return;
+                }
+
+                visibleDocs.forEach(doc => {
+                    const purchase = doc.data() || {};
                     const purchaseId = doc.id;
                     const purchaseDiv = document.createElement('div');
                     purchaseDiv.className = 'purchase-item';
@@ -799,7 +843,7 @@
 
                     purchaseDiv.innerHTML = `
                         <div style="margin-bottom: 10px;">
-                            <strong>${purchase.itemName || 'Unknown Item'}</strong>
+                            <strong>${purchase.itemName || 'Coin Purchase'}</strong>
                         </div>
                         <div style="color: var(--text-secondary); font-size: 14px; margin-bottom: 10px;">
                             User: ${purchase.username || purchase.customerEmail || 'N/A'}<br>
