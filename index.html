@@ -110,6 +110,15 @@
                 >
             </section>
 
+            <section class="recent-changes" aria-label="Recent changes">
+                <div class="recent-changes-header">
+                    <h2 class="recent-changes-title">Recent Changes</h2>
+                    <a class="recent-changes-link" href="changelog.html">View all</a>
+                </div>
+                <div class="recent-changes-meta" id="recentChangesMeta">v2.4.0 • December 2025</div>
+                <ul class="recent-changes-list" id="recentChangesList"></ul>
+            </section>
+
             <div class="song-card" data-title="songs" data-description="music songs nathan jaxon junhu">
                 <a href="songs.html" class="song-link">
                     <div class="song-button">
@@ -209,6 +218,30 @@
         // Search/Filter
         const searchInput = document.getElementById('searchInput');
         const songCards = document.querySelectorAll('.song-card');
+
+        // Recent Changes
+        // Note: `fetch('changelog.html')` is blocked on `file://` by browser security (CORS),
+        // so we keep this list local to make it work both locally and when hosted.
+        function loadRecentChanges() {
+            const listEl = document.getElementById('recentChangesList');
+            if (!listEl) return;
+
+            const changes = [
+                { type: 'Added', text: 'Christmas Event page with claimable rewards (titles, emoji choice, coins, and profile icons)' },
+                { type: 'Added', text: 'Winter-themed Snowball Fight minigame (aim guide + longer range)' },
+                { type: 'Added', text: 'Christmas shop items (event-only titles/icons) that disappear after the event' },
+                { type: 'Added', text: 'plzdonatexmas.png banner on the homepage and new shop icon item' },
+                { type: 'Changed', text: 'Homepage: secrets loading temporarily disabled (secrets page still available)' }
+            ];
+
+            listEl.innerHTML = '';
+            changes.forEach((c) => {
+                const item = document.createElement('li');
+                item.innerHTML = `<span class="rc-tag">${c.type}</span><span class="rc-text">${c.text}</span>`;
+                listEl.appendChild(item);
+            });
+        }
+        loadRecentChanges();
         
         searchInput.addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase().trim();
