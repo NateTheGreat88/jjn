@@ -1,5 +1,18 @@
 // Secret Pages System
 (function() {
+    // Secrets loading disabled on normal pages (like chat) for now.
+    // Only run on:
+    // - secrets.html
+    // - secret-*.html
+    try {
+        const pathname = (window.location && window.location.pathname) ? window.location.pathname.toLowerCase() : '';
+        const file = pathname.split('/').pop() || '';
+        const allowed = (file === 'secrets.html') || (file.startsWith('secret-') && file.endsWith('.html'));
+        if (!allowed) return;
+    } catch (e) {
+        // ignore
+    }
+
     const SECRET_STORAGE_KEY = 'jnjSecretPages';
     
     // Secret pages configuration
