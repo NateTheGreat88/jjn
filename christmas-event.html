@@ -54,6 +54,24 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
 
+        .event-art {
+            margin: 0 auto 30px;
+            max-width: 900px;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 2px solid rgba(252, 211, 77, 0.35);
+            background: rgba(0, 0, 0, 0.25);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+        }
+
+        .event-art img {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 340px;
+            object-fit: contain;
+        }
+
         .back-button {
             display: inline-block;
             padding: 12px 24px;
@@ -149,6 +167,24 @@
             color: rgba(255, 255, 255, 0.7);
         }
 
+        .reward-preview {
+            margin-top: 12px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 2px solid rgba(252, 211, 77, 0.25);
+            border-radius: 14px;
+            padding: 14px;
+        }
+
+        .reward-preview img {
+            display: block;
+            width: 100%;
+            max-width: 520px;
+            max-height: 220px;
+            margin: 0 auto;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+
         .claim-button {
             display: block;
             width: 100%;
@@ -185,6 +221,24 @@
             display: flex;
             align-items: center;
             gap: 15px;
+        }
+
+        .choice-preview {
+            margin-top: 10px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 2px solid rgba(252, 211, 77, 0.2);
+            border-radius: 12px;
+            padding: 10px;
+        }
+
+        .choice-preview img {
+            display: block;
+            width: 100%;
+            max-width: 520px;
+            max-height: 200px;
+            margin: 0 auto;
+            object-fit: contain;
+            border-radius: 10px;
         }
 
         .reward-icon {
@@ -354,6 +408,10 @@
             </div>
 
             <div class="event-content">
+                <div class="event-art" aria-label="Plz Donate Xmas art">
+                    <img src="plzdonatexmas.png" alt="Plz Donate Xmas">
+                </div>
+
                 <div id="rewardsContainer">
                     <h2 class="rewards-title">🎁 Claim Your Christmas Rewards!</h2>
                     
@@ -430,14 +488,41 @@
                             <div class="reward-icon">🎁</div>
                             <div class="reward-info">
                                 <div class="reward-name">Gift Icon</div>
-                                <div class="reward-description">Unlock exclusive gift profile icon</div>
+                                <div class="reward-description">Free: unlock the gift profile icon</div>
                             </div>
                         </div>
                         <div class="reward-item">
                             <div class="reward-icon">❄️</div>
                             <div class="reward-info">
                                 <div class="reward-name">Snowflake Icon</div>
-                                <div class="reward-description">Unlock snowflake profile icon</div>
+                                <div class="reward-description">Free: unlock the snowflake profile icon</div>
+                            </div>
+                        </div>
+                        <div class="reward-preview" aria-label="Plz Donate Xmas image">
+                            <img src="plzdonatexmas.png" alt="Plz Donate Xmas">
+                        </div>
+                    </div>
+
+                    <div class="reward-group">
+                        <div class="reward-group-title">
+                            <span>🖼️</span>
+                            <span>Choose 1 Bonus Profile Icon</span>
+                        </div>
+                        <div class="choice-grid" id="iconChoices">
+                            <div class="choice-item" data-icon="plzdonatexmas-icon">
+                                <div class="choice-emoji">🖼️</div>
+                                <div class="choice-title">Plz Donate Xmas</div>
+                                <div class="choice-description">Unlock the plzdonatexmas.png icon</div>
+                            </div>
+                            <div class="choice-item" data-icon="christmas-tree-choice-icon">
+                                <div class="choice-emoji">🎄</div>
+                                <div class="choice-title">Christmas Tree</div>
+                                <div class="choice-description">Unlock a Christmas tree icon</div>
+                            </div>
+                            <div class="choice-item" data-icon="christmas-santa-choice-icon">
+                                <div class="choice-emoji">🎅</div>
+                                <div class="choice-title">Santa Claus</div>
+                                <div class="choice-description">Unlock a Santa icon</div>
                             </div>
                         </div>
                     </div>
@@ -500,6 +585,7 @@
         let selectedTitle = null;
         let selectedEmoji = null;
         let selectedBonusTitle = null;
+        let selectedIcon = null;
         let rewardsClaimed = false;
 
         // Check if rewards already claimed
@@ -580,12 +666,22 @@
                     updateClaimButton();
                 });
             });
+
+            // Icon choices (choose exactly 1)
+            document.querySelectorAll('#iconChoices .choice-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('#iconChoices .choice-item').forEach(i => i.classList.remove('selected'));
+                    item.classList.add('selected');
+                    selectedIcon = item.dataset.icon;
+                    updateClaimButton();
+                });
+            });
         }
 
         // Update claim button state
         function updateClaimButton() {
             const button = document.getElementById('claimButton');
-            if (selectedTitle && selectedEmoji && selectedBonusTitle) {
+            if (selectedTitle && selectedEmoji && selectedBonusTitle && selectedIcon) {
                 button.disabled = false;
             } else {
                 button.disabled = true;
@@ -622,7 +718,7 @@
 
         // Claim rewards
         async function claimRewards() {
-            if (!selectedTitle || !selectedEmoji || !selectedBonusTitle || rewardsClaimed) {
+            if (!selectedTitle || !selectedEmoji || !selectedBonusTitle || !selectedIcon || rewardsClaimed) {
                 return;
             }
 
@@ -649,15 +745,20 @@
                 // Update avatar emoji
                 profile.avatar = selectedEmoji;
                 
-                // Add profile icons to unlockedImages
+                // Add selected profile icon to unlockedImages
                 if (!profile.unlockedImages) {
                     profile.unlockedImages = [];
                 }
+                // Free icons (always granted)
                 if (!profile.unlockedImages.includes('christmas-gift-icon')) {
                     profile.unlockedImages.push('christmas-gift-icon');
                 }
                 if (!profile.unlockedImages.includes('christmas-snowflake-icon')) {
                     profile.unlockedImages.push('christmas-snowflake-icon');
+                }
+                // Chosen bonus icon (exactly one)
+                if (selectedIcon && !profile.unlockedImages.includes(selectedIcon)) {
+                    profile.unlockedImages.push(selectedIcon);
                 }
                 
                 // Add coins

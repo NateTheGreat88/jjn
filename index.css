@@ -1186,6 +1186,33 @@ h1 {
     overflow: hidden;
 }
 
+/* Christmas Donate Banner (image) */
+.xmas-donate-banner {
+    margin: 20px auto 10px;
+    max-width: 700px;
+    border-radius: 22px;
+    overflow: hidden;
+    border: 2px solid rgba(251, 191, 36, 0.35);
+    background: rgba(0, 0, 0, 0.25);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(10px);
+}
+
+.xmas-donate-image {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 240px;
+    object-fit: contain;
+}
+
+@media (max-width: 768px) {
+    .xmas-donate-banner {
+        margin: 16px auto 6px;
+        border-radius: 18px;
+    }
+}
+
 .christmas-banner::before,
 .christmas-banner::after {
     content: '✧';
@@ -1529,10 +1556,6 @@ h1 {
         0 0 60px rgba(118, 75, 162, 0.6),
         0 0 80px rgba(240, 147, 251, 0.4);
     animation: textShimmer 1.5s ease-in-out infinite;
-}
-    color: #fff;
-    margin-bottom: 10px;
-    font-weight: 700;
 }
 
 .song-info p {
