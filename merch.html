@@ -1813,6 +1813,8 @@
                 } catch (e) {
                     console.error('Error syncing coins via authSystem:', e);
                 }
+                
+                console.log(`Coins saved to Firebase: ${coins}`);
             } catch (e) {
                 console.error('Error saving coins to Firebase:', e);
             }
@@ -1849,14 +1851,30 @@
                 if (userDoc.exists) {
                     const userData = userDoc.data();
                     const profile = userData.profile || {};
-                    const coins = profile.coins || 0;
+                    const firebaseCoins = profile.coins || 0;
+                    const localCoins = parseInt(localStorage.getItem(COINS_STORAGE_KEY) || '0');
+                    
+                    // Use the higher value (in case local was updated while offline)
+                    const coins = Math.max(firebaseCoins, localCoins);
+                    
                     // Save to both localStorage and update display
                     localStorage.setItem(COINS_STORAGE_KEY, coins.toString());
                     saveCoins(coins);
+                    
+                    // If coins differ from Firebase, save the synced value
+                    if (coins !== firebaseCoins) {
+                        await saveCoinsToFirebase(coins);
+                    }
                 } else {
-                    // No profile yet, default to 0
-                    localStorage.setItem(COINS_STORAGE_KEY, '0');
-                    saveCoins(0);
+                    // No profile yet, use localStorage value or default to 0
+                    const localCoins = parseInt(localStorage.getItem(COINS_STORAGE_KEY) || '0');
+                    localStorage.setItem(COINS_STORAGE_KEY, localCoins.toString());
+                    saveCoins(localCoins);
+                    
+                    // Save to Firebase if we have coins
+                    if (localCoins > 0) {
+                        await saveCoinsToFirebase(localCoins);
+                    }
                 }
             } catch (e) {
                 console.error('Error loading coins from Firebase:', e);
@@ -3091,6 +3109,16 @@
             }
         }
 
+        // Sync coins to Firebase periodically (every 30 seconds if authenticated)
+        function startCoinSync() {
+            setInterval(async () => {
+                if (window.authSystem && window.authSystem.isAuthenticated()) {
+                    const coins = parseInt(localStorage.getItem(COINS_STORAGE_KEY) || '0');
+                    await saveCoinsToFirebase(coins);
+                }
+            }, 30000); // Every 30 seconds
+        }
+
         // Initialize page
         function initPage() {
             initFilters();
@@ -3105,14 +3133,22 @@
                     const localCoins = parseInt(localStorage.getItem(COINS_STORAGE_KEY) || '0');
                     if (localCoins > 0) {
                         updateCoinsDisplay(localCoins);
+                    }
                 }
-            }
             });
             
             renderShopItems();
             
+            // Start periodic coin sync
+            startCoinSync();
+            
             // Listen for auth state changes to reload coins
-            window.addEventListener('authStateChanged', () => {
+            window.addEventListener('authStateChanged', async (event) => {
+                if (event.detail && event.detail.user) {
+                    // User logged in - sync coins to Firebase
+                    const coins = parseInt(localStorage.getItem(COINS_STORAGE_KEY) || '0');
+                    await saveCoinsToFirebase(coins);
+                }
                 setTimeout(() => {
                     loadCoinsFromFirebase();
                     renderShopItems(); // Refresh to update purchase status
