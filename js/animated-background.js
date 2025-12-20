@@ -92,7 +92,7 @@
     // Load leaf images
     function loadLeafImages() {
         return new Promise((resolve) => {
-            const leafPaths = ['leaf1.png', 'leaf2.png', 'leaf3.png'];
+            const leafPaths = ['images/leaf1.png', 'images/leaf2.png', 'images/leaf3.png'];
             let loadedCount = 0;
             
             leafPaths.forEach((path, index) => {
@@ -133,7 +133,7 @@
                 boxImageLoaded = true; // Mark as loaded even if failed
                 resolve();
             };
-            img.src = 'box.png';
+            img.src = 'images/box.png';
         });
     }
     

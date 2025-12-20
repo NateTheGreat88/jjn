@@ -5,8 +5,8 @@
     'use strict';
     
     // Use a single relaxing instrumental track
-    // Change this to any of your MP3 files: 'A Sad Truth.mp3', 'You and I.mp3', 'stolen.mp3', 'phantomtaxersparadise.mp3'
-    const MUSIC_FILE = 'A Sad Truth.mp3';
+    // Change this to any of your MP3 files: 'audio/A Sad Truth.mp3', 'audio/You and I.mp3', 'audio/stolen.mp3', 'audio/phantomtaxersparadise.mp3'
+    const MUSIC_FILE = 'audio/A Sad Truth.mp3';
     const VOLUME = 0.2; // Low volume (20%) for ambient background noise
     
     let audioElement = null;

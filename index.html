@@ -4,24 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JNJ Website</title>
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <link rel="stylesheet" href="index.css">
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    <link rel="stylesheet" href="css/index.css">
     <!-- Secrets temporarily disabled on homepage (keep secrets page intact) -->
-    <!-- <link rel="stylesheet" href="secret-pages.css"> -->
-    <link rel="stylesheet" href="animated-background.css">
-    <link rel="stylesheet" href="background-music.css">
-    <script src="page-transitions.js" defer></script>
-    <!-- <script src="secret-pages.js" defer></script> -->
-    <script src="animated-background.js" defer></script>
-    <script src="background-music.js" defer></script>
+    <!-- <link rel="stylesheet" href="css/secret-pages.css"> -->
+    <link rel="stylesheet" href="css/animated-background.css">
+    <link rel="stylesheet" href="css/background-music.css">
+    <script src="js/page-transitions.js" defer></script>
+    <!-- <script src="js/secret-pages.js" defer></script> -->
+    <script src="js/animated-background.js" defer></script>
+    <script src="js/background-music.js" defer></script>
     <!-- Firebase SDK for Authentication -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
-    <link rel="stylesheet" href="auth.css">
-    <script src="auth.js" defer></script>
-    <script src="daily-login.js" defer></script>
+    <link rel="stylesheet" href="css/auth.css">
+    <script src="js/auth.js" defer></script>
+    <script src="js/daily-login.js" defer></script>
 </head>
 <body>
     <!-- Loading Screen -->
@@ -103,7 +103,7 @@
 
             <section class="xmas-donate-banner" aria-label="Christmas donation banner">
                 <img
-                    src="plzdonatexmas.png"
+                    src="images/plzdonatexmas.png"
                     alt="Please donate for Christmas"
                     class="xmas-donate-image"
                     loading="lazy"
@@ -159,7 +159,7 @@
             <div class="song-card" data-title="code editor" data-description="code programming editor interactive">
                 <a href="codeeditor.html" class="song-link">
                     <div class="song-button">
-                        <img src="codeicon.png" alt="Code Editor" class="song-image">
+                        <img src="images/codeicon.png" alt="Code Editor" class="song-image">
                         <div class="song-info">
                             <h2>Code Editor</h2>
                             <p>Interactive code editor</p>
@@ -267,7 +267,16 @@
                 if (profileButton && profileData) {
                     const profile = JSON.parse(profileData);
                     if (profile.avatarImage) {
-                        profileButton.innerHTML = `<img src="${profile.avatarImage}" alt="Profile" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 6px; display: inline-block;"> Profile`;
+                        // Fix old image paths that don't have images/ prefix
+                        let avatarImagePath = profile.avatarImage;
+                        // Check if it's a local file path (not base64 data URL) and doesn't already have images/ prefix
+                        if (!avatarImagePath.startsWith('data:') && !avatarImagePath.startsWith('images/') && !avatarImagePath.startsWith('http://') && !avatarImagePath.startsWith('https://')) {
+                            // Check if it's an image file
+                            if (avatarImagePath.match(/\.(png|jpg|jpeg|gif|svg|ico)$/i)) {
+                                avatarImagePath = 'images/' + avatarImagePath;
+                            }
+                        }
+                        profileButton.innerHTML = `<img src="${avatarImagePath}" alt="Profile" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 6px; display: inline-block;"> Profile`;
                     } else if (profile.avatar) {
                         profileButton.innerHTML = `${profile.avatar} Profile`;
                     }

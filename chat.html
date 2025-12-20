@@ -4,23 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat - JNJ Website</title>
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <link rel="stylesheet" href="chat.css">
-    <link rel="stylesheet" href="animated-background.css">
-    <link rel="stylesheet" href="secret-pages.css">
-    <link rel="stylesheet" href="background-music.css">
-    <script src="page-transitions.js" defer></script>
-    <script src="secret-pages.js" defer></script>
-    <script src="animated-background.js" defer></script>
-    <script src="background-music.js" defer></script>
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    <link rel="stylesheet" href="css/chat.css">
+    <link rel="stylesheet" href="css/animated-background.css">
+    <link rel="stylesheet" href="css/secret-pages.css">
+    <link rel="stylesheet" href="css/background-music.css">
+    <script src="js/page-transitions.js" defer></script>
+    <script src="js/secret-pages.js" defer></script>
+    <script src="js/animated-background.js" defer></script>
+    <script src="js/background-music.js" defer></script>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <!-- Firebase Config -->
     <script src="firebase-config.js"></script>
-    <script src="auth.js" defer></script>
-    <script src="quest-tracker.js" defer></script>
+    <script src="js/auth.js" defer></script>
+    <script src="js/quest-tracker.js" defer></script>
 </head>
 <body>
     <a href="index.html" class="back-button">← Back to Home</a>
@@ -1191,6 +1191,14 @@
             // Use avatar from message data (saved with message), or fallback to profile if it's the current user
             let userAvatar = avatar || '👤';
             let userAvatarImage = avatarImage || null;
+            
+            // Fix old image paths in message data
+            if (userAvatarImage && !userAvatarImage.startsWith('data:') && !userAvatarImage.startsWith('images/') && !userAvatarImage.startsWith('http://') && !userAvatarImage.startsWith('https://')) {
+                if (userAvatarImage.match(/\.(png|jpg|jpeg|gif|svg|ico)$/i)) {
+                    userAvatarImage = 'images/' + userAvatarImage;
+                }
+            }
+            
             let displayUsername = user; // Default to the user value
             let userTitle = null; // Title to display
             
@@ -1215,7 +1223,16 @@
                         }
                         // Get avatar from profile
                         if (profile.avatarImage) {
-                            userAvatarImage = profile.avatarImage;
+                            // Fix old image paths that don't have images/ prefix
+                            let avatarImagePath = profile.avatarImage;
+                            // Check if it's a local file path (not base64 data URL) and doesn't already have images/ prefix
+                            if (!avatarImagePath.startsWith('data:') && !avatarImagePath.startsWith('images/') && !avatarImagePath.startsWith('http://') && !avatarImagePath.startsWith('https://')) {
+                                // Check if it's an image file
+                                if (avatarImagePath.match(/\.(png|jpg|jpeg|gif|svg|ico)$/i)) {
+                                    avatarImagePath = 'images/' + avatarImagePath;
+                                }
+                            }
+                            userAvatarImage = avatarImagePath;
                         } else if (profile.avatar) {
                             userAvatar = profile.avatar;
                         }
