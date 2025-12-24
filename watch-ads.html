@@ -94,6 +94,79 @@
             height: 40px;
         }
 
+        /* Decorative section dividers */
+        .section-divider {
+            margin: 50px auto;
+            max-width: 800px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 0 20px;
+        }
+
+        .divider-line {
+            flex: 1;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255, 255, 255, 0.3) 20%, 
+                rgba(255, 255, 255, 0.5) 50%, 
+                rgba(255, 255, 255, 0.3) 80%, 
+                transparent 100%);
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .divider-line::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.6), 
+                transparent);
+            animation: dividerShine 3s ease-in-out infinite;
+        }
+
+        @keyframes dividerShine {
+            0% {
+                left: -100%;
+            }
+            50% {
+                left: 100%;
+            }
+            100% {
+                left: 100%;
+            }
+        }
+
+        .divider-icon {
+            font-size: 24px;
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border-radius: 50px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            animation: dividerPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes dividerPulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+        }
+
         .ad-section {
             background: rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(20px);
@@ -384,6 +457,16 @@
                 font-size: 16px;
                 padding: 20px;
             }
+
+            .section-divider {
+                margin: 30px auto;
+                gap: 15px;
+            }
+
+            .divider-icon {
+                font-size: 20px;
+                padding: 6px 12px;
+            }
         }
 
         .ad-counter {
@@ -447,7 +530,11 @@
         </div>
         <!-- END AD SECTION 1 -->
 
-        <div class="ad-spacer"></div>
+        <div class="section-divider">
+            <div class="divider-line"></div>
+            <div class="divider-icon">✨</div>
+            <div class="divider-line"></div>
+        </div>
 
         <!-- AD SECTION 2: Mixed Ads -->
         <!-- START AD SECTION 2 -->
@@ -470,7 +557,11 @@
         </div>
         <!-- END AD SECTION 2 -->
 
-        <div class="ad-spacer"></div>
+        <div class="section-divider">
+            <div class="divider-line"></div>
+            <div class="divider-icon">🌟</div>
+            <div class="divider-line"></div>
+        </div>
 
         <!-- AD SECTION 3: Square Ads Grid -->
         <!-- START AD SECTION 3 -->
@@ -493,7 +584,11 @@
         </div>
         <!-- END AD SECTION 3 -->
 
-        <div class="ad-spacer"></div>
+        <div class="section-divider">
+            <div class="divider-line"></div>
+            <div class="divider-icon">💫</div>
+            <div class="divider-line"></div>
+        </div>
 
         <!-- AD SECTION 4: Mixed Ads -->
         <!-- START AD SECTION 4 -->
@@ -516,7 +611,11 @@
         </div>
         <!-- END AD SECTION 4 -->
 
-        <div class="ad-spacer"></div>
+        <div class="section-divider">
+            <div class="divider-line"></div>
+            <div class="divider-icon">⭐</div>
+            <div class="divider-line"></div>
+        </div>
 
         <!-- AD SECTION 5: Skyscraper 160x300 Ads -->
         <!-- START AD SECTION 5 -->
