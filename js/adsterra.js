@@ -13,6 +13,13 @@ const adsterraConfig = {
         height: '250'
     },
     
+    // Banner 468x60 ads
+    banner468: {
+        id: 'f8ce4c665c9d136db3dc1d5fb0f6686c',
+        width: '468',
+        height: '60'
+    },
+    
     // Square ads (300x250)
     square: {
         id: '0f4f70e6a823541e592c8701aa71f717',
@@ -25,6 +32,13 @@ const adsterraConfig = {
         id: '',
         width: '160',
         height: '600'
+    },
+    
+    // Skyscraper 160x300 ads
+    skyscraper300: {
+        id: '0190152f6816476f65609269934d9d59',
+        width: '160',
+        height: '300'
     },
     
     // Mobile banner (320x50)
@@ -40,6 +54,14 @@ const adsterraConfig = {
         id: '',
         width: '300',
         height: '250'
+    },
+    
+    // Native banner ads
+    native: {
+        scriptSrc: 'https://pl28328197.effectivegatecpm.com/e9059bd68684310cf9af71ac9aa55de2/invoke.js',
+        containerId: 'container-e9059bd68684310cf9af71ac9aa55de2',
+        width: '728',
+        height: '90'
     }
 };
 
@@ -63,13 +85,23 @@ function renderExistingAds() {
         }
         
         const adType = container.getAttribute('data-ad-type');
-        if (adType && adsterraConfig[adType]) {
-            // Use mobile ad type on mobile devices if configured
-            const finalAdType = (adType === 'banner' && window.innerWidth < 768 && adsterraConfig.mobile.id) 
-                ? 'mobile' 
-                : adType;
-            renderAd(container, finalAdType);
-            renderedContainers.add(container);
+        if (adType) {
+            // Handle native ads
+            if (adType === 'native' && adsterraConfig.native && adsterraConfig.native.scriptSrc) {
+                renderAd(container, 'native');
+                renderedContainers.add(container);
+                return;
+            }
+            
+            // Handle other ad types
+            if (adsterraConfig[adType]) {
+                // Use mobile ad type on mobile devices if configured
+                const finalAdType = (adType === 'banner' && window.innerWidth < 768 && adsterraConfig.mobile.id) 
+                    ? 'mobile' 
+                    : adType;
+                renderAd(container, finalAdType);
+                renderedContainers.add(container);
+            }
         }
     });
 }
@@ -96,6 +128,62 @@ function createAdContainer(adType, position = 'center') {
 
 // Render ad in container
 function renderAd(container, adType) {
+    // Handle native banners differently
+    if (adType === 'native') {
+        const config = adsterraConfig[adType];
+        if (!config || !config.scriptSrc || !config.containerId) {
+            const placeholder = container.querySelector('.adsterra-placeholder');
+            if (placeholder) {
+                placeholder.innerHTML = '<div class="adsterra-error">Native ad not configured</div>';
+            } else {
+                container.innerHTML = '<div class="adsterra-error">Native ad not configured</div>';
+            }
+            return;
+        }
+        
+        // Remove placeholder
+        const placeholder = container.querySelector('.adsterra-placeholder');
+        if (placeholder) {
+            placeholder.remove();
+        }
+        
+        // Clear container
+        container.innerHTML = '';
+        
+        // Create wrapper container
+        const nativeContainer = document.createElement('div');
+        nativeContainer.className = 'adsterra-ad-content adsterra-native';
+        nativeContainer.style.width = '100%';
+        nativeContainer.style.maxWidth = config.width + 'px';
+        nativeContainer.style.margin = '0 auto';
+        nativeContainer.style.minHeight = config.height + 'px';
+        
+        // Use the exact container ID from Adsterra
+        // The script expects: container-e9059bd68684310cf9af71ac9aa55de2
+        // For multiple instances, we need unique IDs, so we'll create a unique ID
+        // but the script might only work with the exact ID, so we'll use the exact ID
+        // and handle multiple instances by loading the script multiple times
+        
+        // Create the container div with the exact ID from Adsterra
+        const adContainer = document.createElement('div');
+        adContainer.id = config.containerId;
+        nativeContainer.appendChild(adContainer);
+        
+        container.appendChild(nativeContainer);
+        
+        // Load native banner script (exact format from Adsterra email)
+        // For each instance, we need to load the script separately
+        // because the script looks for the exact container ID
+        const nativeScript = document.createElement('script');
+        nativeScript.async = true;
+        nativeScript.setAttribute('data-cfasync', 'false');
+        nativeScript.src = config.scriptSrc;
+        document.head.appendChild(nativeScript);
+        
+        return;
+    }
+    
+    // Standard Adsterra ad rendering
     const config = adsterraConfig[adType];
     if (!config || !config.id) {
         const placeholder = container.querySelector('.adsterra-placeholder');

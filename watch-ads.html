@@ -84,20 +84,26 @@
         .ads-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 40px;
-            margin: 50px auto;
-            max-width: 800px;
+            gap: 30px;
+            margin: 40px auto;
+            max-width: 1000px;
             padding: 0 20px;
+        }
+
+        .ad-spacer {
+            height: 40px;
         }
 
         .ad-section {
             background: rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(20px);
             border-radius: 15px;
-            padding: 25px;
+            padding: 20px;
             border: 2px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
         }
 
         .ad-section:hover {
@@ -107,18 +113,18 @@
         }
 
         .ad-section-title {
-            font-size: 20px;
+            font-size: 16px;
             font-weight: 600;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             text-align: center;
             color: rgba(255, 255, 255, 0.95);
         }
 
         .ad-section-description {
-            font-size: 12px;
+            font-size: 11px;
             color: rgba(255, 255, 255, 0.6);
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -127,13 +133,29 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 280px;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
-            padding: 20px;
+            padding: 15px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            overflow: hidden;
+            overflow: visible;
             position: relative;
+            flex: 1;
+        }
+
+        /* Specific container heights for different ad types */
+        [data-ad-type="square"] ~ .ad-container,
+        .ad-section:has([data-ad-type="square"]) .ad-container {
+            min-height: 300px;
+        }
+
+        [data-ad-type="skyscraper300"] ~ .ad-container,
+        .ad-section:has([data-ad-type="skyscraper300"]) .ad-container {
+            min-height: 340px;
+        }
+
+        [data-ad-type="banner468"] ~ .ad-container,
+        .ad-section:has([data-ad-type="banner468"]) .ad-container {
+            min-height: 100px;
         }
 
         .ad-container .adsterra-ad {
@@ -146,28 +168,113 @@
         }
 
         .ad-container .adsterra-ad-content {
-            width: 300px !important;
-            height: 250px !important;
             max-width: 100%;
             margin: 0 auto;
             position: relative;
             overflow: hidden;
         }
 
-        .ad-container .adsterra-ad-content iframe {
+        /* Square ads (300x250) */
+        [data-ad-type="square"] .adsterra-ad-content {
+            width: 300px !important;
+            height: 250px !important;
+        }
+
+        [data-ad-type="square"] .adsterra-ad-content iframe {
             width: 300px !important;
             height: 250px !important;
             border: none;
             display: block;
         }
 
-        .full-width-ad {
-            grid-column: 1 / -1;
-            margin-bottom: 30px;
+        /* Skyscraper 160x300 ads */
+        [data-ad-type="skyscraper300"] .adsterra-ad-content {
+            width: 160px !important;
+            height: 300px !important;
+            max-width: 160px !important;
+            overflow: visible !important;
         }
 
-        .full-width-ad .ad-container {
-            min-height: 100px;
+        [data-ad-type="skyscraper300"] .adsterra-ad-content iframe {
+            width: 160px !important;
+            height: 300px !important;
+            max-width: 160px !important;
+            border: none;
+            display: block;
+        }
+
+        /* Banner 468x60 ads */
+        .adsterra-header .adsterra-ad-content {
+            width: 468px !important;
+            height: 60px !important;
+        }
+
+        .adsterra-header .adsterra-ad-content iframe {
+            width: 468px !important;
+            height: 60px !important;
+            border: none;
+            display: block;
+        }
+
+        .full-width-ad {
+            grid-column: 1 / -1;
+        }
+
+        /* Better layout for mixed ad sections */
+        .ads-grid.mixed-layout {
+            grid-template-columns: auto 1fr;
+            align-items: start;
+            gap: 30px;
+        }
+
+        .ads-grid.mixed-layout .ad-section:first-child {
+            min-width: 220px;
+            width: auto;
+        }
+
+        /* Ensure skyscraper container doesn't cut off content */
+        .ads-grid.mixed-layout .ad-section:first-child .ad-container {
+            overflow: visible;
+            padding: 15px;
+        }
+
+        .ads-grid.mixed-layout .ad-section:first-child [data-ad-type="skyscraper300"] {
+            overflow: visible;
+        }
+
+        .ads-grid.mixed-layout .ad-section.full-width-ad {
+            grid-column: 2;
+        }
+
+        /* Ensure skyscraper ads have enough space */
+        .ads-grid.mixed-layout .ad-section:first-child .ad-container {
+            padding: 15px;
+            overflow: visible;
+        }
+
+        .ads-grid.mixed-layout .ad-section:first-child [data-ad-type="skyscraper300"] {
+            width: 100%;
+            max-width: 160px;
+        }
+
+        /* Responsive adjustments for 468x60 banners */
+        @media (max-width: 600px) {
+            .adsterra-header .adsterra-ad-content {
+                width: 100% !important;
+                max-width: 468px;
+            }
+
+            .adsterra-header .adsterra-ad-content iframe {
+                width: 100% !important;
+                max-width: 468px;
+            }
+        }
+
+        .adsterra-native {
+            width: 100%;
+            max-width: 728px;
+            margin: 0 auto;
+            min-height: 90px;
         }
 
         .stats {
@@ -206,8 +313,20 @@
         @media (max-width: 900px) {
             .ads-grid {
                 grid-template-columns: 1fr;
-                gap: 40px;
+                gap: 30px;
                 max-width: 100%;
+            }
+
+            .ads-grid.mixed-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .ads-grid.mixed-layout .ad-section:first-child {
+                max-width: 100%;
+            }
+
+            .ads-grid.mixed-layout .ad-section.full-width-ad {
+                grid-column: 1;
             }
         }
 
@@ -216,13 +335,17 @@
                 font-size: 32px;
             }
 
+            .header {
+                padding: 30px 20px;
+            }
+
             .ads-grid {
-                gap: 30px;
+                gap: 25px;
                 padding: 0 10px;
             }
 
             .ad-section {
-                padding: 25px;
+                padding: 20px;
             }
 
             .container {
@@ -231,7 +354,35 @@
 
             .ad-container {
                 padding: 15px;
+            }
+
+            [data-ad-type="square"] ~ .ad-container,
+            .ad-section:has([data-ad-type="square"]) .ad-container {
                 min-height: 280px;
+            }
+
+            [data-ad-type="skyscraper300"] ~ .ad-container,
+            .ad-section:has([data-ad-type="skyscraper300"]) .ad-container {
+                min-height: 320px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .ad-counter {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin: 20px auto;
+                width: fit-content;
+            }
+
+            .header h1 {
+                font-size: 28px;
+            }
+
+            .fun-message {
+                font-size: 16px;
+                padding: 20px;
             }
         }
 
@@ -275,11 +426,12 @@
             🎉 Thanks for supporting us by viewing ads! 🎉
         </div>
 
-        <!-- Grid of Square Ads -->
+        <!-- AD SECTION 1: Square Ads Grid -->
+        <!-- START AD SECTION 1 -->
         <div class="ads-grid">
             <div class="ad-section">
                 <div class="ad-section-title">📦 Ad #1</div>
-                <div class="ad-section-description">300x250 Square Advertisement</div>
+                <div class="ad-section-description">300x250 Square</div>
                 <div class="ad-container">
                     <div class="adsterra-ad adsterra-inline" data-ad-type="square"></div>
                 </div>
@@ -287,12 +439,105 @@
 
             <div class="ad-section">
                 <div class="ad-section-title">📦 Ad #2</div>
-                <div class="ad-section-description">300x250 Square Advertisement</div>
+                <div class="ad-section-description">300x250 Square</div>
                 <div class="ad-container">
                     <div class="adsterra-ad adsterra-inline" data-ad-type="square"></div>
                 </div>
             </div>
         </div>
+        <!-- END AD SECTION 1 -->
+
+        <div class="ad-spacer"></div>
+
+        <!-- AD SECTION 2: Mixed Ads -->
+        <!-- START AD SECTION 2 -->
+        <div class="ads-grid mixed-layout">
+            <div class="ad-section">
+                <div class="ad-section-title">📏 Ad #3</div>
+                <div class="ad-section-description">160x300 Skyscraper</div>
+                <div class="ad-container">
+                    <div class="adsterra-ad adsterra-inline" data-ad-type="skyscraper300"></div>
+                </div>
+            </div>
+
+            <div class="ad-section full-width-ad">
+                <div class="ad-section-title">📢 Ad #4</div>
+                <div class="ad-section-description">468x60 Banner</div>
+                <div class="ad-container">
+                    <div class="adsterra-ad adsterra-header" data-ad-type="banner468"></div>
+                </div>
+            </div>
+        </div>
+        <!-- END AD SECTION 2 -->
+
+        <div class="ad-spacer"></div>
+
+        <!-- AD SECTION 3: Square Ads Grid -->
+        <!-- START AD SECTION 3 -->
+        <div class="ads-grid">
+            <div class="ad-section">
+                <div class="ad-section-title">📦 Ad #5</div>
+                <div class="ad-section-description">300x250 Square</div>
+                <div class="ad-container">
+                    <div class="adsterra-ad adsterra-inline" data-ad-type="square"></div>
+                </div>
+            </div>
+
+            <div class="ad-section">
+                <div class="ad-section-title">📦 Ad #6</div>
+                <div class="ad-section-description">300x250 Square</div>
+                <div class="ad-container">
+                    <div class="adsterra-ad adsterra-inline" data-ad-type="square"></div>
+                </div>
+            </div>
+        </div>
+        <!-- END AD SECTION 3 -->
+
+        <div class="ad-spacer"></div>
+
+        <!-- AD SECTION 4: Mixed Ads -->
+        <!-- START AD SECTION 4 -->
+        <div class="ads-grid mixed-layout">
+            <div class="ad-section">
+                <div class="ad-section-title">📏 Ad #7</div>
+                <div class="ad-section-description">160x300 Skyscraper</div>
+                <div class="ad-container">
+                    <div class="adsterra-ad adsterra-inline" data-ad-type="skyscraper300"></div>
+                </div>
+            </div>
+
+            <div class="ad-section full-width-ad">
+                <div class="ad-section-title">📢 Ad #8</div>
+                <div class="ad-section-description">468x60 Banner</div>
+                <div class="ad-container">
+                    <div class="adsterra-ad adsterra-header" data-ad-type="banner468"></div>
+                </div>
+            </div>
+        </div>
+        <!-- END AD SECTION 4 -->
+
+        <div class="ad-spacer"></div>
+
+        <!-- AD SECTION 5: Skyscraper 160x300 Ads -->
+        <!-- START AD SECTION 5 -->
+        <div class="ads-grid">
+            <div class="ad-section">
+                <div class="ad-section-title">📏 Ad #9</div>
+                <div class="ad-section-description">160x300 Skyscraper</div>
+                <div class="ad-container">
+                    <div class="adsterra-ad adsterra-inline" data-ad-type="skyscraper300"></div>
+                </div>
+            </div>
+
+            <div class="ad-section">
+                <div class="ad-section-title">📏 Ad #10</div>
+                <div class="ad-section-description">160x300 Skyscraper</div>
+                <div class="ad-container">
+                    <div class="adsterra-ad adsterra-inline" data-ad-type="skyscraper300"></div>
+                </div>
+            </div>
+        </div>
+        <!-- END AD SECTION 5 -->
 
         <div class="stats">
             <div class="stats-text">
