@@ -68,6 +68,7 @@
             <a href="profile.html" class="about-button" id="profileButton" style="margin-right: 10px;">👤 Profile</a>
             <a href="events.html" class="about-button" id="eventsButton" style="margin-right: 10px;">🎉 Events</a>
             <a href="quests.html" class="about-button" style="margin-right: 10px;">⚔️ Quests</a>
+            <a href="watch-ads.html" class="about-button" style="margin-right: 10px;">📺 Ads</a>
             <a href="about.html" class="about-button">About Us</a>
         </div>
         
@@ -81,10 +82,10 @@
                         <span class="announcement-panel-icon">📢</span>
                         <h3>Announcement</h3>
                         <button class="announcement-panel-close" onclick="toggleAnnouncement()">×</button>
-                    </div>
+            </div>
                     <div id="announcementPanelText" class="announcement-panel-text"></div>
                     <div id="announcementPanelAuthor" class="announcement-panel-author"></div>
-                </div>
+            </div>
             </div>
         </header>
 
@@ -96,9 +97,9 @@
                         <div class="christmas-title">Christmas Event</div>
                         <div class="christmas-subtitle">Now Live!</div>
                         <div class="christmas-tagline">Click to explore limited-time quests, rewards, and surprises.</div>
-                    </div>
+            </div>
                     <div class="christmas-badge">Holiday 2025</div>
-                </section>
+        </section>
             </a>
 
             <section class="xmas-donate-banner" aria-label="Christmas donation banner">
@@ -114,7 +115,7 @@
                 <div class="recent-changes-header">
                     <h2 class="recent-changes-title">Recent Changes</h2>
                     <a class="recent-changes-link" href="changelog.html">View all</a>
-                </div>
+            </div>
                 <div class="recent-changes-meta" id="recentChangesMeta">v2.4.0 • December 2025</div>
                 <ul class="recent-changes-list" id="recentChangesList"></ul>
             </section>
@@ -346,14 +347,18 @@
             
             songCards.forEach(card => {
                 const link = card.querySelector('a');
+                if (!link) return; // Skip if no link found
+                
                 const href = link.getAttribute('href');
                 const pageName = pageMap[href] || href.replace('.html', '');
                 
                 const indicator = card.querySelector('.recent-indicator');
+                if (indicator) {
                 if (recentPages.includes(href)) {
                     indicator.style.display = 'block';
                 } else {
                     indicator.style.display = 'none';
+                    }
                 }
             });
         }

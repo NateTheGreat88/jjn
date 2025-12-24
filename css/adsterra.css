@@ -1,0 +1,148 @@
+/* Adsterra Ad Styling */
+
+.adsterra-ad {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px auto;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    min-height: 100px;
+    position: relative;
+    overflow: hidden;
+}
+
+.adsterra-ad-header {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.adsterra-ad-footer {
+    margin-top: 40px;
+    margin-bottom: 20px;
+}
+
+.adsterra-ad-inline {
+    margin: 30px auto;
+}
+
+.adsterra-ad-sidebar {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 999;
+    max-width: 180px;
+}
+
+.adsterra-placeholder {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    min-height: 100px;
+}
+
+.adsterra-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+}
+
+.adsterra-spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-top-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    animation: adsterra-spin 1s linear infinite;
+}
+
+@keyframes adsterra-spin {
+    to { transform: rotate(360deg); }
+}
+
+.adsterra-ad-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    min-height: inherit;
+}
+
+.adsterra-ad-content iframe {
+    border: none;
+    border-radius: 8px;
+    max-width: 100%;
+}
+
+.adsterra-error {
+    padding: 20px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .adsterra-ad {
+        margin: 15px auto;
+        padding: 8px;
+    }
+    
+    .adsterra-ad-sidebar {
+        position: static;
+        transform: none;
+        max-width: 100%;
+        margin: 20px auto;
+    }
+    
+    .adsterra-ad-content {
+        max-width: 100%;
+    }
+}
+
+/* Hide ads on very small screens if needed */
+@media (max-width: 480px) {
+    .adsterra-ad-sidebar {
+        display: none;
+    }
+}
+
+/* Dark mode compatibility */
+@media (prefers-color-scheme: dark) {
+    .adsterra-ad {
+        background: rgba(0, 0, 0, 0.3);
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+}
+
+/* Light mode compatibility */
+@media (prefers-color-scheme: light) {
+    .adsterra-ad {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(0, 0, 0, 0.1);
+    }
+}
+
+/* Ad label (optional, for transparency) */
+.adsterra-label {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    pointer-events: none;
+}
+
