@@ -45,16 +45,8 @@ const adsterraConfig = {
 
 // Initialize Adsterra ads
 function initAdsterra() {
-    // Load Adsterra script
-    if (!document.getElementById('adsterra-script')) {
-        const script = document.createElement('script');
-        script.id = 'adsterra-script';
-        script.src = 'https://www.adsterra.com/script.js';
-        script.async = true;
-        document.head.appendChild(script);
-    }
-    
     // Auto-render ads in containers with data-ad-type attribute
+    // Note: We don't need to load adsterra.com/script.js as we're creating ads directly
     renderExistingAds();
 }
 
