@@ -321,23 +321,27 @@
             });
         }
         
-        // Create snowflakes (separate from particle type so they always show during winter)
+        // Create snowflakes only during Christmas event
         // Clear existing snowflakes first
         snowflakes = [];
-        const maxSnowflakes = 200; // More snowflakes
-        for (let i = 0; i < maxSnowflakes; i++) {
-            snowflakes.push({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                radius: Math.random() * 2 + 1, // 1–3px (small snowflakes)
-                speedY: Math.random() * 0.7 + 0.3, // 0.3–1.0
-                speedX: (Math.random() - 0.5) * 0.3, // gentle horizontal drift
-                wobbleAngle: Math.random() * Math.PI * 2,
-                wobbleSpeed: Math.random() * 0.02 + 0.005,
-                opacity: 1.0 // FULLY OPAQUE - no transparency at all!
-            });
+        const isChristmasEventOnInit = localStorage.getItem('jnjChristmasEventActive') === 'true' || 
+                                       window.location.pathname.includes('christmas-event.html');
+        if (isChristmasEventOnInit) {
+            const maxSnowflakes = 200; // More snowflakes
+            for (let i = 0; i < maxSnowflakes; i++) {
+                snowflakes.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 2 + 1, // 1–3px (small snowflakes)
+                    speedY: Math.random() * 0.7 + 0.3, // 0.3–1.0
+                    speedX: (Math.random() - 0.5) * 0.3, // gentle horizontal drift
+                    wobbleAngle: Math.random() * Math.PI * 2,
+                    wobbleSpeed: Math.random() * 0.02 + 0.005,
+                    opacity: 1.0 // FULLY OPAQUE - no transparency at all!
+                });
+            }
+            console.log('Snowflakes initialized:', snowflakes.length);
         }
-        console.log('Snowflakes initialized:', snowflakes.length);
         
         // Initialize particle type
         particleType = getParticleType();
@@ -735,26 +739,26 @@
                 });
             }
             
-            // Update and draw snowflakes LAST (ALWAYS enabled - drawn after everything else so they're visible)
-            // ALWAYS draw snowflakes - they should be visible no matter what!
-            if (snowflakes.length === 0) {
-                // Re-initialize if somehow empty
-                console.warn('Snowflakes array is empty, re-initializing...');
-                for (let i = 0; i < 200; i++) {
-                    snowflakes.push({
-                        x: Math.random() * canvas.width,
-                        y: Math.random() * canvas.height,
-                        radius: Math.random() * 2 + 1, // 1–3px
-                        speedY: Math.random() * 0.7 + 0.3,
-                        speedX: (Math.random() - 0.5) * 0.3,
-                        wobbleAngle: Math.random() * Math.PI * 2,
-                        wobbleSpeed: Math.random() * 0.02 + 0.005,
-                        opacity: 1.0
-                    });
+            // Update and draw snowflakes ONLY during Christmas event
+            if (isChristmasEvent) {
+                if (snowflakes.length === 0) {
+                    // Re-initialize if somehow empty
+                    console.warn('Snowflakes array is empty, re-initializing...');
+                    for (let i = 0; i < 200; i++) {
+                        snowflakes.push({
+                            x: Math.random() * canvas.width,
+                            y: Math.random() * canvas.height,
+                            radius: Math.random() * 2 + 1, // 1–3px
+                            speedY: Math.random() * 0.7 + 0.3,
+                            speedX: (Math.random() - 0.5) * 0.3,
+                            wobbleAngle: Math.random() * Math.PI * 2,
+                            wobbleSpeed: Math.random() * 0.02 + 0.005,
+                            opacity: 1.0
+                        });
+                    }
                 }
-            }
-            
-            snowflakes.forEach((flake, index) => {
+                
+                snowflakes.forEach((flake, index) => {
                 // Slight horizontal wobble
                 flake.wobbleAngle += flake.wobbleSpeed;
                 const wobble = Math.sin(flake.wobbleAngle) * 0.4;
@@ -804,7 +808,11 @@
                 
                 ctx.restore();
                 ctx.shadowBlur = 0;
-            });
+                });
+            } else {
+                // Clear snowflakes when Christmas event is not active
+                snowflakes = [];
+            }
             
             requestAnimationFrame(animate);
         }

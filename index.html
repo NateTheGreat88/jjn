@@ -90,23 +90,11 @@
         </header>
 
         <main>
-            <a href="christmas-event.html" style="text-decoration: none; display: block;">
-                <section class="christmas-banner">
-                    <div class="christmas-icon">🎄</div>
-                    <div class="christmas-text">
-                        <div class="christmas-title">Christmas Event</div>
-                        <div class="christmas-subtitle">Now Live!</div>
-                        <div class="christmas-tagline">Click to explore limited-time quests, rewards, and surprises.</div>
-            </div>
-                    <div class="christmas-badge">Holiday 2025</div>
-        </section>
-            </a>
-
-            <section class="xmas-donate-banner" aria-label="Christmas donation banner">
+            <section class="donate-banner" aria-label="Donation banner">
                 <img
-                    src="images/plzdonatexmas.png"
-                    alt="Please donate for Christmas"
-                    class="xmas-donate-image"
+                    src="images/plzdonate.png"
+                    alt="Please donate"
+                    class="donate-image"
                     loading="lazy"
                 >
             </section>
@@ -118,8 +106,8 @@
             </div>
                 <div class="recent-changes-meta" id="recentChangesMeta">v2.4.0 • December 2025</div>
                 <ul class="recent-changes-list" id="recentChangesList"></ul>
-            </section>
-
+        </section>
+        
             <div class="song-card" data-title="songs" data-description="music songs nathan jaxon junhu">
                 <a href="songs.html" class="song-link">
                     <div class="song-button">
@@ -302,8 +290,8 @@
         // Update profile button on page load
         document.addEventListener('DOMContentLoaded', () => {
             updateProfileButton();
-            // Activate Christmas event
-            localStorage.setItem('jnjChristmasEventActive', 'true');
+            // End Christmas event
+            localStorage.removeItem('jnjChristmasEventActive');
         });
         
         // Also update when returning to page (in case profile was updated)
