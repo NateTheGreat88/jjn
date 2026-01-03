@@ -1,4 +1,38 @@
-     }
+// Adsterra Ad Configuration
+// Update these IDs with your actual Adsterra ad unit IDs from your dashboard
+const adsterraConfig = {
+    banner: {
+        id: '28227736', // 468x60 Banner
+        width: '468',
+        height: '60'
+    },
+    banner468: {
+        id: '28227736', // 468x60 Banner
+        width: '468',
+        height: '60'
+    },
+    square: {
+        id: '28218676', // 300x250 Square
+        width: '300',
+        height: '250'
+    },
+    skyscraper300: {
+        id: '28227770', // 160x300 Skyscraper
+        width: '160',
+        height: '300'
+    },
+    mobile: {
+        id: '28218676', // Using 300x250 for mobile too
+        width: '300',
+        height: '250'
+    },
+    native: {
+        id: '28227698', // Native Banner
+        scriptSrc: '', // Will be set if needed
+        containerId: '', // Will be set if needed
+        width: '728',
+        height: '90'
+    }
 };
 
 // Initialize Adsterra ads
@@ -145,39 +179,49 @@ function renderAd(container, adType) {
     adDiv.style.margin = '0 auto';
     adDiv.style.minHeight = config.height + 'px';
     adDiv.style.position = 'relative';
-    adDiv.style.overflow = 'hidden';
+    // Use 'visible' for skyscraper ads to prevent cutoff, 'hidden' for others
+    adDiv.style.overflow = (adType === 'skyscraper300') ? 'visible' : 'hidden';
     
     container.appendChild(adDiv);
     
     // Adsterra standard ad code format (exact format from Adsterra)
     // Use unique variable name for each ad instance
     const atOptionsVarName = `atOptions_${uniqueId}`;
-    const atOptionsScript = document.createElement('script');
-    atOptionsScript.type = 'text/javascript';
-    atOptionsScript.innerHTML = `
-        (function() {
-            window['${atOptionsVarName}'] = {
-                'key' : '${config.id}',
-                'format' : 'iframe',
-                'height' : ${config.height},
-                'width' : ${config.width},
-                'params' : {}
-            };
-            var oldAtOptions = window.atOptions;
-            window.atOptions = window['${atOptionsVarName}'];
-            var script = document.createElement('script');
-            script.type = 'text/javascript';
-            script.src = 'https://www.highperformanceformat.com/${config.id}/invoke.js';
-            script.async = true;
-            script.onload = function() {
-                if (oldAtOptions) window.atOptions = oldAtOptions;
-            };
-            document.getElementById('${adId}').appendChild(script);
-        })();
-    `;
     
-    // Append script to the ad container
-    adDiv.appendChild(atOptionsScript);
+    // Set up the atOptions configuration
+    window[atOptionsVarName] = {
+        'key': config.id,
+        'format': 'iframe',
+        'height': parseInt(config.height),
+        'width': parseInt(config.width),
+        'params': {}
+    };
+    
+    // Save old atOptions and set current one
+    const oldAtOptions = window.atOptions;
+    window.atOptions = window[atOptionsVarName];
+    
+    // Create and load the invoke script
+    const invokeScript = document.createElement('script');
+    invokeScript.type = 'text/javascript';
+    invokeScript.src = `https://www.highperformanceformat.com/${config.id}/invoke.js`;
+    invokeScript.async = true;
+    invokeScript.onload = function() {
+        // Restore old atOptions after script loads
+        if (oldAtOptions) {
+            window.atOptions = oldAtOptions;
+        }
+    };
+    invokeScript.onerror = function() {
+        console.error('Failed to load Adsterra ad script for', config.id);
+        // Restore old atOptions on error
+        if (oldAtOptions) {
+            window.atOptions = oldAtOptions;
+        }
+    };
+    
+    // Append invoke script to the ad container (Adsterra standard format)
+    adDiv.appendChild(invokeScript);
 }
 
 // Insert ad at specific position
