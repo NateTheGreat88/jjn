@@ -1538,99 +1538,6 @@
                 grantType: 'profile-image',
                 grantValue: 'donate-box',
                 limitedEdition: false
-            },
-            // Christmas Event Items (only available during Christmas event)
-            {
-                id: 'christmas-snowman-icon',
-                name: 'Snowman Icon',
-                icon: '⛄',
-                description: 'Exclusive Christmas event icon! Unlock a snowman profile icon. Limited time only!',
-                price: '1.00',
-                priceInCoins: 10,
-                type: 'profile-image',
-                grantType: 'profile-image',
-                grantValue: 'christmas-snowman-icon',
-                limitedEdition: true,
-                christmasEvent: true
-            },
-            {
-                id: 'christmas-reindeer-icon',
-                name: 'Reindeer Icon',
-                icon: '🦌',
-                description: 'Exclusive Christmas event icon! Unlock a reindeer profile icon. Limited time only!',
-                price: '1.00',
-                priceInCoins: 10,
-                type: 'profile-image',
-                grantType: 'profile-image',
-                grantValue: 'christmas-reindeer-icon',
-                limitedEdition: true,
-                christmasEvent: true
-            },
-            {
-                id: 'christmas-elf-title',
-                name: 'Elf Title',
-                icon: '🧝',
-                description: 'Exclusive Christmas event title! Become an Elf and spread holiday cheer. Limited time only!',
-                price: '2.00',
-                priceInCoins: 20,
-                type: 'title',
-                grantType: 'title',
-                grantValue: 'christmas-elf',
-                limitedEdition: true,
-                christmasEvent: true
-            },
-            {
-                id: 'christmas-caroler-title',
-                name: 'Caroler Title',
-                icon: '🎤',
-                description: 'Exclusive Christmas event title! Spread joy with the Caroler title. Limited time only!',
-                price: '2.00',
-                priceInCoins: 20,
-                type: 'title',
-                grantType: 'title',
-                grantValue: 'christmas-caroler',
-                limitedEdition: true,
-                christmasEvent: true
-            },
-            {
-                id: 'christmas-gingerbread-icon',
-                name: 'Gingerbread Icon',
-                icon: '🍪',
-                description: 'Exclusive Christmas event icon! Unlock a gingerbread cookie profile icon. Limited time only!',
-                price: '0.75',
-                priceInCoins: 8,
-                type: 'profile-image',
-                grantType: 'profile-image',
-                grantValue: 'christmas-gingerbread-icon',
-                limitedEdition: true,
-                christmasEvent: true
-            },
-            {
-                id: 'christmas-bell-icon',
-                name: 'Bell Icon',
-                icon: '🔔',
-                description: 'Exclusive Christmas event icon! Unlock a jingle bell profile icon. Limited time only!',
-                price: '0.75',
-                priceInCoins: 8,
-                type: 'profile-image',
-                grantType: 'profile-image',
-                grantValue: 'christmas-bell-icon',
-                limitedEdition: true,
-                christmasEvent: true
-            },
-            {
-                id: 'plzdonatexmas-icon',
-                name: 'Christmas Donate Icon',
-                icon: 'images/plzdonatexmas.png',
-                iconType: 'image',
-                description: 'Christmas event exclusive! Unlock the “plz donate xmas” image icon for your profile. Limited time only!',
-                price: '1.50',
-                priceInCoins: 15,
-                type: 'profile-image',
-                grantType: 'profile-image',
-                grantValue: 'plzdonatexmas-icon',
-                limitedEdition: true,
-                christmasEvent: true
             }
         ];
 
@@ -2057,22 +1964,9 @@
             }
         }
 
-        // Check if Christmas event is active
-        function isChristmasEventActive() {
-            return localStorage.getItem('jnjChristmasEventActive') === 'true' || 
-                   window.location.pathname.includes('christmas-event.html');
-        }
-
         // Filter items based on category and search
         function filterItems() {
-            const christmasEventActive = isChristmasEventActive();
-            
             filteredItems = SHOP_ITEMS.filter(item => {
-                // Hide Christmas items if event is not active
-                if (item.christmasEvent && !christmasEventActive) {
-                    return false;
-                }
-                
                 // Category filter
                 let categoryMatch = true;
                 if (currentCategory !== 'all') {
