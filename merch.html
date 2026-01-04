@@ -1404,6 +1404,20 @@
 
         const SHOP_ITEMS = [
             {
+                id: 't-shirt',
+                name: 'JNJ T-Shirt',
+                icon: '👕',
+                description: 'Get an exclusive JNJ T-Shirt! Show your support with this limited edition merchandise. Must be purchased with money (not coins).',
+                price: '9.50',
+                originalPrice: '15.00',
+                type: 'item',
+                grantType: 'item',
+                grantValue: 't-shirt',
+                url: 'buy-coins.html',
+                limitedEdition: true,
+                moneyPurchase: true
+            },
+            {
                 id: 'cd',
                 name: 'Song CD',
                 icon: '💿',
@@ -2102,6 +2116,27 @@
                             <span class="subscription-badge">Subscription</span>
                         </div>
                     `;
+                } else if (item.moneyPurchase) {
+                    // Money purchase items (like T-shirt) - show dollar price with discount
+                    if (hasDiscount) {
+                        priceHTML = `
+                            <div class="shop-price-container">
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                                    <span style="text-decoration: line-through; color: var(--text-secondary); font-size: 14px;">$${item.originalPrice}</span>
+                                    <span class="shop-price" style="color: #22c55e;">$${item.price}</span>
+                                    <span style="color: #ef4444; font-size: 12px; font-weight: 600;">Save $${discountAmount}!</span>
+                                    <span style="color: var(--text-secondary); font-size: 12px;">💰 Money purchase</span>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        priceHTML = `
+                            <div class="shop-price-container">
+                                <span class="shop-price">$${item.price}</span>
+                                <span style="color: var(--text-secondary); font-size: 12px;">💰 Money purchase</span>
+                            </div>
+                        `;
+                    }
                 } else {
                     priceHTML = `
                     <div class="shop-price-container">

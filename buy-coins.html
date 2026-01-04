@@ -443,6 +443,17 @@
                 type: 'coins',
                 grantType: 'coins',
                 grantValue: 50
+            },
+            {
+                id: 't-shirt',
+                name: 'JNJ T-Shirt',
+                icon: '👕',
+                description: 'Get an exclusive JNJ T-Shirt! Show your support with this limited edition merchandise.',
+                price: '9.50',
+                originalPrice: '15.00',
+                type: 'item',
+                grantType: 'item',
+                grantValue: 't-shirt'
             }
         ];
 
@@ -559,14 +570,34 @@
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'shop-item';
                 
+                const hasDiscount = item.originalPrice && parseFloat(item.originalPrice) > parseFloat(item.price);
+                const discountAmount = hasDiscount ? (parseFloat(item.originalPrice) - parseFloat(item.price)).toFixed(2) : null;
+                
+                let priceHTML = '';
+                if (hasDiscount) {
+                    priceHTML = `
+                        <div class="shop-price-container">
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                                <span style="text-decoration: line-through; color: var(--text-secondary); font-size: 14px;">$${item.originalPrice}</span>
+                                <span class="shop-price" style="color: #22c55e;">$${item.price}</span>
+                                <span style="color: #ef4444; font-size: 12px; font-weight: 600;">Save $${discountAmount}!</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    priceHTML = `
+                        <div class="shop-price-container">
+                            <span class="shop-price">$${item.price}</span>
+                            ${item.type === 'coins' && item.coinsGranted ? `<span class="coins-granted">→ +${item.coinsGranted} 🪙</span>` : ''}
+                        </div>
+                    `;
+                }
+                
                 itemDiv.innerHTML = `
                     <span class="shop-icon">${item.icon}</span>
                     <h2 class="shop-name">${item.name}</h2>
                     <p class="shop-description">${item.description}</p>
-                    <div class="shop-price-container">
-                        <span class="shop-price">$${item.price}</span>
-                        <span class="coins-granted">→ +${item.coinsGranted} 🪙</span>
-                    </div>
+                    ${priceHTML}
                     <button class="shop-button" onclick="openPurchaseModal('${item.id}')">Purchase ${item.name}</button>
                 `;
 
@@ -597,19 +628,54 @@
 
             modalIcon.textContent = item.icon;
             
-            modalInfo.innerHTML = `
-                <div style="text-align: center;">
-                    <h3 style="color: white; margin-bottom: 15px;">${item.name}</h3>
-                    <p style="color: var(--text-secondary); margin-bottom: 20px;">${item.description}</p>
+            const hasDiscount = item.originalPrice && parseFloat(item.originalPrice) > parseFloat(item.price);
+            const discountAmount = hasDiscount ? (parseFloat(item.originalPrice) - parseFloat(item.price)).toFixed(2) : null;
+            
+            let priceHTML = '';
+            if (hasDiscount) {
+                priceHTML = `
+                    <div style="font-size: 20px; color: var(--text-secondary); text-decoration: line-through; margin-bottom: 5px;">
+                        $${item.originalPrice}
+                    </div>
+                    <div style="font-size: 32px; color: #22c55e; font-weight: bold; margin-bottom: 10px;">
+                        $${item.price} <span style="font-size: 18px; color: #ef4444;">(Save $${discountAmount}!)</span>
+                    </div>
+                `;
+            } else {
+                priceHTML = `
                     <div style="font-size: 32px; color: #22c55e; font-weight: bold; margin-bottom: 10px;">
                         $${item.price}
                     </div>
+                `;
+            }
+            
+            let grantHTML = '';
+            if (item.type === 'coins' && item.coinsGranted) {
+                grantHTML = `
                     <div style="font-size: 24px; color: #FFD700; font-weight: 600;">
                         You'll receive: +${item.coinsGranted} 🪙
                     </div>
                     <p style="color: var(--text-secondary); font-size: 14px; margin-top: 20px;">
                         💰 Please bring the money to one of the developers. Coins will be granted after payment is received.
                     </p>
+                `;
+            } else {
+                grantHTML = `
+                    <div style="font-size: 24px; color: #FFD700; font-weight: 600; margin-bottom: 10px;">
+                        ${item.icon} ${item.name}
+                    </div>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin-top: 20px;">
+                        💰 Please bring the money to one of the developers. Your item will be granted after payment is received.
+                    </p>
+                `;
+            }
+            
+            modalInfo.innerHTML = `
+                <div style="text-align: center;">
+                    <h3 style="color: white; margin-bottom: 15px;">${item.name}</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px;">${item.description}</p>
+                    ${priceHTML}
+                    ${grantHTML}
                 </div>
             `;
 
@@ -714,7 +780,6 @@
                     price: item.price,
                     grantType: item.grantType,
                     grantValue: item.grantValue,
-                    coinsGranted: item.coinsGranted,
                     customerEmail: customerEmail,
                     userId: userId,
                     username: username,
@@ -722,16 +787,33 @@
                     status: 'pending',
                     granted: false
                 };
+                
+                // Add coinsGranted only if it's a coin purchase
+                if (item.type === 'coins' && item.coinsGranted) {
+                    purchaseData.coinsGranted = item.coinsGranted;
+                }
+                
+                // Add originalPrice if there's a discount
+                if (item.originalPrice) {
+                    purchaseData.originalPrice = item.originalPrice;
+                }
 
                 await db.collection('purchases').add(purchaseData);
-                console.log('Coin purchase saved to Firestore');
+                console.log('Purchase saved to Firestore');
 
                 document.body.removeChild(loadingMsg);
+
+                let successMessage = '';
+                if (item.type === 'coins' && item.coinsGranted) {
+                    successMessage = `Thank you for purchasing ${item.name} for $${item.price}.\n\n💰 Please bring the money to one of the developers. Coins will be granted after payment is received!`;
+                } else {
+                    successMessage = `Thank you for purchasing ${item.name} for $${item.price}.\n\n💰 Please bring the money to one of the developers. Your item will be granted after payment is received!`;
+                }
 
                 showNotification(
                     'success',
                     '✅ Purchase Confirmed!',
-                    `Thank you for purchasing ${item.name} for $${item.price}.\n\n💰 Please bring the money to one of the developers. Coins will be granted after payment is received!`
+                    successMessage
                 );
 
                 // Refresh purchases if dev
@@ -776,14 +858,19 @@
                     return;
                 }
 
-                // Coins-only: do NOT show non-coin purchases here.
+                // Show coin purchases and item purchases (like T-shirt) from buy-coins page
                 // IMPORTANT: We intentionally avoid `orderBy('timestamp')` because it requires
-                // a composite index with `where('grantType' == 'coins')`. Instead we sort in JS.
-                const purchasesSnapshot = await db.collection('purchases')
-                    .where('grantType', '==', 'coins')
-                    .get();
+                // a composite index. Instead we sort in JS.
+                // Get both coin purchases and item purchases (from buy-coins page)
+                const [coinsSnapshot, itemsSnapshot] = await Promise.all([
+                    db.collection('purchases').where('grantType', '==', 'coins').get(),
+                    db.collection('purchases').where('grantType', '==', 'item').get()
+                ]);
+                
+                // Combine both snapshots
+                const allDocs = [...coinsSnapshot.docs, ...itemsSnapshot.docs];
 
-                if (purchasesSnapshot.empty) {
+                if (allDocs.length === 0) {
                     purchasesList.innerHTML = '<div class="no-purchases">No purchases yet</div>';
                     return;
                 }
@@ -791,7 +878,7 @@
                 purchasesList.innerHTML = '';
 
                 // Sort docs by timestamp desc (serverTimestamp -> Date).
-                const docs = (purchasesSnapshot.docs || []).slice();
+                const docs = allDocs.slice();
                 const getMillis = (p) => {
                     const ts = p && p.timestamp;
                     if (!ts) return 0;
@@ -841,20 +928,25 @@
                     const timestamp = purchase.timestamp ? (purchase.timestamp.toDate ? purchase.timestamp.toDate() : new Date(purchase.timestamp.seconds * 1000)) : new Date();
                     const dateStr = timestamp.toLocaleString();
 
+                    const isItem = purchase.grantType === 'item';
+                    const itemIcon = isItem ? (purchase.itemName === 'JNJ T-Shirt' ? '👕' : '📦') : '🪙';
+                    
                     purchaseDiv.innerHTML = `
                         <div style="margin-bottom: 10px;">
-                            <strong>${purchase.itemName || 'Coin Purchase'}</strong>
+                            <strong>${itemIcon} ${purchase.itemName || 'Purchase'}</strong>
                         </div>
                         <div style="color: var(--text-secondary); font-size: 14px; margin-bottom: 10px;">
                             User: ${purchase.username || purchase.customerEmail || 'N/A'}<br>
                             Price: $${purchase.price || '0.00'}<br>
+                            ${purchase.originalPrice ? `<span style="text-decoration: line-through; color: var(--text-secondary);">$${purchase.originalPrice}</span> <span style="color: #22c55e;">→ $${purchase.price}</span><br>` : ''}
                             ${purchase.coinsGranted ? `Coins: +${purchase.coinsGranted} 🪙<br>` : ''}
+                            ${isItem ? `Item: ${purchase.grantValue || 'N/A'}<br>` : ''}
                             Date: ${dateStr}
                         </div>
                         <button class="grant-button" 
-                                onclick="grantItem('${purchaseId}', '${purchase.userId || ''}', '${purchase.grantType}', '${purchase.grantValue}', ${purchase.coinsGranted || 0})"
+                                onclick="grantItem('${purchaseId}', '${purchase.userId || ''}', '${purchase.grantType}', '${String(purchase.grantValue || '').replace(/'/g, "\\'")}', ${purchase.coinsGranted || 0})"
                                 ${purchase.granted ? 'disabled' : ''}>
-                            ${purchase.granted ? 'Already Granted' : 'Grant Coins'}
+                            ${purchase.granted ? 'Already Granted' : (isItem ? 'Grant Item' : 'Grant Coins')}
                         </button>
                     `;
 
@@ -866,9 +958,14 @@
             }
         }
 
-        // Grant coins to user
+        // Grant coins or items to user
         async function grantItem(purchaseId, userId, grantType, grantValue, coinsGranted) {
-            if (!confirm(`Grant ${coinsGranted} coins to user ${userId || 'N/A'}?`)) {
+            const isItem = grantType === 'item';
+            const confirmMessage = isItem 
+                ? `Grant ${grantValue} to user ${userId || 'N/A'}?`
+                : `Grant ${coinsGranted} coins to user ${userId || 'N/A'}?`;
+            
+            if (!confirm(confirmMessage)) {
                 return;
             }
 
@@ -887,8 +984,7 @@
                     grantedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                // Add coins to user's profile
-                if (userId && grantType === 'coins') {
+                if (userId) {
                     const userDoc = await db.collection('users').doc(userId).get();
                     let userData = {};
                     let profile = {};
@@ -898,8 +994,18 @@
                         profile = { ...(userData.profile || {}) };
                     }
                     
-                    const currentCoins = profile.coins || 0;
-                    profile.coins = currentCoins + coinsGranted;
+                    if (grantType === 'coins' && coinsGranted) {
+                        // Add coins to user's profile
+                        const currentCoins = profile.coins || 0;
+                        profile.coins = currentCoins + coinsGranted;
+                    } else if (grantType === 'item') {
+                        // Add item to purchasedItems array
+                        const purchasedItems = profile.purchasedItems || [];
+                        if (!purchasedItems.includes(grantValue)) {
+                            purchasedItems.push(grantValue);
+                            profile.purchasedItems = purchasedItems;
+                        }
+                    }
                     
                     if (userDoc.exists) {
                         await db.collection('users').doc(userId).update({
@@ -916,17 +1022,22 @@
                     if (window.authSystem && window.authSystem.isAuthenticated()) {
                         const currentUser = window.authSystem.getUser();
                         if (currentUser && currentUser.uid === userId) {
-                            localStorage.setItem(COINS_STORAGE_KEY, profile.coins.toString());
-                            updateCoinsDisplay(profile.coins);
+                            if (grantType === 'coins' && coinsGranted) {
+                                localStorage.setItem(COINS_STORAGE_KEY, profile.coins.toString());
+                                updateCoinsDisplay(profile.coins);
+                            }
                         }
                     }
                 }
 
-                showNotification('success', '✅ Coins Granted', 'Coins granted successfully!');
+                const successMessage = isItem 
+                    ? 'Item granted successfully!'
+                    : 'Coins granted successfully!';
+                showNotification('success', '✅ Granted', successMessage);
                 loadPurchases(); // Refresh the list
             } catch (error) {
-                console.error('Error granting coins:', error);
-                showNotification('error', '❌ Error', 'Error granting coins. Please try again.');
+                console.error('Error granting:', error);
+                showNotification('error', '❌ Error', 'Error granting. Please try again.');
             }
         }
 
