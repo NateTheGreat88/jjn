@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebCore Studio Elite | Professional Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+        :root {
+            --bg-base: #050507;
+            --bg-panel: #0c0c0e;
+            --bg-editor: #08080a;
+            --accent: #818cf8;
+            --accent-glow: rgba(129, 140, 248, 0.3);
+            --border: rgba(255, 255, 255, 0.08);
+            --text-muted: #64748b;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: #f1f5f9;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-family: 'Outfit', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .editor-container {
+            position: relative;
+            flex-grow: 1;
+            background: var(--bg-editor);
+            overflow: hidden;
+        }
+
+        #editing, #highlighting {
+            margin: 0;
+            padding: 2rem;
+            border: 0;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            tab-size: 4;
+            overflow: auto;
+            white-space: pre;
+            word-wrap: normal;
+            font-family: 'Fira Code', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            outline: none;
+        }
+
+        #editing {
+            z-index: 1;
+            background: transparent;
+            color: transparent;
+            caret-color: var(--accent);
+            resize: none;
+        }
+
+        #highlighting { z-index: 0; pointer-events: none; }
+
+        .side-nav-item {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            color: var(--text-muted);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+        }
+        .side-nav-item:hover { color: #fff; background: rgba(255,255,255,0.04); }
+        .side-nav-item.active { 
+            color: var(--accent); 
+            background: rgba(129, 140, 248, 0.1);
+        }
+        .side-nav-item.active::after {
+            content: '';
+            position: absolute;
+            left: -12px;
+            width: 3px;
+            height: 16px;
+            background: var(--accent);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .tab-btn {
+            padding: 0 20px;
+            height: 40px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            border-right: 1px solid var(--border);
+            transition: all 0.2s;
+            background: var(--bg-panel);
+            position: relative;
+        }
+        .tab-btn.active {
+            color: #fff;
+            background: var(--bg-editor);
+        }
+
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+        #resizer {
+            width: 2px;
+            cursor: col-resize;
+            background: var(--border);
+            transition: background 0.3s;
+            z-index: 10;
+        }
+        #resizer:hover, #resizer.active { background: var(--accent); width: 4px; }
+
+        .glass {
+            background: rgba(12, 12, 14, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .search-result {
+            border-left: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .search-result:hover {
+            background: rgba(129, 140, 248, 0.05);
+            border-left-color: var(--accent);
+        }
+        .search-match-text {
+            color: var(--accent);
+            font-weight: bold;
+            background: rgba(129, 140, 248, 0.1);
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide { animation: slideUp 0.3s ease-out forwards; }
+    </style>
+</head>
+<body>
+
+    <!-- Modals -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] hidden items-center justify-center">
+        <div class="bg-zinc-900 border border-white/10 p-6 rounded-2xl w-full max-w-sm shadow-2xl animate-slide">
+            <h3 class="text-lg font-bold mb-1">Create Module</h3>
+            <p class="text-zinc-500 text-xs mb-5">Provide a unique identifier for the new file.</p>
+            <input type="text" id="new-filename" placeholder="component.js" 
+                   class="w-full bg-black border border-white/10 rounded-xl p-3 text-white mb-5 outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-mono text-sm">
+            <div class="flex gap-2">
+                <button onclick="closeModal()" class="flex-1 py-2.5 text-zinc-400 hover:text-white text-sm font-medium transition">Cancel</button>
+                <button onclick="confirmCreateFile()" class="flex-1 py-2.5 bg-indigo-500 text-white rounded-xl text-sm font-bold hover:bg-indigo-400 transition-all shadow-lg shadow-indigo-500/20">Create File</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main UI -->
+    <div class="flex flex-col h-full overflow-hidden">
+        
+        <header class="h-14 border-b border-white/5 flex items-center justify-between px-5 glass shrink-0">
+            <div class="flex items-center gap-6">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 bg-indigo-500 rounded-lg flex items-center justify-center">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                    </div>
+                    <span class="text-xs font-bold tracking-tight uppercase">WebCore <span class="text-indigo-400">Elite</span></span>
+                </div>
+                <button onclick="runCode()" class="bg-white/5 hover:bg-white/10 text-white border border-white/10 px-3.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-2 transition-all active:scale-95">
+                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
+                    Launch Build
+                </button>
+            </div>
+            <div class="flex items-center gap-4">
+                <div id="save-pill" class="hidden text-[9px] text-indigo-400 font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-indigo-400/10 border border-indigo-400/20">Saved</div>
+                <div class="flex items-center -space-x-2">
+                    <div class="w-6 h-6 rounded-full border-2 border-zinc-950 bg-indigo-500 flex items-center justify-center text-[10px] font-bold">JD</div>
+                    <div class="w-6 h-6 rounded-full border-2 border-zinc-950 bg-emerald-500 flex items-center justify-center text-[10px] font-bold">AI</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex grow overflow-hidden">
+            <!-- Left Nav -->
+            <nav class="w-14 bg-black border-r border-white/5 flex flex-col items-center py-5 gap-4 shrink-0">
+                <div onclick="switchView('explorer')" class="side-nav-item active" id="nav-explorer" title="Files">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+                </div>
+                <div onclick="switchView('search')" class="side-nav-item" id="nav-search" title="Global Search">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </div>
+                <div class="grow"></div>
+                <div onclick="downloadProject()" class="side-nav-item mb-1 group" title="Export Full Build">
+                    <svg class="group-hover:translate-y-0.5 transition-transform" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </div>
+                <div onclick="switchView('settings')" class="side-nav-item" id="nav-settings" title="Preferences">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+                </div>
+            </nav>
+
+            <!-- Sidebar Panel -->
+            <aside id="sidebar-content" class="w-64 bg-zinc-950 border-r border-white/5 flex flex-col shrink-0">
+                <div id="view-explorer" class="flex flex-col h-full">
+                    <div class="px-4 py-4 flex justify-between items-center">
+                        <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Workspace</span>
+                        <button onclick="openNewFileModal()" class="w-6 h-6 flex items-center justify-center hover:bg-white/5 rounded-md text-zinc-500 hover:text-indigo-400 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                        </button>
+                    </div>
+                    <div id="file-list" class="px-2 space-y-0.5 overflow-y-auto grow"></div>
+                </div>
+                
+                <div id="view-search" class="hidden flex flex-col h-full">
+                    <div class="px-4 py-4">
+                        <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-4 block">Search Project</span>
+                        <div class="relative group">
+                            <input type="text" id="global-search-input" oninput="performSearch()" placeholder="Search terms..." 
+                                   class="w-full bg-black border border-white/10 rounded-lg py-2 pl-8 pr-3 text-xs outline-none focus:border-indigo-500/50 transition-all text-white placeholder-zinc-700">
+                            <svg class="absolute left-2.5 top-2.5 text-zinc-700 group-focus-within:text-indigo-400 transition-colors" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                        </div>
+                    </div>
+                    <div id="search-results" class="px-2 space-y-1 overflow-y-auto grow pb-4"></div>
+                </div>
+
+                <div id="view-settings" class="hidden p-4 flex flex-col h-full">
+                    <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-6">Preferences</span>
+                    <div class="space-y-6">
+                        <div>
+                            <label class="text-[10px] text-zinc-400 font-bold uppercase block mb-3">Color Accent</label>
+                            <div class="flex gap-2.5">
+                                <button onclick="setAccent('#818cf8')" class="w-5 h-5 rounded-full bg-indigo-400 border-2 border-transparent hover:scale-110 transition active:border-white"></button>
+                                <button onclick="setAccent('#f472b6')" class="w-5 h-5 rounded-full bg-pink-400 border-2 border-transparent hover:scale-110 transition active:border-white"></button>
+                                <button onclick="setAccent('#34d399')" class="w-5 h-5 rounded-full bg-emerald-400 border-2 border-transparent hover:scale-110 transition active:border-white"></button>
+                            </div>
+                        </div>
+                        <div class="pt-6 border-t border-white/5">
+                            <button onclick="downloadProject()" class="w-full bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-[11px] font-bold py-2.5 rounded-lg transition-all border border-indigo-500/20">
+                                Build & Download Bundle
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Editor Workspace -->
+            <main id="editor-side" class="flex flex-col grow bg-black min-w-0">
+                <div id="tab-strip" class="flex bg-zinc-950/50 border-b border-white/5 overflow-x-auto h-10 shrink-0"></div>
+                <div class="editor-container grow">
+                    <textarea id="editing" spellcheck="false" oninput="handleInput()" onscroll="syncScroll()" onkeydown="handleKey(event)" onkeyup="updateCursorPos()"></textarea>
+                    <pre id="highlighting" aria-hidden="true"><code id="highlighter"></code></pre>
+                </div>
+                <div class="h-6 bg-zinc-950 border-t border-white/5 flex items-center justify-between px-3 text-[10px] text-zinc-600 font-mono shrink-0">
+                    <div id="cursor-pos">Ln 1, Col 1</div>
+                    <div class="text-indigo-500/80 font-bold">Workspace Ready</div>
+                </div>
+            </main>
+
+            <div id="resizer"></div>
+
+            <!-- Preview Terminal -->
+            <section id="preview-side" class="flex flex-col grow bg-[#f8fafc] min-w-0">
+                <div class="h-10 bg-white border-b border-zinc-200 flex items-center px-4 justify-between shrink-0">
+                    <div class="flex items-center gap-3">
+                        <div class="flex gap-1">
+                            <div class="w-2.5 h-2.5 rounded-full bg-zinc-200"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-zinc-200"></div>
+                        </div>
+                        <span class="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">Live Runtime</span>
+                    </div>
+                    <!-- RESTORED FULLSCREEN TOGGLE -->
+                    <button onclick="toggleFS()" class="text-zinc-300 hover:text-indigo-500 transition p-1.5 rounded-md hover:bg-zinc-50">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                    </button>
+                </div>
+                <div class="grow relative">
+                    <iframe id="preview-frame" class="w-full h-full bg-white shadow-inner"></iframe>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        let files = {
+            'index.html': `<!-- Advanced Workspace -->\n<div class="container">\n  <header>\n    <h1>WebCore Elite</h1>\n    <p>Version 2.0 Live Runtime</p>\n  </header>\n  \n  <main class="card">\n    <h3>Interactive Module</h3>\n    <p>Real-time compilation active.</p>\n    <button id="action-btn">Initialize Sequence</button>\n  </main>\n</div>`,
+            'styles.css': `body {\n  margin: 0;\n  background: #f1f5f9;\n  font-family: sans-serif;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  min-height: 100vh;\n  color: #0f172a;\n}\n.container {\n  text-align: center;\n}\n.card {\n  background: white;\n  padding: 2.5rem;\n  border-radius: 1.5rem;\n  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);\n  border: 1px solid rgba(0,0,0,0.05);\n}\nbutton {\n  background: #6366f1;\n  color: white;\n  border: none;\n  padding: 0.75rem 1.5rem;\n  border-radius: 0.75rem;\n  font-weight: 600;\n  cursor: pointer;\n  transition: all 0.2s;\n}`,
+            'script.js': `const btn = document.getElementById('action-btn');\nbtn.onclick = () => {\n  btn.textContent = "Sequence Active";\n  btn.style.background = "#10b981";\n  console.log("Runtime event triggered.");\n};`
+        };
+        let activeFile = 'index.html';
+        const editorArea = document.getElementById('editing');
+        const highlightArea = document.getElementById('highlighter');
+        const previewFrame = document.getElementById('preview-frame');
+
+        function switchView(view) {
+            document.querySelectorAll('.side-nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`nav-${view}`).classList.add('active');
+            ['explorer', 'search', 'settings'].forEach(v => {
+                document.getElementById(`view-${v}`).classList.toggle('hidden', v !== view);
+            });
+            if (view === 'search') document.getElementById('global-search-input').focus();
+        }
+
+        function setAccent(color) { document.documentElement.style.setProperty('--accent', color); }
+
+        function downloadProject() {
+            const bundle = `<!DOCTYPE html><html><head><style>${files['styles.css'] || ''}</style></head><body>${files['index.html'] || ''}<script>${files['script.js'] || ''}<\/script></body></html>`;
+            const blob = new Blob([bundle], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `webcore-build-${Date.now()}.html`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // --- RESTORED FULLSCREEN LOGIC ---
+        function toggleFS() {
+            const side = document.getElementById('preview-side');
+            side.classList.toggle('fixed');
+            side.classList.toggle('inset-0');
+            side.classList.toggle('z-[10000]');
+        }
+
+        function performSearch() {
+            const query = document.getElementById('global-search-input').value.toLowerCase();
+            const resultsContainer = document.getElementById('search-results');
+            if (!query) { resultsContainer.innerHTML = ''; return; }
+            let resultsHTML = '';
+            for (const [filename, content] of Object.entries(files)) {
+                const lines = content.split('\n');
+                lines.forEach((line, index) => {
+                    if (line.toLowerCase().includes(query)) {
+                        resultsHTML += `<div onclick="goToMatch('${filename}', ${index + 1})" class="search-result p-2 cursor-pointer bg-white/5 mb-1 rounded">
+                            <div class="text-[9px] text-zinc-500">${filename} : Ln ${index+1}</div>
+                            <div class="text-[11px] text-zinc-300 truncate font-mono">${line.trim()}</div>
+                        </div>`;
+                    }
+                });
+            }
+            resultsContainer.innerHTML = resultsHTML || '<div class="p-2 text-zinc-600 text-[11px]">No matches found.</div>';
+        }
+
+        function goToMatch(filename, lineNumber) {
+            files[activeFile] = editorArea.value;
+            activeFile = filename;
+            updateInterface();
+            setTimeout(() => {
+                const lineHeight = 1.6 * 14;
+                editorArea.scrollTop = (lineNumber - 1) * lineHeight;
+            }, 50);
+        }
+
+        function updateInterface() {
+            const list = document.getElementById('file-list');
+            list.innerHTML = '';
+            Object.keys(files).sort().forEach(filename => {
+                const isActive = activeFile === filename;
+                const div = document.createElement('div');
+                div.className = `px-3 py-1.5 rounded-lg cursor-pointer text-[11px] transition-all ${isActive ? 'bg-indigo-500/10 text-indigo-400 font-semibold' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'}`;
+                div.innerText = filename;
+                div.onclick = () => { files[activeFile] = editorArea.value; activeFile = filename; updateInterface(); };
+                list.appendChild(div);
+            });
+
+            const strip = document.getElementById('tab-strip');
+            strip.innerHTML = '';
+            Object.keys(files).forEach(filename => {
+                const tab = document.createElement('div');
+                tab.className = `tab-btn ${activeFile === filename ? 'active' : ''}`;
+                tab.onclick = () => { files[activeFile] = editorArea.value; activeFile = filename; updateInterface(); };
+                tab.innerText = filename;
+                strip.appendChild(tab);
+            });
+
+            editorArea.value = files[activeFile];
+            refreshHighlighter();
+        }
+
+        function handleInput() {
+            files[activeFile] = editorArea.value;
+            refreshHighlighter();
+            const pill = document.getElementById('save-pill');
+            pill.classList.remove('hidden');
+            clearTimeout(window.saveDebounce);
+            window.saveDebounce = setTimeout(() => pill.classList.add('hidden'), 800);
+        }
+
+        function refreshHighlighter() {
+            const ext = activeFile.split('.').pop();
+            const langMap = { html: 'markup', css: 'css', js: 'javascript' };
+            highlightArea.className = `language-${langMap[ext] || 'markup'}`;
+            highlightArea.textContent = editorArea.value;
+            Prism.highlightElement(highlightArea);
+        }
+
+        function syncScroll() {
+            const pre = document.getElementById('highlighting');
+            pre.scrollTop = editorArea.scrollTop;
+            pre.scrollLeft = editorArea.scrollLeft;
+        }
+
+        function runCode() {
+            const bundle = `<!DOCTYPE html><html><head><style>${files['styles.css'] || ''}</style></head><body>${files['index.html'] || ''}<script>${files['script.js'] || ''}<\/script></body></html>`;
+            const blob = new Blob([bundle], { type: 'text/html' });
+            previewFrame.src = URL.createObjectURL(blob);
+        }
+
+        function handleKey(e) {
+            if (e.key === "Tab") {
+                e.preventDefault();
+                const s = editorArea.selectionStart;
+                editorArea.value = editorArea.value.substring(0, s) + "    " + editorArea.value.substring(editorArea.selectionEnd);
+                editorArea.selectionStart = editorArea.selectionEnd = s + 4;
+                handleInput();
+            }
+        }
+
+        function updateCursorPos() {
+            const text = editorArea.value.substring(0, editorArea.selectionStart);
+            const lines = text.split('\n');
+            document.getElementById('cursor-pos').innerText = `Ln ${lines.length}, Col ${lines[lines.length - 1].length + 1}`;
+        }
+
+        function openNewFileModal() { document.getElementById('modal-overlay').classList.replace('hidden', 'flex'); }
+        function closeModal() { document.getElementById('modal-overlay').classList.replace('flex', 'hidden'); }
+        function confirmCreateFile() {
+            const name = document.getElementById('new-filename').value.trim();
+            if (name) { files[name] = ''; activeFile = name; closeModal(); updateInterface(); }
+        }
+
+        const resizer = document.getElementById('resizer');
+        const editorSide = document.getElementById('editor-side');
+        resizer.onmousedown = (e) => {
+            document.onmousemove = (e) => {
+                const newWidth = e.clientX - 320;
+                if (newWidth > 200) { editorSide.style.flex = 'none'; editorSide.style.width = newWidth + 'px'; }
+            };
+            document.onmouseup = () => document.onmousemove = null;
+        };
+
+        updateInterface();
+        runCode();
+    </script>
+</body>
+</html>
