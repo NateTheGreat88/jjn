@@ -26,6 +26,41 @@
     <a href="index.html" class="back-button">← Back to Home</a>
     
     <div class="chat-container" id="chatContainer">
+        <!-- Sidebar -->
+        <div class="chat-sidebar" id="chatSidebar">
+            <div class="sidebar-header">
+                <h2>Chat Rooms</h2>
+                <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">☰</button>
+            </div>
+            <div class="sidebar-content">
+                <button class="sidebar-room active" data-room="main" id="mainChatRoom">
+                    <span class="room-icon">💬</span>
+                    <span class="room-name">Main Chat</span>
+                </button>
+                <div class="sidebar-divider"></div>
+                <div class="sidebar-section">
+                    <div class="sidebar-section-header">
+                        <span>Your Rooms</span>
+                    </div>
+                    <div class="sidebar-actions">
+                        <button class="sidebar-action-btn" id="sidebarCreateRoom" title="Create Room">
+                            <span class="action-icon">➕</span>
+                            <span class="action-text">Create Room</span>
+                        </button>
+                        <button class="sidebar-action-btn" id="sidebarJoinRoom" title="Join Room">
+                            <span class="action-icon">🔗</span>
+                            <span class="action-text">Join Room</span>
+                        </button>
+                    </div>
+                    <div class="rooms-list" id="roomsList">
+                        <!-- Rooms will be dynamically added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Chat Area -->
+        <div class="chat-main" id="chatMain">
         <header class="chat-header" id="chatHeader">
             <h1 id="chatTitle">JNJ Chat <span id="announcementBubble" class="announcement-bubble" style="display: none;" onclick="toggleAnnouncement()" title="Click to view announcement">📢</span></h1>
             <p class="chat-subtitle">Junhu Choi • Jaxon Croskey • Nathan DeLuca</p>
@@ -41,7 +76,7 @@
                     <div id="announcementPanelAuthor" class="announcement-panel-author"></div>
                 </div>
             </div>
-            <div class="room-controls">
+            <div class="room-controls" style="display: none;">
                 <button id="createRoomButton" class="room-button" style="display: none;">Create Private Room</button>
                 <button id="joinRoomButton" class="room-button" style="display: none;">Join Room</button>
                 <button id="leaveRoomButton" class="room-button room-button-leave" style="display: none;">Leave Room</button>
@@ -98,7 +133,8 @@
                 <button id="removeGifButton" class="remove-image-button">✕</button>
             </div>
         </div>
-    </div>
+        </div> <!-- End chat-main -->
+    </div> <!-- End chat-container -->
 
     <!-- Room Code Modal -->
     <div id="roomCodeModal" class="modal" style="display: none;">
@@ -121,6 +157,19 @@
             <div class="modal-buttons">
                 <button id="confirmJoinButton" class="modal-button">Join</button>
                 <button id="cancelJoinButton" class="modal-button modal-button-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Room Name Modal -->
+    <div id="roomNameModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2 id="roomNameModalTitle">Name Your Room</h2>
+            <p style="color: #b0b0b0; margin-bottom: 15px; font-size: 14px;">Give this room a custom name (optional)</p>
+            <input type="text" id="roomNameInput" placeholder="Room name..." maxlength="30" style="width: 100%; padding: 12px; margin-bottom: 20px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; color: #e0e0e0; font-size: 16px;">
+            <div class="modal-buttons">
+                <button id="confirmRoomNameButton" class="modal-button">Save</button>
+                <button id="skipRoomNameButton" class="modal-button modal-button-cancel">Skip</button>
             </div>
         </div>
     </div>
@@ -239,6 +288,298 @@
         const roomCodeInput = document.getElementById('roomCodeInput');
         const confirmJoinButton = document.getElementById('confirmJoinButton');
         const cancelJoinButton = document.getElementById('cancelJoinButton');
+        const roomNameModal = document.getElementById('roomNameModal');
+        const roomNameInput = document.getElementById('roomNameInput');
+        const roomNameModalTitle = document.getElementById('roomNameModalTitle');
+        const confirmRoomNameButton = document.getElementById('confirmRoomNameButton');
+        const skipRoomNameButton = document.getElementById('skipRoomNameButton');
+        
+        // Store pending room info for naming
+        let pendingRoomCode = null;
+        let pendingRoomAction = null; // 'create' or 'join'
+        
+        // Sidebar elements
+        const chatSidebar = document.getElementById('chatSidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const mainChatRoom = document.getElementById('mainChatRoom');
+        const roomsList = document.getElementById('roomsList');
+        const sidebarCreateRoom = document.getElementById('sidebarCreateRoom');
+        
+        // User's rooms storage
+        const USER_ROOMS_KEY = 'jjnUserRooms';
+        
+        // Get user's rooms from localStorage
+        function getUserRooms() {
+            try {
+                const rooms = localStorage.getItem(USER_ROOMS_KEY);
+                return rooms ? JSON.parse(rooms) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+        
+        // Save user's rooms to localStorage
+        function saveUserRooms(rooms) {
+            try {
+                localStorage.setItem(USER_ROOMS_KEY, JSON.stringify(rooms));
+            } catch (e) {
+                console.error('Error saving rooms:', e);
+            }
+        }
+        
+        // Add room to user's list
+        function addUserRoom(roomCode, roomName = null) {
+            const rooms = getUserRooms();
+            // Check if room already exists
+            const existingRoom = rooms.find(r => r.code === roomCode);
+            if (existingRoom) {
+                // Update name if provided and different
+                if (roomName && existingRoom.name !== roomName) {
+                    existingRoom.name = roomName;
+                    saveUserRooms(rooms);
+                    renderSidebarRooms();
+                }
+                return;
+            }
+            rooms.push({
+                code: roomCode,
+                name: roomName || `Room ${roomCode}`,
+                addedAt: Date.now()
+            });
+            saveUserRooms(rooms);
+            renderSidebarRooms();
+        }
+        
+        // Update room name
+        function updateRoomName(roomCode, newName) {
+            const rooms = getUserRooms();
+            const room = rooms.find(r => r.code === roomCode);
+            if (room) {
+                room.name = newName.trim() || `Room ${roomCode}`;
+                saveUserRooms(rooms);
+                renderSidebarRooms();
+            }
+        }
+        
+        // Remove room from user's list
+        function removeUserRoom(roomCode) {
+            const rooms = getUserRooms();
+            const filtered = rooms.filter(r => r.code !== roomCode);
+            saveUserRooms(filtered);
+            renderSidebarRooms();
+        }
+        
+        // Render rooms in sidebar
+        function renderSidebarRooms() {
+            const rooms = getUserRooms();
+            roomsList.innerHTML = '';
+            
+            rooms.forEach(room => {
+                const roomItem = document.createElement('div');
+                roomItem.className = 'sidebar-room';
+                if (currentRoomCode === room.code) {
+                    roomItem.classList.add('active');
+                }
+                roomItem.setAttribute('data-room', room.code);
+                
+                const roomIcon = document.createElement('span');
+                roomIcon.className = 'room-icon';
+                // Use special icon for devchat
+                roomIcon.textContent = room.code === 'devchat' ? '🔧' : '💬';
+                
+                const roomNameContainer = document.createElement('div');
+                roomNameContainer.className = 'room-name-container';
+                roomNameContainer.style.flex = '1';
+                roomNameContainer.style.display = 'flex';
+                roomNameContainer.style.flexDirection = 'column';
+                
+                const roomName = document.createElement('span');
+                roomName.className = 'room-name';
+                roomName.textContent = room.name;
+                roomName.title = 'Click to rename';
+                roomName.style.cursor = 'pointer';
+                roomName.onclick = (e) => {
+                    e.stopPropagation();
+                    renameRoom(room.code, room.name);
+                };
+                
+                const roomCode = document.createElement('span');
+                roomCode.className = 'room-code-display';
+                roomCode.textContent = room.code === 'devchat' ? 'devchat' : room.code;
+                roomCode.style.fontSize = '11px';
+                roomCode.style.color = '#888';
+                roomCode.style.marginTop = '2px';
+                roomCode.style.opacity = '0.7';
+                
+                roomNameContainer.appendChild(roomName);
+                roomNameContainer.appendChild(roomCode);
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'room-delete-btn';
+                deleteBtn.textContent = '✕';
+                deleteBtn.title = 'Delete Room';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (confirm(`Delete ${room.name} from your rooms?`)) {
+                        removeUserRoom(room.code);
+                        // If this was the current room, switch to main
+                        if (currentRoomCode === room.code) {
+                            switchToRoom('main');
+                        }
+                    }
+                };
+                
+                roomItem.appendChild(roomIcon);
+                roomItem.appendChild(roomNameContainer);
+                roomItem.appendChild(deleteBtn);
+                
+                roomItem.onclick = () => {
+                    switchToRoom(room.code);
+                };
+                
+                roomsList.appendChild(roomItem);
+            });
+        }
+        
+        // Switch to a room
+        function switchToRoom(roomCode) {
+            // Remove dev chat styling if switching away
+            if (roomCode !== 'devchat') {
+                document.body.classList.remove('dev-chat-active');
+                const chatContainer = document.getElementById('chatContainer');
+                const chatHeader = document.getElementById('chatHeader');
+                const chatTitle = document.getElementById('chatTitle');
+                if (chatContainer) chatContainer.classList.remove('dev-chat');
+                if (chatHeader) chatHeader.classList.remove('dev-chat-header');
+                if (chatTitle) chatTitle.textContent = 'JNJ Chat';
+            }
+            
+            // Update active state
+            document.querySelectorAll('.sidebar-room').forEach(room => {
+                room.classList.remove('active');
+            });
+            
+            if (roomCode === 'main') {
+                mainChatRoom.classList.add('active');
+                currentRoomCode = null;
+                localStorage.removeItem('jjnChatRoomCode');
+            } else {
+                const roomElement = document.querySelector(`[data-room="${roomCode}"]`);
+                if (roomElement) {
+                    roomElement.classList.add('active');
+                }
+                currentRoomCode = roomCode;
+                localStorage.setItem('jjnChatRoomCode', roomCode);
+                
+                // Apply dev chat styling if switching to devchat
+                if (roomCode === 'devchat') {
+                    document.body.classList.add('dev-chat-active');
+                    const chatContainer = document.getElementById('chatContainer');
+                    const chatHeader = document.getElementById('chatHeader');
+                    const chatTitle = document.getElementById('chatTitle');
+                    if (chatContainer) chatContainer.classList.add('dev-chat');
+                    if (chatHeader) chatHeader.classList.add('dev-chat-header');
+                    if (chatTitle) chatTitle.textContent = '🔧 Dev Chat';
+                    showDevStarIfNeeded();
+                }
+            }
+            
+            // Update UI
+            updateRoomUI();
+            
+            // Clear chat and reload messages
+            chatMessages.innerHTML = '<div class="message welcome-message"><div class="message-content"><p>Loading messages...</p></div></div>';
+            loadedMessageIds.clear();
+            isInitialLoad = true;
+            
+            if (roomCode === 'main') {
+                // Load public messages
+                if (db) {
+                    loadMessagesFromFirestore(null);
+                } else {
+                    loadMessages();
+                }
+                loadAnnouncements();
+            } else {
+                // Load room messages
+                if (db) {
+                    loadMessagesFromFirestore(roomCode);
+                } else {
+                    loadMessages();
+                }
+            }
+        }
+        
+        // Initialize sidebar
+        function initSidebar() {
+            // Re-get elements in case they weren't available when script loaded
+            const sidebarCreateRoomEl = document.getElementById('sidebarCreateRoom');
+            const sidebarJoinRoomEl = document.getElementById('sidebarJoinRoom');
+            const sidebarToggleEl = document.getElementById('sidebarToggle');
+            const mainChatRoomEl = document.getElementById('mainChatRoom');
+            const chatSidebarEl = document.getElementById('chatSidebar');
+            
+            // Load saved rooms
+            renderSidebarRooms();
+            
+            // Set active room
+            if (currentRoomCode) {
+                const roomElement = document.querySelector(`[data-room="${currentRoomCode}"]`);
+                if (roomElement) {
+                    roomElement.classList.add('active');
+                } else if (mainChatRoomEl) {
+                    mainChatRoomEl.classList.add('active');
+                }
+            } else if (mainChatRoomEl) {
+                mainChatRoomEl.classList.add('active');
+            }
+            
+            // Main chat click handler
+            if (mainChatRoomEl) {
+                mainChatRoomEl.onclick = () => {
+                    switchToRoom('main');
+                };
+            }
+            
+            // Sidebar toggle
+            if (sidebarToggleEl && chatSidebarEl) {
+                sidebarToggleEl.onclick = () => {
+                    chatSidebarEl.classList.toggle('collapsed');
+                };
+            }
+            
+            // Create room from sidebar
+            if (sidebarCreateRoomEl) {
+                sidebarCreateRoomEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    console.log('Create room button clicked');
+                    if (createRoom) {
+                        createRoom();
+                    } else {
+                        console.error('createRoom function not found');
+                    }
+                });
+            } else {
+                console.error('sidebarCreateRoom element not found');
+            }
+            
+            // Join room from sidebar
+            if (sidebarJoinRoomEl) {
+                sidebarJoinRoomEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    console.log('Join room button clicked');
+                    if (joinRoom) {
+                        joinRoom();
+                    } else {
+                        console.error('joinRoom function not found');
+                    }
+                });
+            } else {
+                console.error('sidebarJoinRoom element not found');
+            }
+        }
         
         // Emoji and GIF picker elements
         const emojiButton = document.getElementById('emojiButton');
@@ -1939,15 +2280,13 @@
             return Math.floor(100000 + Math.random() * 900000).toString();
         }
         
-        // Create a private room
-        function createRoom() {
-            if (!currentUserName) {
-                alert('Please enter your name first.');
-                return;
-            }
+        // Finish room creation after naming
+        function finishRoomCreation(roomCode, roomCreationTime, roomName = null) {
+            const finalName = roomName || `Room ${roomCode}`;
             
-            const roomCode = generateRoomCode();
-            const roomCreationTime = Date.now();
+            // Add to user's rooms
+            addUserRoom(roomCode, finalName);
+            
             currentRoomCode = roomCode;
             localStorage.setItem('jjnChatRoomCode', roomCode);
             
@@ -1957,7 +2296,7 @@
                 announcementBanner.remove();
             }
             
-            // Save room metadata to Firestore
+            // Save room metadata to Firestore (only write, no read)
             if (db) {
                 db.collection('rooms').doc(roomCode).set({
                     code: roomCode,
@@ -1982,24 +2321,55 @@
                 console.log('Room saved to localStorage:', roomCode, 'at', new Date(roomCreationTime));
             }
             
-            // Update UI
-            updateRoomUI();
+            // Switch to the new room
+            switchToRoom(roomCode);
             
             // Show modal with code to copy
             roomCodeDisplayText.textContent = roomCode;
             roomCodeModal.style.display = 'flex';
+        }
+        
+        // Rename room function
+        function renameRoom(roomCode, currentName) {
+            if (roomNameModal && roomNameInput) {
+                pendingRoomCode = roomCode;
+                pendingRoomAction = 'rename';
+                roomNameModalTitle.textContent = 'Rename Room';
+                roomNameInput.value = currentName;
+                roomNameInput.placeholder = 'Room name...';
+                roomNameModal.style.display = 'flex';
+                roomNameInput.focus();
+                roomNameInput.select();
+            }
+        }
+        
+        // Create a private room
+        function createRoom() {
+            console.log('createRoom called, currentUserName:', currentUserName);
+            if (!currentUserName) {
+                alert('Please enter your name first.');
+                return;
+            }
             
-            // Clear chat and show welcome message for private room
-            chatMessages.innerHTML = '<div class="message welcome-message"><div class="message-content"><p>Welcome to Private Room ' + roomCode + '!</p></div></div>';
-            loadedMessageIds.clear();
-            isInitialLoad = true;
+            const roomCode = generateRoomCode();
+            const roomCreationTime = Date.now();
+            console.log('Generated room code:', roomCode);
             
-            // Load messages for this room (will be empty initially)
-            if (db) {
-                loadMessagesFromFirestore(roomCode);
+            // Store room code for naming
+            pendingRoomCode = roomCode;
+            pendingRoomAction = 'create';
+            window.pendingRoomCreationTime = roomCreationTime;
+            
+            // Show room name modal
+            if (roomNameModal && roomNameInput) {
+                roomNameModalTitle.textContent = 'Name Your Room';
+                roomNameInput.value = '';
+                roomNameInput.placeholder = 'Room name...';
+                roomNameModal.style.display = 'flex';
+                roomNameInput.focus();
             } else {
-                // Fallback: reload from localStorage with room filter
-                loadMessages();
+                // Fallback: add with default name
+                finishRoomCreation(roomCode, roomCreationTime, `Room ${roomCode}`);
             }
         }
         
@@ -2031,9 +2401,11 @@
                 joinRoomModal.style.display = 'none';
                 roomCodeInput.value = '';
                 
-                // Join the dev chat room
-                currentRoomCode = 'devchat';
-                localStorage.setItem('jjnChatRoomCode', 'devchat');
+                // Add to user's rooms (devchat is always valid)
+                addUserRoom('devchat', '🔧 Dev Chat');
+                
+                // Switch to dev chat
+                switchToRoom('devchat');
                 
                 // Apply dev chat styling
                 document.body.classList.add('dev-chat-active');
@@ -2044,31 +2416,16 @@
                 if (chatHeader) chatHeader.classList.add('dev-chat-header');
                 if (chatTitle) chatTitle.textContent = '🔧 Dev Chat';
                 
-                // Update UI
-                updateRoomUI();
-                
                 // Show dev star button
                 showDevStarIfNeeded();
                 
-                
-                // Clear chat and show welcome message for dev room
-                chatMessages.innerHTML = '<div class="message welcome-message dev-welcome"><div class="message-content"><p>🔧 Welcome to Dev Chat Room!</p><p style="margin-top: 10px; font-size: 14px; opacity: 0.8;">This is a secret developer chat room.</p></div></div>';
-                loadedMessageIds.clear();
-                isInitialLoad = true;
-                
-                // Load messages for dev room
-                if (db) {
-                    loadMessagesFromFirestore('devchat');
-                } else {
-                    // Fallback: reload from localStorage with room filter
-                    loadMessages();
-                }
                 return;
             }
             
             // Regular room code validation (6 digits)
             if (code.length !== 6 || !/^\d+$/.test(code)) {
                 alert('Please enter a valid 6-digit room code.');
+                roomCodeInput.value = '';
                 return;
             }
             
@@ -2088,12 +2445,26 @@
                     return;
                 }
                 
-                // Room is valid, join it
-                currentRoomCode = code;
-                localStorage.setItem('jjnChatRoomCode', code);
+                // Store room code for naming
+                pendingRoomCode = code;
+                pendingRoomAction = 'join';
                 
-                // Update UI
-                updateRoomUI();
+                // Close join modal
+                joinRoomModal.style.display = 'none';
+                roomCodeInput.value = '';
+                
+                // Show room name modal
+                if (roomNameModal && roomNameInput) {
+                    roomNameModalTitle.textContent = 'Name This Room';
+                    roomNameInput.value = '';
+                    roomNameInput.placeholder = 'Room name...';
+                    roomNameModal.style.display = 'flex';
+                    roomNameInput.focus();
+                } else {
+                    // Fallback: add with default name
+                    addUserRoom(code, `Room ${code}`);
+                    switchToRoom(code);
+                }
                 
                 // Remove announcement banner when entering a room
                 const announcementBanner = document.getElementById('announcementBanner');
@@ -2104,19 +2475,6 @@
                 // Close modal
                 joinRoomModal.style.display = 'none';
                 roomCodeInput.value = '';
-                
-                // Clear chat and show welcome message for private room
-                chatMessages.innerHTML = '<div class="message welcome-message"><div class="message-content"><p>Welcome to Private Room ' + code + '!</p></div></div>';
-                loadedMessageIds.clear();
-                isInitialLoad = true;
-                
-                // Load messages for this room
-                if (db) {
-                    loadMessagesFromFirestore(code);
-                } else {
-                    // Fallback: reload from localStorage with room filter
-                    loadMessages();
-                }
             }).catch((error) => {
                 console.error('Error checking room validity:', error);
                 confirmJoinButton.textContent = originalButtonText;
@@ -3404,28 +3762,8 @@ ${avatarImage ? '🖼️ Avatar: [Image]' : `😊 Avatar: ${avatar}`}
             if (chatHeader) chatHeader.classList.remove('dev-chat-header');
             if (chatTitle) chatTitle.textContent = 'JNJ Chat';
             
-            
-            currentRoomCode = null;
-            localStorage.removeItem('jjnChatRoomCode');
-            
-            // Update UI
-            updateRoomUI();
-            
-            // Clear chat and show welcome message for public chat
-            chatMessages.innerHTML = '<div class="message welcome-message"><div class="message-content"><p>Welcome to JNJ Chat! Start a conversation below.</p></div></div>';
-            loadedMessageIds.clear();
-            isInitialLoad = true;
-            
-            // Load public messages
-            if (db) {
-                loadMessagesFromFirestore(null);
-            } else {
-                // Fallback: reload from localStorage
-                loadMessages();
-            }
-            
-            // Load announcements when returning to main chat (real-time listener)
-            loadAnnouncements();
+            // Switch to main chat
+            switchToRoom('main');
         }
         
         // Copy room code to clipboard
@@ -3602,6 +3940,66 @@ ${avatarImage ? '🖼️ Avatar: [Image]' : `😊 Avatar: ${avatar}`}
             joinRoomModal.style.display = 'none';
             roomCodeInput.value = '';
         });
+        
+        // Room name modal event listeners
+        if (confirmRoomNameButton) {
+            confirmRoomNameButton.addEventListener('click', () => {
+                const roomName = roomNameInput.value.trim();
+                if (pendingRoomCode) {
+                    if (pendingRoomAction === 'create') {
+                        finishRoomCreation(pendingRoomCode, window.pendingRoomCreationTime || Date.now(), roomName || `Room ${pendingRoomCode}`);
+                    } else if (pendingRoomAction === 'join') {
+                        addUserRoom(pendingRoomCode, roomName || `Room ${pendingRoomCode}`);
+                        switchToRoom(pendingRoomCode);
+                        joinRoomModal.style.display = 'none';
+                        roomCodeInput.value = '';
+                    } else if (pendingRoomAction === 'rename') {
+                        updateRoomName(pendingRoomCode, roomName);
+                    }
+                }
+                roomNameModal.style.display = 'none';
+                pendingRoomCode = null;
+                pendingRoomAction = null;
+            });
+        }
+        
+        if (skipRoomNameButton) {
+            skipRoomNameButton.addEventListener('click', () => {
+                if (pendingRoomCode) {
+                    if (pendingRoomAction === 'create') {
+                        finishRoomCreation(pendingRoomCode, window.pendingRoomCreationTime || Date.now(), `Room ${pendingRoomCode}`);
+                    } else if (pendingRoomAction === 'join') {
+                        addUserRoom(pendingRoomCode, `Room ${pendingRoomCode}`);
+                        switchToRoom(pendingRoomCode);
+                        joinRoomModal.style.display = 'none';
+                        roomCodeInput.value = '';
+                    }
+                }
+                roomNameModal.style.display = 'none';
+                pendingRoomCode = null;
+                pendingRoomAction = null;
+            });
+        }
+        
+        // Allow Enter key in room name input
+        if (roomNameInput) {
+            roomNameInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    confirmRoomNameButton.click();
+                }
+            });
+        }
+        
+        // Close room name modal on outside click
+        if (roomNameModal) {
+            roomNameModal.addEventListener('click', (e) => {
+                if (e.target === roomNameModal) {
+                    roomNameModal.style.display = 'none';
+                    pendingRoomCode = null;
+                    pendingRoomAction = null;
+                }
+            });
+        }
         roomCodeInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 confirmJoin();
@@ -3624,6 +4022,87 @@ ${avatarImage ? '🖼️ Avatar: [Image]' : `😊 Avatar: ${avatar}`}
         loadUserName();
         loadMessages();
         loadAnnouncements();
+        
+        // Initialize sidebar after DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => {
+                    initSidebar();
+                }, 100);
+            });
+        } else {
+            setTimeout(() => {
+                initSidebar();
+            }, 100);
+        }
+        
+        // Also set up event listeners directly as fallback (with retry)
+        function setupSidebarButtons() {
+            const sidebarCreateRoomEl = document.getElementById('sidebarCreateRoom');
+            const sidebarJoinRoomEl = document.getElementById('sidebarJoinRoom');
+            
+            if (sidebarCreateRoomEl) {
+                // Remove any existing listeners by cloning
+                const newCreateBtn = sidebarCreateRoomEl.cloneNode(true);
+                sidebarCreateRoomEl.parentNode.replaceChild(newCreateBtn, sidebarCreateRoomEl);
+                
+                newCreateBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    console.log('Create room button clicked (direct listener)');
+                    try {
+                        if (typeof createRoom === 'function') {
+                            createRoom();
+                        } else {
+                            console.error('createRoom is not a function');
+                            alert('Error: Create room function not available. Please refresh the page.');
+                        }
+                    } catch (error) {
+                        console.error('Error in createRoom:', error);
+                        alert('Error creating room: ' + error.message);
+                    }
+                });
+            } else {
+                console.warn('sidebarCreateRoom element not found, will retry...');
+                setTimeout(setupSidebarButtons, 500);
+                return;
+            }
+            
+            if (sidebarJoinRoomEl) {
+                // Remove any existing listeners by cloning
+                const newJoinBtn = sidebarJoinRoomEl.cloneNode(true);
+                sidebarJoinRoomEl.parentNode.replaceChild(newJoinBtn, sidebarJoinRoomEl);
+                
+                newJoinBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    console.log('Join room button clicked (direct listener)');
+                    try {
+                        if (typeof joinRoom === 'function') {
+                            joinRoom();
+                        } else {
+                            console.error('joinRoom is not a function');
+                            alert('Error: Join room function not available. Please refresh the page.');
+                        }
+                    } catch (error) {
+                        console.error('Error in joinRoom:', error);
+                        alert('Error joining room: ' + error.message);
+                    }
+                });
+            } else {
+                console.warn('sidebarJoinRoom element not found, will retry...');
+                setTimeout(setupSidebarButtons, 500);
+            }
+        }
+        
+        // Set up buttons when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(setupSidebarButtons, 100);
+            });
+        } else {
+            setTimeout(setupSidebarButtons, 100);
+        }
         
         // Cursor Trail Effect - Smooth line effect
         const trails = [];
