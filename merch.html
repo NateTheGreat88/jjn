@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JNJ Shop - JNJ Website</title>
     <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;300;400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/index.css">
-    <link rel="stylesheet" href="css/animated-background.css">
+    <!-- <link rel="stylesheet" href="css/animated-background.css"> -->
     <link rel="stylesheet" href="css/background-music.css">
-    <script src="js/animated-background.js" defer></script>
+    <!-- <script src="js/animated-background.js" defer></script> -->
     <script src="js/page-transitions.js" defer></script>
     <script src="js/background-music.js" defer></script>
     <script src="firebase-config.js"></script>
@@ -1272,11 +1274,47 @@
         }
     </style>
 </head>
-<body>
+<body class="p-6 md:p-12 lg:p-16">
+    <!-- Cursor Ring -->
+    <div class="prism-cursor-ring" id="cursor-ring"></div>
+    
+    <!-- Animated Background Orbs -->
+    <div class="prism-bg">
+        <div class="orb w-[800px] h-[800px] bg-cyan-900/40 -top-40 -left-40"></div>
+        <div class="orb w-[600px] h-[600px] bg-purple-900/30 bottom-10 right-10" style="animation-delay: -7s"></div>
+    </div>
+
+    <div class="max-w-[1800px] mx-auto space-y-16 relative z-10">
+        <!-- Top Controls -->
+        <div class="top-controls flex flex-wrap items-center justify-between gap-4 px-4 mb-8">
+            <div class="flex gap-3 flex-wrap">
+                <a href="index.html" class="modern-btn modern-btn-outline">← Home</a>
+                <a href="profile.html" class="modern-btn modern-btn-primary" id="profileButton">👤 Profile</a>
+                <a href="events.html" class="modern-btn modern-btn-secondary" id="eventsButton">🎉 Events</a>
+                <a href="quests.html" class="modern-btn modern-btn-accent">⚔️ Quests</a>
+                <a href="about.html" class="modern-btn modern-btn-outline">About Us</a>
+            </div>
+        </div>
+        
+        <!-- Header -->
+        <header class="flex flex-col xl:flex-row items-start xl:items-end justify-between gap-12 px-4 mb-12">
+            <div class="space-y-8">
+                <div class="flex items-center gap-6">
+                    <div class="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10">
+                        <div class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></div>
+                        <span class="text-[10px] font-black tracking-[0.2em] uppercase text-slate-400">JNJ // Shop</span>
+                    </div>
+                    <span class="text-[10px] font-mono text-slate-600">v2.4.0-STABLE</span>
+                </div>
+                <h1 class="glitch-text text-9xl md:text-[12rem] font-black leading-[0.7] tracking-tighter transition-all duration-500">
+                    Shop<span class="opacity-30">.</span>
+                </h1>
+            </div>
+        </header>
+    
     <div class="container" id="mainContainer">
         <div class="shop-container">
             <div class="shop-header">
-                <h1 class="shop-title">🛍️ JNJ Shop 🛍️</h1>
                 <p class="shop-subtitle">Exclusive limited edition items and merchandise!</p>
                 <div style="display: flex; gap: 15px; justify-content: center; align-items: center; margin-top: 20px; flex-wrap: wrap;">
                     <div class="coins-display" id="coinsDisplay">
@@ -1333,9 +1371,6 @@
 
             <!-- Dev purchases section removed - only available on buy-coins page -->
 
-            <div style="text-align: center;">
-                <a href="index.html" class="back-button">← Back to Home</a>
-            </div>
         </div>
     </div>
 
@@ -3095,6 +3130,25 @@
             initFirebase();
             initPage();
         }
+        
+        // Cursor Ring
+        const ring = document.getElementById('cursor-ring');
+        if (ring) {
+            document.addEventListener('mousemove', (e) => {
+                ring.style.left = `${e.clientX}px`;
+                ring.style.top = `${e.clientY}px`;
+            });
+            document.addEventListener('mousedown', () => {
+                ring.style.scale = '0.7';
+                ring.style.opacity = '1';
+            });
+            document.addEventListener('mouseup', () => {
+                ring.style.scale = '1';
+                ring.style.opacity = '0.6';
+            });
+        }
     </script>
+    </div>
+    </div>
 </body>
 </html>
