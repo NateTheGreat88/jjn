@@ -50,6 +50,64 @@ body {
         radial-gradient(circle at 50% 50%, #050510 0%, #010103 100%);
 }
 
+/* Grid Parallax Background */
+.prism-bg {
+    --grid-scroll-y: 0px;
+}
+
+.prism-bg::before {
+    content: '';
+    position: absolute;
+    inset: -200px;
+    background-image: 
+        linear-gradient(rgba(0, 242, 255, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 242, 255, 0.08) 1px, transparent 1px);
+    background-size: 50px 50px;
+    background-position: 0 0;
+    background-repeat: repeat;
+    animation: gridMove 20s linear infinite;
+    transform: translateY(var(--grid-scroll-y, 0px));
+    will-change: transform, background-position;
+    pointer-events: none;
+    mix-blend-mode: screen;
+}
+
+@keyframes gridMove {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 50px 50px;
+    }
+}
+
+/* Additional grid layer for depth */
+.prism-grid-overlay {
+    position: fixed;
+    inset: -300px;
+    z-index: -1;
+    pointer-events: none;
+    background-image: 
+        linear-gradient(rgba(112, 0, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(112, 0, 255, 0.06) 1px, transparent 1px);
+    background-size: 100px 100px;
+    background-position: 0 0;
+    background-repeat: repeat;
+    animation: gridMoveSlow 30s linear infinite;
+    will-change: transform, background-position;
+    opacity: 0.8;
+    mix-blend-mode: screen;
+}
+
+@keyframes gridMoveSlow {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 100px 100px;
+    }
+}
+
 
 .orb {
     position: absolute;

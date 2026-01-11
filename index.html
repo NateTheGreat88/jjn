@@ -63,6 +63,9 @@
         <div class="orb w-[800px] h-[800px] bg-cyan-900/40 -top-40 -left-40"></div>
         <div class="orb w-[600px] h-[600px] bg-purple-900/30 bottom-10 right-10" style="animation-delay: -7s"></div>
     </div>
+    
+    <!-- Grid Parallax Overlay -->
+    <div class="prism-grid-overlay"></div>
 
     <div class="max-w-[1800px] mx-auto space-y-16 relative z-10" id="mainContainer" style="opacity: 0; pointer-events: none;">
         <!-- Top Controls -->
@@ -111,17 +114,17 @@
         </header>
         
         <!-- Announcement Panel -->
-        <div id="announcementPanel" class="announcement-panel" style="display: none;">
-            <div class="announcement-panel-content">
-                <div class="announcement-panel-header">
-                    <span class="announcement-panel-icon">📢</span>
-                    <h3>Announcement</h3>
-                    <button class="announcement-panel-close" onclick="toggleAnnouncement()">×</button>
-                </div>
-                <div id="announcementPanelText" class="announcement-panel-text"></div>
-                <div id="announcementPanelAuthor" class="announcement-panel-author"></div>
+            <div id="announcementPanel" class="announcement-panel" style="display: none;">
+                <div class="announcement-panel-content">
+                    <div class="announcement-panel-header">
+                        <span class="announcement-panel-icon">📢</span>
+                        <h3>Announcement</h3>
+                        <button class="announcement-panel-close" onclick="toggleAnnouncement()">×</button>
             </div>
-        </div>
+                    <div id="announcementPanelText" class="announcement-panel-text"></div>
+                    <div id="announcementPanelAuthor" class="announcement-panel-author"></div>
+            </div>
+            </div>
 
         <!-- Refined Layout -->
         <main class="grid grid-cols-1 xl:grid-cols-12 gap-10">
@@ -132,12 +135,12 @@
                 <div class="lumina-card group">
                     <div class="card-glow"></div>
                     <div class="p-6">
-                        <img
-                            src="images/plzdonate.png"
-                            alt="Please donate"
+                <img
+                    src="images/plzdonate.png"
+                    alt="Please donate"
                             class="w-full h-auto rounded-2xl"
-                            loading="lazy"
-                        >
+                    loading="lazy"
+                >
                     </div>
                 </div>
 
@@ -148,7 +151,7 @@
                         <div class="flex items-center gap-4 mb-6">
                             <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
                                 <span class="text-2xl">⭐</span>
-                            </div>
+            </div>
                             <div>
                                 <h2 class="text-2xl font-bold tracking-tight">Featured Content</h2>
                                 <p class="text-sm text-slate-400">Discover what's new and popular</p>
@@ -202,113 +205,113 @@
                                 </div>
                                 <span class="recent-indicator text-xl" title="Recently visited">⭐</span>
                             </div>
-                        </a>
-                    </div>
+                </a>
+            </div>
                     
                     <div class="song-card-modern card-shape-diamond group" data-title="merch" data-description="merchandise store shop cd music">
                         <a href="merch.html" class="song-link-modern block p-6">
                             <div class="flex items-center gap-6">
                                 <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-purple-500/30 flex items-center justify-center">
                                     <svg class="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                                </div>
+                        </div>
                                 <div class="flex-1">
                                     <h2 class="text-2xl font-bold mb-2">JNJ Shop</h2>
                                     <p class="text-sm text-slate-400">Exclusive limited edition items and merchandise</p>
-                                </div>
+                    </div>
                                 <span class="recent-indicator text-xl" title="Recently visited">⭐</span>
                             </div>
-                        </a>
-                    </div>
+                </a>
+            </div>
 
                     <div class="song-card-modern card-shape-chat group" data-title="chat" data-description="collaborative messaging communication">
                         <a href="chat.html" class="song-link-modern block p-6">
                             <div class="flex items-center gap-6">
                                 <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-purple-500/30 flex items-center justify-center">
                                     <svg class="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                                </div>
+                        </div>
                                 <div class="flex-1">
                                     <h2 class="text-2xl font-bold mb-2">Chat</h2>
                                     <p class="text-sm text-slate-400">Collaborative messaging</p>
-                                </div>
+                    </div>
                                 <span class="recent-indicator text-xl" title="Recently visited">⭐</span>
                             </div>
-                        </a>
-                    </div>
+                </a>
+            </div>
                     
                     <div class="song-card-modern card-shape-square group" data-title="code editor" data-description="code programming editor interactive">
                         <a href="codeeditor.html" class="song-link-modern block p-6">
                             <div class="flex items-center gap-6">
                                 <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-purple-500/30 flex items-center justify-center">
                                     <svg class="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                                </div>
+                        </div>
                                 <div class="flex-1">
                                     <h2 class="text-2xl font-bold mb-2">Code Editor</h2>
                                     <p class="text-sm text-slate-400">Interactive code editor</p>
-                                </div>
+                    </div>
                                 <span class="recent-indicator text-xl" title="Recently visited">⭐</span>
                             </div>
-                        </a>
-                    </div>
+                </a>
+            </div>
                     
                     <div class="song-card-modern card-shape-asymmetric group" data-title="image editor" data-description="image edit create art design">
                         <a href="imageeditor.html" class="song-link-modern block p-6">
                             <div class="flex items-center gap-6">
                                 <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-purple-500/30 flex items-center justify-center">
                                     <svg class="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                                </div>
+                        </div>
                                 <div class="flex-1">
                                     <h2 class="text-2xl font-bold mb-2">Image Editor</h2>
                                     <p class="text-sm text-slate-400">Edit and create images</p>
-                                </div>
+                    </div>
                                 <span class="recent-indicator text-xl" title="Recently visited">⭐</span>
                             </div>
-                        </a>
-                    </div>
+                </a>
+            </div>
                     
                     <div id="minigamesCard" class="song-card-modern card-shape-hexagon group" data-title="mini games" data-description="games collection snake tetris pong memory reaction" style="display: none;">
                         <a href="minigames.html" class="song-link-modern block p-6">
                             <div class="flex items-center gap-6">
                                 <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-purple-500/30 flex items-center justify-center">
                                     <svg class="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                                </div>
+                        </div>
                                 <div class="flex-1">
                                     <h2 class="text-2xl font-bold mb-2">Mini Games</h2>
                                     <p class="text-sm text-slate-400">Collection of classic games</p>
-                                </div>
+                    </div>
                                 <span class="recent-indicator text-xl" title="Recently visited">⭐</span>
                             </div>
-                        </a>
-                    </div>
+                </a>
+            </div>
                     
                     <div class="song-card-modern card-shape-sharp group" data-title="chess" data-description="chess game strategy board">
                         <a href="chess.html" class="song-link-modern block p-6">
                             <div class="flex items-center gap-6">
                                 <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-purple-500/30 flex items-center justify-center">
                                     <svg class="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                                </div>
+                        </div>
                                 <div class="flex-1">
                                     <h2 class="text-2xl font-bold mb-2">Chess</h2>
                                     <p class="text-sm text-slate-400">Play chess against AI or friends</p>
-                                </div>
+                    </div>
                                 <span class="recent-indicator text-xl" title="Recently visited">⭐</span>
                             </div>
-                        </a>
-                    </div>
+                </a>
+            </div>
                     
                     <div id="secretsCard" class="song-card-modern card-shape-cut-corner group" data-title="secrets" data-description="hidden pages easter eggs unlock" style="display: none;">
                         <a href="secrets.html" class="song-link-modern block p-6">
                             <div class="flex items-center gap-6">
                                 <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-purple-500/30 flex items-center justify-center">
                                     <svg class="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                                </div>
+                        </div>
                                 <div class="flex-1">
                                     <h2 class="text-2xl font-bold mb-2">Secrets</h2>
                                     <p class="text-sm text-slate-400">Hidden pages and easter eggs</p>
-                                </div>
+                    </div>
                                 <span class="recent-indicator text-xl" title="Discovered">🔓</span>
                             </div>
-                        </a>
-                    </div>
+                </a>
+            </div>
                 </div>
 
                 <!-- Community Section -->
@@ -444,6 +447,42 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Theme Voting Section -->
+                <div class="lumina-card p-10 bg-gradient-to-br from-purple-500/10 to-transparent">
+                    <div class="card-glow"></div>
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-lg font-bold">Theme Vote</h4>
+                            <div class="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2"></path></svg>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <p class="text-sm text-slate-300 font-medium">New JNJ Theme</p>
+                            <div class="flex items-center gap-4">
+                                <button id="voteThumbsUp" class="flex-1 flex items-center justify-center gap-2 p-3 rounded-xl bg-gradient-to-r from-green-500/10 to-transparent border border-green-500/20 hover:border-green-400/50 hover:from-green-500/20 transition-all group vote-btn" data-vote="up">
+                                    <svg class="w-5 h-5 text-green-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" stroke-width="2"></path></svg>
+                                    <span class="text-sm font-medium text-green-400" id="thumbsUpCount">0</span>
+                                </button>
+                                <button id="voteThumbsDown" class="flex-1 flex items-center justify-center gap-2 p-3 rounded-xl bg-gradient-to-r from-red-500/10 to-transparent border border-red-500/20 hover:border-red-400/50 hover:from-red-500/20 transition-all group vote-btn" data-vote="down">
+                                    <svg class="w-5 h-5 text-red-400 group-hover:scale-110 transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" stroke-width="2"></path></svg>
+                                    <span class="text-sm font-medium text-red-400" id="thumbsDownCount">0</span>
+                                </button>
+                            </div>
+                            <div id="userVoteStatus" class="text-xs text-slate-500 text-center"></div>
+                            <div id="devVoteDetails" class="hidden space-y-2 pt-2 border-t border-white/10">
+                                <p class="text-xs font-bold text-cyan-400 uppercase tracking-widest">Dev View</p>
+                                <div class="text-xs text-slate-400 space-y-1">
+                                    <div>Total Votes: <span id="devTotalVotes" class="text-cyan-400">0</span></div>
+                                    <div>Up Votes: <span id="devUpVotes" class="text-green-400">0</span></div>
+                                    <div>Down Votes: <span id="devDownVotes" class="text-red-400">0</span></div>
+                                    <div>Percentage: <span id="devPercentage" class="text-purple-400">0%</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </aside>
 
             <!-- Status Strip -->
@@ -468,7 +507,7 @@
                     <div class="h-10 w-[1px] bg-white/10"></div>
                     <span class="text-sm font-bold tracking-widest uppercase text-cyan-400">3 Creators</span>
                 </div>
-            </footer>
+        </footer>
         </main>
 
         <div class="py-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
@@ -1266,6 +1305,20 @@
                 }
             }
             waitForAuthSystem();
+            
+            // Fallback: Force hide loading screen after 5 seconds if still showing
+            setTimeout(() => {
+                const loadingScreen = document.getElementById('loadingScreen');
+                const mainContainer = document.getElementById('mainContainer');
+                if (loadingScreen && loadingScreen.style.display !== 'none' && !loadingScreen.classList.contains('hidden')) {
+                    console.warn('Loading screen timeout - forcing hide');
+                    hideLoadingScreen();
+                    if (mainContainer) {
+                        mainContainer.style.opacity = '1';
+                        mainContainer.style.pointerEvents = 'auto';
+                    }
+                }
+            }, 5000);
         }
         
         // Initialize auth modal when DOM is ready
@@ -1742,6 +1795,334 @@
                     setTimeout(() => notification.remove(), 500);
                 }
             }, 10000);
+        }
+        
+        // Theme Voting System
+        const VOTE_STORAGE_KEY = 'jnjThemeVote';
+        const VOTE_COLLECTION = 'themeVotes';
+        
+        // Check if user is dev
+        function isDev() {
+            try {
+                const profileData = localStorage.getItem('jnjUserProfile');
+                if (profileData) {
+                    const profile = JSON.parse(profileData);
+                    return profile.isDev === true;
+                }
+            } catch (e) {
+                console.error('Error checking dev status:', e);
+            }
+            return false;
+        }
+        
+        // Get user ID for voting
+        function getUserId() {
+            if (window.authSystem && window.authSystem.isAuthenticated()) {
+                const user = window.authSystem.getUser();
+                return user ? user.uid : null;
+            }
+            // Fallback to localStorage-based ID
+            let userId = localStorage.getItem('jnjVoteUserId');
+            if (!userId) {
+                userId = 'anon_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('jnjVoteUserId', userId);
+            }
+            return userId;
+        }
+        
+        // Load votes from Firebase
+        async function loadVotes() {
+            try {
+                if (typeof firebaseConfig === 'undefined' || typeof firebase === 'undefined') {
+                    // Fallback to localStorage only
+                    loadVotesFromLocalStorage();
+                    return;
+                }
+                
+                if (!firebase.apps || firebase.apps.length === 0) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                
+                const db = firebase.firestore();
+                const votesSnapshot = await db.collection(VOTE_COLLECTION).get();
+                
+                let upVotes = 0;
+                let downVotes = 0;
+                const votes = {};
+                
+                votesSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    votes[doc.id] = data.vote;
+                    if (data.vote === 'up') upVotes++;
+                    else if (data.vote === 'down') downVotes++;
+                });
+                
+                // Update display
+                updateVoteDisplay(upVotes, downVotes);
+                
+                // Show dev details if dev
+                if (isDev()) {
+                    showDevVoteDetails(upVotes, downVotes);
+                }
+                
+                // Check user's vote
+                const userId = getUserId();
+                if (userId && votes[userId]) {
+                    const userVote = votes[userId];
+                    updateUserVoteStatus(userVote);
+                    highlightVoteButton(userVote);
+                }
+                
+                // Save to localStorage for offline access
+                localStorage.setItem('jnjVoteCounts', JSON.stringify({ up: upVotes, down: downVotes }));
+            } catch (error) {
+                console.error('Error loading votes:', error);
+                loadVotesFromLocalStorage();
+            }
+        }
+        
+        // Load votes from localStorage (fallback)
+        function loadVotesFromLocalStorage() {
+            const counts = JSON.parse(localStorage.getItem('jnjVoteCounts') || '{"up":0,"down":0}');
+            updateVoteDisplay(counts.up, counts.down);
+            
+            const userVote = localStorage.getItem(VOTE_STORAGE_KEY);
+            if (userVote) {
+                updateUserVoteStatus(userVote);
+                highlightVoteButton(userVote);
+            }
+        }
+        
+        // Update vote display
+        function updateVoteDisplay(upVotes, downVotes) {
+            const upCount = document.getElementById('thumbsUpCount');
+            const downCount = document.getElementById('thumbsDownCount');
+            if (upCount) upCount.textContent = upVotes;
+            if (downCount) downCount.textContent = downVotes;
+        }
+        
+        // Show dev vote details
+        function showDevVoteDetails(upVotes, downVotes) {
+            const devDetails = document.getElementById('devVoteDetails');
+            if (!devDetails) return;
+            
+            const total = upVotes + downVotes;
+            const percentage = total > 0 ? Math.round((upVotes / total) * 100) : 0;
+            
+            document.getElementById('devTotalVotes').textContent = total;
+            document.getElementById('devUpVotes').textContent = upVotes;
+            document.getElementById('devDownVotes').textContent = downVotes;
+            document.getElementById('devPercentage').textContent = percentage + '%';
+            
+            devDetails.classList.remove('hidden');
+        }
+        
+        // Update user vote status
+        function updateUserVoteStatus(vote) {
+            const statusEl = document.getElementById('userVoteStatus');
+            if (!statusEl) return;
+            
+            if (vote === 'up') {
+                statusEl.textContent = 'You voted 👍';
+                statusEl.className = 'text-xs text-green-400 text-center';
+            } else if (vote === 'down') {
+                statusEl.textContent = 'You voted 👎';
+                statusEl.className = 'text-xs text-red-400 text-center';
+            }
+        }
+        
+        // Highlight vote button
+        function highlightVoteButton(vote) {
+            const upBtn = document.getElementById('voteThumbsUp');
+            const downBtn = document.getElementById('voteThumbsDown');
+            
+            if (vote === 'up' && upBtn) {
+                upBtn.classList.add('border-green-400', 'from-green-500/30');
+            } else if (vote === 'down' && downBtn) {
+                downBtn.classList.add('border-red-400', 'from-red-500/30');
+            }
+        }
+        
+        // Submit vote
+        async function submitVote(vote) {
+            const userId = getUserId();
+            if (!userId) {
+                alert('Unable to submit vote. Please try again.');
+                return;
+            }
+            
+            // Check if already voted this way
+            const existingVote = localStorage.getItem(VOTE_STORAGE_KEY);
+            if (existingVote === vote) {
+                return; // Already voted this way
+            }
+            
+            // Save to localStorage immediately
+            localStorage.setItem(VOTE_STORAGE_KEY, vote);
+            updateUserVoteStatus(vote);
+            
+            // Reset button highlights
+            const upBtn = document.getElementById('voteThumbsUp');
+            const downBtn = document.getElementById('voteThumbsDown');
+            if (upBtn) {
+                upBtn.classList.remove('border-green-400', 'from-green-500/30');
+            }
+            if (downBtn) {
+                downBtn.classList.remove('border-red-400', 'from-red-500/30');
+            }
+            highlightVoteButton(vote);
+            
+            // Save to Firebase
+            try {
+                if (typeof firebaseConfig !== 'undefined' && typeof firebase !== 'undefined') {
+                    if (!firebase.apps || firebase.apps.length === 0) {
+                        firebase.initializeApp(firebaseConfig);
+                    }
+                    
+                    const db = firebase.firestore();
+                    
+                    // Save/update vote
+                    await db.collection(VOTE_COLLECTION).doc(userId).set({
+                        vote: vote,
+                        userId: userId,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                    
+                    // Reload votes to update counts
+                    await loadVotes();
+                } else {
+                    // Update localStorage counts
+                    const counts = JSON.parse(localStorage.getItem('jnjVoteCounts') || '{"up":0,"down":0}');
+                    if (existingVote === 'up') counts.up--;
+                    else if (existingVote === 'down') counts.down--;
+                    
+                    if (vote === 'up') counts.up++;
+                    else if (vote === 'down') counts.down++;
+                    
+                    localStorage.setItem('jnjVoteCounts', JSON.stringify(counts));
+                    updateVoteDisplay(counts.up, counts.down);
+                    
+                    if (isDev()) {
+                        showDevVoteDetails(counts.up, counts.down);
+                    }
+                }
+            } catch (error) {
+                console.error('Error submitting vote:', error);
+                // Still update localStorage counts
+                const counts = JSON.parse(localStorage.getItem('jnjVoteCounts') || '{"up":0,"down":0}');
+                if (existingVote === 'up') counts.up--;
+                else if (existingVote === 'down') counts.down--;
+                
+                if (vote === 'up') counts.up++;
+                else if (vote === 'down') counts.down++;
+                
+                localStorage.setItem('jnjVoteCounts', JSON.stringify(counts));
+                updateVoteDisplay(counts.up, counts.down);
+                
+                if (isDev()) {
+                    showDevVoteDetails(counts.up, counts.down);
+                }
+            }
+        }
+        
+        // Initialize voting system
+        function initVotingSystem() {
+            const upBtn = document.getElementById('voteThumbsUp');
+            const downBtn = document.getElementById('voteThumbsDown');
+            
+            if (upBtn) {
+                upBtn.addEventListener('click', () => submitVote('up'));
+            }
+            
+            if (downBtn) {
+                downBtn.addEventListener('click', () => submitVote('down'));
+            }
+            
+            // Load votes
+            loadVotes();
+            
+            // Check dev status and show details
+            if (isDev()) {
+                // Wait a bit for votes to load
+                setTimeout(() => {
+                    loadVotes();
+                }, 500);
+            }
+        }
+        
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initVotingSystem);
+        } else {
+            initVotingSystem();
+        }
+        
+        // Re-check dev status when auth state changes
+        window.addEventListener('authStateChanged', () => {
+            setTimeout(() => {
+                if (isDev()) {
+                    loadVotes();
+                }
+            }, 500);
+        });
+        
+        // Grid Parallax Effect
+        function initGridParallax() {
+            try {
+                const gridOverlay = document.querySelector('.prism-grid-overlay');
+                const prismBg = document.querySelector('.prism-bg');
+                if (!gridOverlay) return;
+                
+                let mouseX = 0;
+                let mouseY = 0;
+                let scrollY = 0;
+                
+                // Mouse parallax
+                document.addEventListener('mousemove', (e) => {
+                    try {
+                        mouseX = (e.clientX / window.innerWidth - 0.5) * 30;
+                        mouseY = (e.clientY / window.innerHeight - 0.5) * 30;
+                        updateGridParallax();
+                    } catch (err) {
+                        console.error('Grid parallax mousemove error:', err);
+                    }
+                });
+                
+                // Scroll parallax
+                window.addEventListener('scroll', () => {
+                    try {
+                        scrollY = window.scrollY * 0.5;
+                        updateGridParallax();
+                        
+                        // Also update the ::before grid layer
+                        if (prismBg) {
+                            const scrollOffset = window.scrollY * 0.4;
+                            prismBg.style.setProperty('--grid-scroll-y', `${scrollOffset}px`);
+                        }
+                    } catch (err) {
+                        console.error('Grid parallax scroll error:', err);
+                    }
+                });
+                
+                function updateGridParallax() {
+                    try {
+                        if (gridOverlay) {
+                            gridOverlay.style.transform = `translate(${mouseX}px, ${mouseY + scrollY}px)`;
+                        }
+                    } catch (err) {
+                        console.error('Grid parallax update error:', err);
+                    }
+                }
+            } catch (err) {
+                console.error('Grid parallax init error:', err);
+            }
+        }
+        
+        // Initialize grid parallax when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initGridParallax);
+        } else {
+            initGridParallax();
         }
         
         // Cursor Ring Effect
