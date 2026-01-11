@@ -44,7 +44,7 @@
             </div>
             <div class="sidebar-content">
                 <button class="sidebar-room active" data-room="main" id="mainChatRoom">
-                    <span class="room-icon">💬</span>
+                    <span class="room-icon"></span>
                     <span class="room-name">Main Chat</span>
                 </button>
                 <div class="sidebar-divider"></div>
@@ -54,11 +54,11 @@
                     </div>
                     <div class="sidebar-actions">
                         <button class="sidebar-action-btn" id="sidebarCreateRoom" title="Create Room">
-                            <span class="action-icon">➕</span>
+                            <span class="action-icon"></span>
                             <span class="action-text">Create Room</span>
                         </button>
                         <button class="sidebar-action-btn" id="sidebarJoinRoom" title="Join Room">
-                            <span class="action-icon">🔗</span>
+                            <span class="action-icon"></span>
                             <span class="action-text">Join Room</span>
                         </button>
                     </div>
@@ -72,13 +72,13 @@
         <!-- Main Chat Area -->
         <div class="chat-main" id="chatMain">
         <header class="chat-header" id="chatHeader">
-            <h1 id="chatTitle">JNJ Chat <span id="announcementBubble" class="announcement-bubble" style="display: none;" onclick="toggleAnnouncement()" title="Click to view announcement">📢</span></h1>
+            <h1 id="chatTitle">JNJ Chat <span id="announcementBubble" class="announcement-bubble" style="display: none;" onclick="toggleAnnouncement()" title="Click to view announcement">ALERT</span></h1>
             <p class="chat-subtitle">Junhu Choi • Jaxon Croskey • Nathan DeLuca</p>
-            <button id="devStarButton" class="dev-star-button" style="display: none; position: absolute; top: 10px; right: 10px; background: rgba(255, 215, 0, 0.2); border: 2px solid #ffd700; border-radius: 50%; width: 50px; height: 50px; font-size: 28px; cursor: pointer; z-index: 1000; transition: all 0.2s; color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.8); box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);" title="Become a Dev">⭐</button>
+            <button id="devStarButton" class="dev-star-button" style="display: none; position: absolute; top: 10px; right: 10px; background: rgba(0, 255, 255, 0.1); border: 2px solid #00ffff; border-radius: 4px; width: auto; height: auto; padding: 8px 16px; font-size: 12px; cursor: pointer; z-index: 1000; transition: all 0.2s; color: #00ffff; text-shadow: 0 0 10px rgba(0, 255, 255, 0.8); box-shadow: 0 0 20px rgba(0, 255, 255, 0.3); font-family: 'Courier New', monospace; font-weight: bold; letter-spacing: 1px;" title="Become a Dev">DEV</button>
             <div id="announcementPanel" class="announcement-panel" style="display: none;">
                 <div class="announcement-panel-content">
                     <div class="announcement-panel-header">
-                        <span class="announcement-panel-icon">📢</span>
+                        <span class="announcement-panel-icon"></span>
                         <h3>Announcement</h3>
                         <button class="announcement-panel-close" onclick="toggleAnnouncement()">×</button>
                     </div>
@@ -112,7 +112,7 @@
                 </div>
             </div>
             <div class="input-wrapper">
-                <button id="emojiButton" class="emoji-button" title="Add Emoji">😀</button>
+                <button id="emojiButton" class="emoji-button" title="Add Emoji">EMOJI</button>
                 <input 
                     type="text" 
                     id="messageInput" 
@@ -123,7 +123,7 @@
                 >
                 <button id="gifButton" class="gif-button" title="Add GIF">GIF</button>
                 <label for="imageInput" class="image-upload-button" title="Upload Image">
-                    📁
+                    IMG
                 </label>
                 <input 
                     type="file" 
@@ -157,7 +157,7 @@
             <p style="color: #b0b0b0; margin-bottom: 20px; text-align: center;">Share this code with your friends:</p>
             <div class="room-code-display-large">
                 <span id="roomCodeDisplayText"></span>
-                <button id="copyRoomCodeButton" class="copy-button" title="Copy code">📋</button>
+                <button id="copyRoomCodeButton" class="copy-button" title="Copy code">COPY</button>
             </div>
             <button id="closeRoomCodeModal" class="modal-button" style="margin-top: 20px;">Close</button>
         </div>
@@ -215,7 +215,7 @@
     <!-- Dev Password Modal -->
     <div id="devPasswordModal" class="modal" style="display: none;">
         <div class="modal-content" style="max-width: 500px;">
-            <h2>⭐ Dev Access</h2>
+            <h2>DEV Access</h2>
             <p style="margin-bottom: 20px; opacity: 0.8;">Enter the dev password to unlock moderation tools:</p>
             <input type="password" id="devPasswordInput" class="message-input" placeholder="Enter password..." style="width: 100%; margin-bottom: 15px; padding: 12px;">
             <div style="display: flex; gap: 10px;">
@@ -227,7 +227,7 @@
 
     <!-- Notification -->
     <div class="notification" id="notification">
-        <span class="notification-icon" id="notificationIcon">✅</span>
+        <span class="notification-icon" id="notificationIcon">✓</span>
         <div class="notification-content">
             <div class="notification-title" id="notificationTitle">Success</div>
             <div class="notification-message" id="notificationMessage"></div>
@@ -399,7 +399,8 @@
                 const roomIcon = document.createElement('span');
                 roomIcon.className = 'room-icon';
                 // Use special icon for devchat
-                roomIcon.textContent = room.code === 'devchat' ? '🔧' : '💬';
+                // Use geometric shape for all rooms
+                roomIcon.setAttribute('data-room-type', room.code === 'devchat' ? 'dev' : 'normal');
                 
                 const roomNameContainer = document.createElement('div');
                 roomNameContainer.className = 'room-name-container';
@@ -493,7 +494,7 @@
                     const chatTitle = document.getElementById('chatTitle');
                     if (chatContainer) chatContainer.classList.add('dev-chat');
                     if (chatHeader) chatHeader.classList.add('dev-chat-header');
-                    if (chatTitle) chatTitle.textContent = '🔧 Dev Chat';
+                    if (chatTitle) chatTitle.textContent = 'Dev Chat';
                     showDevStarIfNeeded();
                 }
             }
@@ -857,7 +858,7 @@
                     if (welcomeMsg) {
                         if (currentRoomCode === 'devchat') {
                             welcomeMsg.classList.add('dev-welcome');
-                            welcomeMsg.querySelector('.message-content').innerHTML = '<p>🔧 Welcome to Dev Chat Room!</p><p style="margin-top: 10px; font-size: 14px; opacity: 0.8;">This is a secret developer chat room.</p>';
+                            welcomeMsg.querySelector('.message-content').innerHTML = '<p>Welcome to Dev Chat Room!</p><p style="margin-top: 10px; font-size: 14px; opacity: 0.8;">This is a secret developer chat room.</p>';
                         } else if (currentRoomCode) {
                             welcomeMsg.querySelector('.message-content p').textContent = 'Welcome to Private Room ' + currentRoomCode + '!';
                         } else {
@@ -1544,7 +1545,7 @@
             // Emojis are already Unicode, so they should display fine
             
             // Use avatar from message data (saved with message), or fallback to profile if it's the current user
-            let userAvatar = avatar || '👤';
+            let userAvatar = avatar || null; // No emoji fallback
             let userAvatarImage = avatarImage || null;
             
             // Fix old image paths in message data
@@ -1601,14 +1602,18 @@
                 // Ignore errors
             }
             
-            // Create avatar HTML
+            // Create avatar HTML - use geometric shape or image
             let avatarHtml = '';
             if (userAvatarImage) {
                 // Base64 data URLs are safe to use directly (they come from profile or message data)
-                avatarHtml = `<img src="${userAvatarImage}" alt="Avatar" class="message-avatar-image" style="width: 32px; height: 32px; border-radius: 50%; margin-right: 8px; object-fit: cover; border: 2px solid rgba(255, 255, 255, 0.2);">`;
-            } else {
-                // Emoji is safe to use directly
+                avatarHtml = `<img src="${userAvatarImage}" alt="Avatar" class="message-avatar-image" style="width: 32px; height: 32px; border-radius: 4px; margin-right: 8px; object-fit: cover; border: 2px solid rgba(0, 255, 255, 0.4);">`;
+            } else if (userAvatar) {
+                // Use emoji if provided (for backward compatibility)
                 avatarHtml = `<span class="message-avatar" style="font-size: 20px; margin-right: 8px;">${userAvatar}</span>`;
+            } else {
+                // Geometric shape fallback - use first letter of username
+                const initial = displayUsername ? displayUsername.charAt(0).toUpperCase() : 'U';
+                avatarHtml = `<div class="message-avatar-geometric" style="width: 32px; height: 32px; margin-right: 8px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(138, 43, 226, 0.2)); border: 2px solid rgba(0, 255, 255, 0.5); border-radius: 4px; color: #00ffff; font-weight: bold; font-size: 14px; text-shadow: 0 0 8px rgba(0, 255, 255, 0.8);">${initial}</div>`;
             }
             
             // Title display (golden color)
@@ -2078,7 +2083,7 @@
             // Always get the latest username, userId, avatar, and title from profile FIRST
             let messageUsername = currentUserName;
             let messageUserId = null;
-            let messageAvatar = '👤';
+            let messageAvatar = null; // No emoji fallback
             let messageAvatarImage = null;
             let messageTitle = null;
             try {
@@ -2416,7 +2421,7 @@
                 roomCodeInput.value = '';
                 
                 // Add to user's rooms (devchat is always valid)
-                addUserRoom('devchat', '🔧 Dev Chat');
+                addUserRoom('devchat', 'Dev Chat');
                 
                 // Switch to dev chat
                 switchToRoom('devchat');
@@ -2645,13 +2650,13 @@
 
             // Set icon based on type
             if (type === 'success') {
-                notificationIcon.textContent = '✅';
+                notificationIcon.textContent = '✓';
                 notification.className = 'notification success show';
             } else if (type === 'error') {
-                notificationIcon.textContent = '❌';
+                notificationIcon.textContent = '✗';
                 notification.className = 'notification error show';
             } else {
-                notificationIcon.textContent = 'ℹ️';
+                notificationIcon.textContent = 'i';
                 notification.className = 'notification info show';
             }
 
@@ -2710,19 +2715,19 @@
                 const titleNames = unlockedTitles.map(id => TITLES[id] || id).join(', ') || 'None';
                 const equippedTitleName = TITLES[equippedTitle] || equippedTitle || 'None';
                 
-                const statsMessage = `📊 Your Statistics
+                const statsMessage = `STATISTICS
 
-👤 Name: ${displayName}
-⭐ Status: ${isDev ? 'Developer' : (isVip ? 'VIP' : 'User')}
-📅 Joined: ${joinDate} (${daysSinceJoin} days ago)
+NAME: ${displayName}
+STATUS: ${isDev ? 'Developer' : (isVip ? 'VIP' : 'User')}
+JOINED: ${joinDate} (${daysSinceJoin} days ago)
 
-💬 Messages Sent: ${messageCount}
-💝 Kind Words: ${kindWordCount}
+MESSAGES: ${messageCount}
+KIND WORDS: ${kindWordCount}
 
-🏆 Titles Unlocked: ${unlockedTitles.length}
+TITLES UNLOCKED: ${unlockedTitles.length}
    ${titleNames}
    
-👑 Equipped Title: ${equippedTitleName}`;
+EQUIPPED: ${equippedTitleName}`;
 
                 showNotification('info', 'Your Stats', statsMessage);
             } catch (e) {
@@ -2733,7 +2738,7 @@
         
         // Show help (zero reads)
         function showHelp() {
-            const helpMessage = `📚 Developer Commands
+            const helpMessage = `DEVELOPER COMMANDS
 
 /announce [message]
    Send site-wide announcement
@@ -2775,11 +2780,11 @@
             const endTime = performance.now();
             const responseTime = (endTime - startTime).toFixed(2);
             
-            const pingMessage = `🏓 Pong!
+            const pingMessage = `PONG
 
-⚡ Response Time: ${responseTime}ms
-🕐 Timestamp: ${new Date().toLocaleTimeString()}
-✅ System: Operational`;
+RESPONSE TIME: ${responseTime}ms
+TIMESTAMP: ${new Date().toLocaleTimeString()}
+STATUS: Operational`;
 
             showNotification('success', 'Ping Test', pingMessage);
         }
@@ -3120,7 +3125,7 @@
                 const displayName = profile.displayName || 'N/A';
                 const foundUsername = profile.username || 'N/A';
                 const bio = profile.bio || 'No bio';
-                const avatar = profile.avatar || '👤';
+                const avatar = profile.avatar || null;
                 const avatarImage = profile.avatarImage || null;
                 const equippedTitle = profile.equippedTitle || 'None';
                 const unlockedTitles = profile.unlockedTitles || [];
@@ -3152,20 +3157,20 @@
                 const titleNames = unlockedTitles.map(id => TITLES[id] || id).join(', ') || 'None';
                 const equippedTitleName = TITLES[equippedTitle] || equippedTitle || 'None';
                 
-                let userInfo = `👤 User Profile
+                let userInfo = `USER PROFILE
 
-🆔 User ID: ${userId}
-📛 Display Name: ${displayName}
-👤 Username: ${foundUsername}
-⭐ Status: ${isDev ? 'Developer' : (isVip ? 'VIP' : 'User')}
-📅 Joined: ${joinDate}
+ID: ${userId}
+DISPLAY NAME: ${displayName}
+USERNAME: ${foundUsername}
+STATUS: ${isDev ? 'Developer' : (isVip ? 'VIP' : 'User')}
+JOINED: ${joinDate}
 
-${avatarImage ? '🖼️ Avatar: [Image]' : `😊 Avatar: ${avatar}`}
-👑 Equipped Title: ${equippedTitleName}
-🏆 Titles Unlocked: ${unlockedTitles.length}
+${avatarImage ? 'AVATAR: [Image]' : `AVATAR: ${avatar}`}
+EQUIPPED TITLE: ${equippedTitleName}
+TITLES UNLOCKED: ${unlockedTitles.length}
    ${titleNames}
 
-📝 Bio: ${bio}`;
+BIO: ${bio}`;
                 
                 if (userDocs.length > 1) {
                     userInfo += `\n\n⚠️ Note: ${userDocs.length} users found with this username. Showing the first one.`;
@@ -3606,7 +3611,7 @@ ${avatarImage ? '🖼️ Avatar: [Image]' : `😊 Avatar: ${avatar}`}
                     devStarButton.style.display = 'none';
                     devPasswordModal.style.display = 'none';
                     devPasswordInput.value = '';
-                    alert('⭐ Dev access granted! You now have moderation tools.');
+                    alert('DEV access granted! You now have moderation tools.');
                     
                     // Setup message handlers for newly granted dev
                     setupMessageClickHandlers();
@@ -3787,7 +3792,7 @@ ${avatarImage ? '🖼️ Avatar: [Image]' : `😊 Avatar: ${avatar}`}
                 copyRoomCodeButton.textContent = '✓';
                 copyRoomCodeButton.style.background = 'rgba(81, 207, 102, 0.3)';
                 setTimeout(() => {
-                    copyRoomCodeButton.textContent = '📋';
+                    copyRoomCodeButton.textContent = 'COPY';
                     copyRoomCodeButton.style.background = '';
                 }, 2000);
             }).catch(() => {
@@ -3800,7 +3805,7 @@ ${avatarImage ? '🖼️ Avatar: [Image]' : `😊 Avatar: ${avatar}`}
                 document.body.removeChild(textArea);
                 copyRoomCodeButton.textContent = '✓';
                 setTimeout(() => {
-                    copyRoomCodeButton.textContent = '📋';
+                    copyRoomCodeButton.textContent = 'COPY';
                 }, 2000);
             });
         }
