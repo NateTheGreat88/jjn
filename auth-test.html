@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JNJ Auth Test - Sign In</title>
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    <link rel="stylesheet" href="css/auth.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .test-container {
+            text-align: center;
+            color: white;
+            padding: 20px;
+        }
+        
+        .test-container h1 {
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        
+        .test-container p {
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+        
+        .status-info {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 14px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .status-info strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .sign-out-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .sign-out-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+    <!-- Firebase SDK for Authentication -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="js/auth.js" defer></script>
+</head>
+<body>
+    <div class="test-container">
+        <h1>JNJ Authentication Test</h1>
+        <p>This page tests the sign-in functionality from index.html</p>
+        
+        <div id="statusInfo" class="status-info" style="display: none;">
+            <strong>Authentication Status:</strong>
+            <div id="statusText">Loading...</div>
+        </div>
+        
+        <button id="signOutBtn" class="sign-out-btn" style="display: none;">Sign Out</button>
+    </div>
+    
+    <!-- Authentication Modal -->
+    <div class="auth-overlay" id="authOverlay">
+        <div class="auth-modal">
+            <h2>Welcome to JNJ Website</h2>
+            <p>Sign in to save your progress, secrets, and preferences</p>
+            
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="signin">Sign In</button>
+                <button class="auth-tab" data-tab="signup">Create Account</button>
+            </div>
+            
+            <div id="authError" class="auth-error"></div>
+            <div id="authSuccess" class="auth-success"></div>
+            
+            <form id="signInForm" class="auth-form active">
+                <div class="auth-form-group">
+                    <label for="signInEmail">Email</label>
+                    <input type="email" id="signInEmail" placeholder="Enter your email" required>
+                </div>
+                <div class="auth-form-group">
+                    <label for="signInPassword">Password</label>
+                    <input type="password" id="signInPassword" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="auth-submit-btn">Sign In</button>
+                <div id="signInLoading" class="auth-loading">Signing in...</div>
+            </form>
+            
+            <form id="signUpForm" class="auth-form">
+                <div class="auth-form-group">
+                    <label for="signUpEmail">Email</label>
+                    <input type="email" id="signUpEmail" placeholder="Enter your email" required>
+                </div>
+                <div class="auth-form-group">
+                    <label for="signUpPassword">Password</label>
+                    <input type="password" id="signUpPassword" placeholder="Create a password" required minlength="6">
+                </div>
+                <div class="auth-form-group">
+                    <label for="signUpPasswordConfirm">Confirm Password</label>
+                    <input type="password" id="signUpPasswordConfirm" placeholder="Confirm your password" required minlength="6">
+                </div>
+                <button type="submit" class="auth-submit-btn">Create Account</button>
+                <div id="signUpLoading" class="auth-loading">Creating account...</div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Wait for auth system to be ready
+        function waitForAuthSystem() {
+            if (window.authSystem) {
+                initAuthModal();
+                checkAuthState();
+            } else {
+                setTimeout(waitForAuthSystem, 100);
+            }
+        }
+        
+        // Initialize auth modal functionality
+        function initAuthModal() {
+            const authOverlay = document.getElementById('authOverlay');
+            
+            // Tab switching
+            const tabs = authOverlay.querySelectorAll('.auth-tab');
+            const forms = authOverlay.querySelectorAll('.auth-form');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.dataset.tab;
+                    
+                    tabs.forEach(t => t.classList.remove('active'));
+                    forms.forEach(f => f.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(tabName === 'signin' ? 'signInForm' : 'signUpForm').classList.add('active');
+                    
+                    // Clear errors
+                    document.getElementById('authError').classList.remove('show');
+                    document.getElementById('authSuccess').classList.remove('show');
+                });
+            });
+            
+            // Sign in form
+            document.getElementById('signInForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('signInEmail').value.trim();
+                const password = document.getElementById('signInPassword').value;
+                const errorDiv = document.getElementById('authError');
+                const successDiv = document.getElementById('authSuccess');
+                const loadingDiv = document.getElementById('signInLoading');
+                const submitBtn = e.target.querySelector('.auth-submit-btn');
+                
+                errorDiv.classList.remove('show');
+                successDiv.classList.remove('show');
+                loadingDiv.classList.add('show');
+                submitBtn.disabled = true;
+                
+                if (window.authSystem) {
+                    const result = await window.authSystem.signIn(email, password);
+                    loadingDiv.classList.remove('show');
+                    submitBtn.disabled = false;
+                    
+                    if (result.success) {
+                        successDiv.textContent = 'Signed in successfully!';
+                        successDiv.classList.add('show');
+                        setTimeout(() => {
+                            authOverlay.style.display = 'none';
+                            document.body.classList.add('authenticated');
+                            updateStatus();
+                        }, 1000);
+                    } else {
+                        let errorMsg = result.error || 'Failed to sign in. Please try again.';
+                        if (errorMsg.includes('configuration-not-found')) {
+                            errorMsg = 'Firebase Authentication is not enabled. Please enable Email/Password authentication in Firebase Console. See FIREBASE_AUTH_SETUP.md for instructions.';
+                        }
+                        errorDiv.textContent = errorMsg;
+                        errorDiv.classList.add('show');
+                    }
+                } else {
+                    loadingDiv.classList.remove('show');
+                    submitBtn.disabled = false;
+                    errorDiv.textContent = 'Authentication system not loaded. Please refresh the page.';
+                    errorDiv.classList.add('show');
+                }
+            });
+            
+            // Sign up form
+            document.getElementById('signUpForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('signUpEmail').value.trim();
+                const password = document.getElementById('signUpPassword').value;
+                const passwordConfirm = document.getElementById('signUpPasswordConfirm').value;
+                const errorDiv = document.getElementById('authError');
+                const successDiv = document.getElementById('authSuccess');
+                const loadingDiv = document.getElementById('signUpLoading');
+                const submitBtn = e.target.querySelector('.auth-submit-btn');
+                
+                errorDiv.classList.remove('show');
+                successDiv.classList.remove('show');
+                
+                // Validate passwords match
+                if (password !== passwordConfirm) {
+                    errorDiv.textContent = 'Passwords do not match!';
+                    errorDiv.classList.add('show');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    errorDiv.textContent = 'Password must be at least 6 characters long!';
+                    errorDiv.classList.add('show');
+                    return;
+                }
+                
+                loadingDiv.classList.add('show');
+                submitBtn.disabled = true;
+                
+                if (window.authSystem) {
+                    const result = await window.authSystem.signUp(email, password);
+                    loadingDiv.classList.remove('show');
+                    submitBtn.disabled = false;
+                    
+                    if (result.success) {
+                        successDiv.textContent = 'Account created successfully!';
+                        successDiv.classList.add('show');
+                        setTimeout(() => {
+                            authOverlay.style.display = 'none';
+                            document.body.classList.add('authenticated');
+                            updateStatus();
+                        }, 1000);
+                    } else {
+                        let errorMsg = result.error || 'Failed to create account. Please try again.';
+                        if (errorMsg.includes('configuration-not-found')) {
+                            errorMsg = 'Firebase Authentication is not enabled. Please enable Email/Password authentication in Firebase Console. See FIREBASE_AUTH_SETUP.md for instructions.';
+                        }
+                        errorDiv.textContent = errorMsg;
+                        errorDiv.classList.add('show');
+                    }
+                } else {
+                    loadingDiv.classList.remove('show');
+                    submitBtn.disabled = false;
+                    errorDiv.textContent = 'Authentication system not loaded. Please refresh the page.';
+                    errorDiv.classList.add('show');
+                }
+            });
+        }
+        
+        // Check auth state and show/hide modal
+        function checkAuthState() {
+            let authStateDetermined = false;
+            let authCheckTimeout = null;
+            
+            function performCheck() {
+                if (window.authSystem) {
+                    const isAuth = window.authSystem.isAuthenticated();
+                    const user = window.authSystem.getUser();
+                    
+                    if (isAuth && user) {
+                        // User is signed in
+                        document.getElementById('authOverlay').style.display = 'none';
+                        document.body.classList.add('authenticated');
+                        updateStatus();
+                    } else {
+                        // User is not signed in
+                        document.getElementById('authOverlay').style.display = 'flex';
+                        document.body.classList.remove('authenticated');
+                        updateStatus();
+                    }
+                    
+                    authStateDetermined = true;
+                    if (authCheckTimeout) {
+                        clearTimeout(authCheckTimeout);
+                    }
+                } else {
+                    // Auth system not ready yet, wait a bit more
+                    if (!authStateDetermined) {
+                        authCheckTimeout = setTimeout(performCheck, 100);
+                    }
+                }
+            }
+            
+            // Initial check
+            performCheck();
+            
+            // Listen for auth state changes
+            window.addEventListener('authStateChanged', () => {
+                performCheck();
+            });
+        }
+        
+        // Update status display
+        function updateStatus() {
+            const statusInfo = document.getElementById('statusInfo');
+            const statusText = document.getElementById('statusText');
+            const signOutBtn = document.getElementById('signOutBtn');
+            
+            if (window.authSystem && window.authSystem.isAuthenticated()) {
+                const user = window.authSystem.getUser();
+                statusInfo.style.display = 'block';
+                statusText.innerHTML = `
+                    <strong style="color: #86efac;">✓ Signed In</strong><br>
+                    Email: ${user.email}<br>
+                    UID: ${user.uid}
+                `;
+                signOutBtn.style.display = 'block';
+            } else {
+                statusInfo.style.display = 'block';
+                statusText.innerHTML = '<strong style="color: #fca5a5;">✗ Not Signed In</strong>';
+                signOutBtn.style.display = 'none';
+            }
+        }
+        
+        // Sign out button
+        document.getElementById('signOutBtn').addEventListener('click', async () => {
+            if (window.authSystem) {
+                const result = await window.authSystem.signOut();
+                if (result.success) {
+                    document.getElementById('authOverlay').style.display = 'flex';
+                    document.body.classList.remove('authenticated');
+                    updateStatus();
+                }
+            }
+        });
+        
+        // Start initialization when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', waitForAuthSystem);
+        } else {
+            waitForAuthSystem();
+        }
+    </script>
+</body>
+</html>
