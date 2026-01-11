@@ -448,8 +448,8 @@
                     </div>
                 </div>
 
-                <!-- Theme Voting Section -->
-                <div class="lumina-card p-10 bg-gradient-to-br from-purple-500/10 to-transparent">
+                <!-- Theme Voting Section (Dev Only) -->
+                <div id="themeVotingSection" class="lumina-card p-10 bg-gradient-to-br from-purple-500/10 to-transparent" style="display: none;">
                     <div class="card-glow"></div>
                     <div class="space-y-6">
                         <div class="flex items-center justify-between">
@@ -1802,12 +1802,34 @@
         const VOTE_COLLECTION = 'themeVotes';
         
         // Check if user is dev
-        function isDev() {
+        async function isDev() {
             try {
+                // First check localStorage (fastest)
                 const profileData = localStorage.getItem('jnjUserProfile');
                 if (profileData) {
                     const profile = JSON.parse(profileData);
-                    return profile.isDev === true;
+                    if (profile.isDev === true) {
+                        return true;
+                    }
+                }
+                
+                // If not in localStorage and user is authenticated, check Firebase
+                if (window.authSystem && window.authSystem.isAuthenticated()) {
+                    const user = window.authSystem.getUser();
+                    if (user && user.uid) {
+                        try {
+                            const userData = await window.authSystem.loadUserData(user.uid);
+                            if (userData && userData.isDev === true) {
+                                // Update localStorage
+                                const profile = JSON.parse(localStorage.getItem('jnjUserProfile') || '{}');
+                                profile.isDev = true;
+                                localStorage.setItem('jnjUserProfile', JSON.stringify(profile));
+                                return true;
+                            }
+                        } catch (e) {
+                            console.error('Error loading dev status from Firebase:', e);
+                        }
+                    }
                 }
             } catch (e) {
                 console.error('Error checking dev status:', e);
@@ -1839,11 +1861,16 @@
                     return;
                 }
                 
+                // Initialize Firebase if needed
                 if (!firebase.apps || firebase.apps.length === 0) {
                     firebase.initializeApp(firebaseConfig);
                 }
                 
                 const db = firebase.firestore();
+                if (!db) {
+                    throw new Error('Firestore not initialized');
+                }
+                
                 const votesSnapshot = await db.collection(VOTE_COLLECTION).get();
                 
                 let upVotes = 0;
@@ -1861,7 +1888,8 @@
                 updateVoteDisplay(upVotes, downVotes);
                 
                 // Show dev details if dev
-                if (isDev()) {
+                const devStatus = await isDev();
+                if (devStatus) {
                     showDevVoteDetails(upVotes, downVotes);
                 }
                 
@@ -1975,11 +2003,15 @@
             // Save to Firebase
             try {
                 if (typeof firebaseConfig !== 'undefined' && typeof firebase !== 'undefined') {
+                    // Initialize Firebase if needed
                     if (!firebase.apps || firebase.apps.length === 0) {
                         firebase.initializeApp(firebaseConfig);
                     }
                     
                     const db = firebase.firestore();
+                    if (!db) {
+                        throw new Error('Firestore not initialized');
+                    }
                     
                     // Save/update vote
                     await db.collection(VOTE_COLLECTION).doc(userId).set({
@@ -1987,6 +2019,8 @@
                         userId: userId,
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     }, { merge: true });
+                    
+                    console.log('Vote saved to Firebase successfully');
                     
                     // Reload votes to update counts
                     await loadVotes();
@@ -2002,12 +2036,13 @@
                     localStorage.setItem('jnjVoteCounts', JSON.stringify(counts));
                     updateVoteDisplay(counts.up, counts.down);
                     
-                    if (isDev()) {
+                    const devStatus = await isDev();
+                    if (devStatus) {
                         showDevVoteDetails(counts.up, counts.down);
                     }
                 }
             } catch (error) {
-                console.error('Error submitting vote:', error);
+                console.error('Error submitting vote to Firebase:', error);
                 // Still update localStorage counts
                 const counts = JSON.parse(localStorage.getItem('jnjVoteCounts') || '{"up":0,"down":0}');
                 if (existingVote === 'up') counts.up--;
@@ -2019,49 +2054,67 @@
                 localStorage.setItem('jnjVoteCounts', JSON.stringify(counts));
                 updateVoteDisplay(counts.up, counts.down);
                 
-                if (isDev()) {
+                const devStatus = await isDev();
+                if (devStatus) {
                     showDevVoteDetails(counts.up, counts.down);
                 }
             }
         }
         
         // Initialize voting system
-        function initVotingSystem() {
-            const upBtn = document.getElementById('voteThumbsUp');
-            const downBtn = document.getElementById('voteThumbsDown');
+        async function initVotingSystem() {
+            // Check if user is dev - only show voting section if dev
+            const devStatus = await isDev();
+            const votingSection = document.getElementById('themeVotingSection');
             
-            if (upBtn) {
-                upBtn.addEventListener('click', () => submitVote('up'));
-            }
-            
-            if (downBtn) {
-                downBtn.addEventListener('click', () => submitVote('down'));
-            }
-            
-            // Load votes
-            loadVotes();
-            
-            // Check dev status and show details
-            if (isDev()) {
-                // Wait a bit for votes to load
-                setTimeout(() => {
-                    loadVotes();
-                }, 500);
+            if (devStatus && votingSection) {
+                votingSection.style.display = 'block';
+                
+                const upBtn = document.getElementById('voteThumbsUp');
+                const downBtn = document.getElementById('voteThumbsDown');
+                
+                if (upBtn) {
+                    upBtn.addEventListener('click', () => submitVote('up'));
+                }
+                
+                if (downBtn) {
+                    downBtn.addEventListener('click', () => submitVote('down'));
+                }
+                
+                // Load votes
+                await loadVotes();
+            } else if (votingSection) {
+                // Hide voting section for non-devs
+                votingSection.style.display = 'none';
             }
         }
         
         // Initialize when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initVotingSystem);
-        } else {
-            initVotingSystem();
+        async function initVotingWhenReady() {
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    // Wait for auth system to be ready
+                    setTimeout(initVotingSystem, 500);
+                });
+            } else {
+                // Wait for auth system to be ready
+                setTimeout(initVotingSystem, 500);
+            }
         }
         
+        initVotingWhenReady();
+        
         // Re-check dev status when auth state changes
-        window.addEventListener('authStateChanged', () => {
-            setTimeout(() => {
-                if (isDev()) {
-                    loadVotes();
+        window.addEventListener('authStateChanged', async () => {
+            setTimeout(async () => {
+                const devStatus = await isDev();
+                const votingSection = document.getElementById('themeVotingSection');
+                
+                if (devStatus && votingSection) {
+                    votingSection.style.display = 'block';
+                    await loadVotes();
+                } else if (votingSection) {
+                    votingSection.style.display = 'none';
                 }
             }, 500);
         });
