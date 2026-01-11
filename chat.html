@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat - JNJ Website</title>
     <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;300;400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/chat.css">
     <link rel="stylesheet" href="css/animated-background.css">
     <link rel="stylesheet" href="css/secret-pages.css">
@@ -23,6 +24,15 @@
     <script src="js/quest-tracker.js" defer></script>
 </head>
 <body>
+    <!-- Quantum Canvas Background -->
+    <div class="prism-bg">
+        <div class="orb" style="width: 800px; height: 800px; background: rgba(0, 200, 255, 0.4); top: -40px; left: -40px;"></div>
+        <div class="orb" style="width: 600px; height: 600px; background: rgba(112, 0, 255, 0.3); bottom: 10px; right: 10px; animation-delay: -7s;"></div>
+    </div>
+
+    <!-- Phantom Cursor Ring -->
+    <div class="prism-cursor-ring" id="cursor-ring"></div>
+
     <a href="index.html" class="back-button">← Back to Home</a>
     
     <div class="chat-container" id="chatContainer">
@@ -122,7 +132,11 @@
                     style="display: none;"
                     disabled
                 >
-                <button id="sendButton" class="send-button" disabled>Send</button>
+                <button id="sendButton" class="send-button core-btn" disabled>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 32px; height: 32px;">
+                        <path d="M13 5l7 7m0 0l-7 7m7-7H3" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                </button>
             </div>
             <div id="imagePreview" class="image-preview" style="display: none;">
                 <img id="previewImage" src="" alt="Preview">
@@ -4035,6 +4049,59 @@ ${avatarImage ? '🖼️ Avatar: [Image]' : `😊 Avatar: ${avatar}`}
                 initSidebar();
             }, 100);
         }
+
+        // LUMINA Cursor Ring and Card Glow Effects
+        const ring = document.getElementById('cursor-ring');
+        if (ring) {
+            document.addEventListener('mousemove', (e) => {
+                if (ring) {
+                    ring.style.transform = `translate(${e.clientX - 20}px, ${e.clientY - 20}px)`;
+                }
+
+                // Card Glow Logic
+                document.querySelectorAll('.lumina-card, .chat-sidebar, .chat-messages, .chat-input-container, .modal-content, .notification').forEach(card => {
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    card.style.setProperty('--mouse-x', `${x}px`);
+                    card.style.setProperty('--mouse-y', `${y}px`);
+                });
+            });
+
+            document.addEventListener('mousedown', () => {
+                if (ring) {
+                    ring.style.scale = '0.7';
+                    ring.style.opacity = '1';
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (ring) {
+                    ring.style.scale = '1';
+                    ring.style.opacity = '0.6';
+                }
+            });
+        }
+
+        // Add lumina-card class to main containers
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebar = document.getElementById('chatSidebar');
+            const messages = document.getElementById('chatMessages');
+            const inputContainer = document.querySelector('.chat-input-container');
+            
+            if (sidebar) sidebar.classList.add('lumina-card');
+            if (messages) messages.classList.add('lumina-card');
+            if (inputContainer) inputContainer.classList.add('lumina-card');
+            
+            // Add card-glow divs
+            [sidebar, messages, inputContainer].forEach(el => {
+                if (el) {
+                    const glow = document.createElement('div');
+                    glow.className = 'card-glow';
+                    el.appendChild(glow);
+                }
+            });
+        });
         
         // Also set up event listeners directly as fallback (with retry)
         function setupSidebarButtons() {
