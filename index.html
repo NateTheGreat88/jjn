@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JNJ Website</title>
     <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-TQH7DJ7YYG"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-TQH7DJ7YYG');
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;300;400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/index.css">
@@ -113,18 +122,20 @@
             </div>
         </header>
         
-        <!-- Announcement Panel -->
-            <div id="announcementPanel" class="announcement-panel" style="display: none;">
+        <!-- Announcement Modal Overlay -->
+        <div id="announcementOverlay" class="announcement-overlay" style="display: none;" onclick="toggleAnnouncement()">
+            <div class="announcement-panel" onclick="event.stopPropagation()">
                 <div class="announcement-panel-content">
                     <div class="announcement-panel-header">
                         <span class="announcement-panel-icon">📢</span>
                         <h3>Announcement</h3>
                         <button class="announcement-panel-close" onclick="toggleAnnouncement()">×</button>
-            </div>
+                    </div>
                     <div id="announcementPanelText" class="announcement-panel-text"></div>
                     <div id="announcementPanelAuthor" class="announcement-panel-author"></div>
+                </div>
             </div>
-            </div>
+        </div>
 
         <!-- Refined Layout -->
         <main class="grid grid-cols-1 xl:grid-cols-12 gap-10">
@@ -1027,22 +1038,23 @@
                     
         // Toggle announcement panel
         function toggleAnnouncement() {
-            const panel = document.getElementById('announcementPanel');
+            const overlay = document.getElementById('announcementOverlay');
             const bubble = document.getElementById('announcementBubble');
             
-            if (!panel) {
-                console.warn('Announcement panel not found');
+            if (!overlay) {
+                console.warn('Announcement overlay not found');
                 return;
             }
             
-            // Check if panel is currently visible
-            const isVisible = panel.style.display === 'block' || (panel.style.display === '' && window.getComputedStyle(panel).display !== 'none');
+            // Check if overlay is currently visible
+            const isVisible = overlay.style.display === 'block' || (overlay.style.display === '' && window.getComputedStyle(overlay).display !== 'none');
             
             if (isVisible) {
-                // Hide panel
-                panel.style.display = 'none';
+                // Hide overlay
+                overlay.style.display = 'none';
+                document.body.style.overflow = ''; // Re-enable scrolling
             } else {
-                // Show panel
+                // Show overlay
                 if (currentAnnouncement) {
                     const textEl = document.getElementById('announcementPanelText');
                     const authorEl = document.getElementById('announcementPanelAuthor');
@@ -1067,7 +1079,8 @@
                     if (authorEl) authorEl.textContent = '';
                 }
                 
-                panel.style.display = 'block';
+                overlay.style.display = 'block';
+                document.body.style.overflow = 'hidden'; // Prevent background scrolling
             }
         }
         
