@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JNJ AI | Powered by Puter.js</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Puter.js SDK -->
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        /* Custom scrollbar for a cleaner look */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #cbd5e1;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 h-screen flex flex-col font-sans text-slate-900">
+
+    <!-- Navbar -->
+    <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-indigo-200 shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight">JNJ AI</h1>
+                <p class="text-xs text-slate-500 flex items-center gap-1">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    Online Assistant
+                </p>
+            </div>
+        </div>
+        <button onclick="window.location.reload()" class="text-slate-400 hover:text-slate-600 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+        </button>
+    </header>
+
+    <!-- Chat Container -->
+    <main id="chat-window" class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 custom-scrollbar">
+        <!-- Initial Message -->
+        <div class="flex items-start gap-3 max-w-3xl">
+            <div class="w-8 h-8 rounded-full bg-slate-200 flex-shrink-0 flex items-center justify-center text-xs font-bold text-slate-600">JNJ</div>
+            <div class="bg-white border border-slate-200 p-4 rounded-2xl rounded-tl-none shadow-sm">
+                <p class="text-sm leading-relaxed">Hello! I'm <strong>JNJ AI</strong>, your website's assistant. How can I help you today?</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Input Area -->
+    <footer class="p-4 md:p-6 bg-white border-t border-slate-200">
+        <div class="max-w-4xl mx-auto">
+            <form id="chat-form" class="relative flex items-center">
+                <input 
+                    type="text" 
+                    id="user-input" 
+                    placeholder="Type your message..." 
+                    autofocus
+                    class="w-full bg-slate-100 border-none rounded-2xl py-4 pl-6 pr-14 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm transition-all shadow-inner"
+                >
+                <button 
+                    type="submit" 
+                    id="send-btn"
+                    class="absolute right-2 p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                    </svg>
+                </button>
+            </form>
+            <p class="text-center text-[10px] text-slate-400 mt-3 uppercase tracking-widest font-semibold">
+                Powered by Puter.js • Developed for JNJ
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        const chatWindow = document.getElementById('chat-window');
+        const chatForm = document.getElementById('chat-form');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        // Function to add a message to the UI
+        function addMessage(text, isUser = false) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''} max-w-3xl ${isUser ? 'ml-auto' : ''}`;
+
+            const avatar = document.createElement('div');
+            avatar.className = `w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold ${isUser ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-600'}`;
+            avatar.innerText = isUser ? 'ME' : 'JNJ';
+
+            const bubble = document.createElement('div');
+            bubble.className = `p-4 rounded-2xl shadow-sm border ${
+                isUser 
+                ? 'bg-indigo-600 text-white border-indigo-500 rounded-tr-none' 
+                : 'bg-white text-slate-800 border-slate-200 rounded-tl-none'
+            }`;
+            
+            const messageText = document.createElement('p');
+            messageText.className = 'text-sm leading-relaxed';
+            messageText.innerText = text;
+
+            bubble.appendChild(messageText);
+            wrapper.appendChild(avatar);
+            wrapper.appendChild(bubble);
+            chatWindow.appendChild(wrapper);
+
+            // Scroll to bottom
+            chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'smooth' });
+        }
+
+        // Typing indicator element
+        function createTypingIndicator() {
+            const id = 'typing-indicator';
+            const indicator = document.createElement('div');
+            indicator.id = id;
+            indicator.className = 'flex items-start gap-3 max-w-3xl animate-pulse';
+            indicator.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-slate-200 flex-shrink-0 flex items-center justify-center text-xs font-bold text-slate-600 italic">...</div>
+                <div class="bg-white border border-slate-200 p-4 rounded-2xl rounded-tl-none shadow-sm text-slate-400 text-xs">
+                    JNJ is thinking...
+                </div>
+            `;
+            chatWindow.appendChild(indicator);
+            chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'smooth' });
+            return id;
+        }
+
+        chatForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            addMessage(text, true);
+            userInput.value = '';
+            
+            userInput.disabled = true;
+            sendBtn.disabled = true;
+
+            const indicatorId = createTypingIndicator();
+
+            try {
+                // Call Puter.js AI with a system prompt to define its identity
+                const response = await puter.ai.chat(
+                    `The user says: ${text}`, 
+                    {
+                        // This "primary_directive" helps define the AI's personality
+                        primary_directive: "Your name is JNJ AI. You are a friendly, helpful, and polite assistant for the JNJ website. Always identify as JNJ AI if asked. Keep responses safe and appropriate for all ages."
+                    }
+                );
+                
+                document.getElementById(indicatorId).remove();
+                addMessage(response);
+            } catch (error) {
+                if(document.getElementById(indicatorId)) document.getElementById(indicatorId).remove();
+                addMessage("I'm sorry, I'm having trouble connecting right now. Please try again!");
+                console.error("Puter Error:", error);
+            } finally {
+                userInput.disabled = false;
+                sendBtn.disabled = false;
+                userInput.focus();
+            }
+        };
+    </script>
+</body>
+</html>
