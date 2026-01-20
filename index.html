@@ -88,7 +88,12 @@
                     autocomplete="off"
                 >
             </div>
-            <div class="flex gap-3 flex-wrap">
+            <div class="flex gap-3 flex-wrap items-center">
+                <a href="chat.html" class="chat-button-main">
+                    <span class="chat-button-icon">💬</span>
+                    <span class="chat-button-text">Chat</span>
+                    <div class="chat-button-glow"></div>
+                </a>
                 <a href="profile.html" class="modern-btn modern-btn-primary" id="profileButton">👤 Profile</a>
                 <a href="events.html" class="modern-btn modern-btn-secondary" id="eventsButton">🎉 Events</a>
                 <a href="quests.html" class="modern-btn modern-btn-accent">⚔️ Quests</a>
@@ -130,10 +135,10 @@
                         <span class="announcement-panel-icon">📢</span>
                         <h3>Announcement</h3>
                         <button class="announcement-panel-close" onclick="toggleAnnouncement()">×</button>
-                    </div>
+            </div>
                     <div id="announcementPanelText" class="announcement-panel-text"></div>
                     <div id="announcementPanelAuthor" class="announcement-panel-author"></div>
-                </div>
+            </div>
             </div>
         </div>
 
@@ -1061,17 +1066,17 @@
                     
                     if (textEl) textEl.textContent = currentAnnouncement.text;
                     if (authorEl) authorEl.textContent = `- ${currentAnnouncement.createdBy || 'Developer'}`;
-                    
-                    // Mark as read
-                    if (announcementId) {
-                        const readAnnouncements = JSON.parse(localStorage.getItem('jnjReadAnnouncements') || '[]');
-                        if (!readAnnouncements.includes(announcementId)) {
-                            readAnnouncements.push(announcementId);
-                            localStorage.setItem('jnjReadAnnouncements', JSON.stringify(readAnnouncements));
-                            if (bubble) bubble.classList.remove('unread');
-                        }
+                
+                // Mark as read
+                if (announcementId) {
+                    const readAnnouncements = JSON.parse(localStorage.getItem('jnjReadAnnouncements') || '[]');
+                    if (!readAnnouncements.includes(announcementId)) {
+                        readAnnouncements.push(announcementId);
+                        localStorage.setItem('jnjReadAnnouncements', JSON.stringify(readAnnouncements));
+                        if (bubble) bubble.classList.remove('unread');
                     }
-                } else {
+                }
+            } else {
                     // No announcement available, show placeholder
                     const textEl = document.getElementById('announcementPanelText');
                     if (textEl) textEl.textContent = 'No announcements at this time.';

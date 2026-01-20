@@ -2094,6 +2094,14 @@ h1.glitch-text:hover {
         width: 100%;
     }
     
+    .chat-button-main {
+        width: 100%;
+        justify-content: center;
+        padding: 16px 24px;
+        font-size: 18px;
+        order: -1; /* Put chat button first on mobile */
+    }
+    
     .about-button {
         width: 100%;
         justify-content: center;
@@ -2165,6 +2173,103 @@ h1.glitch-text:hover {
 ::-webkit-scrollbar { width: 0; }
 
 /* Modern Button Styles - Solid, not glass */
+/* Main Chat Button - Prominent Feature */
+.chat-button-main {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 28px;
+    border-radius: 16px;
+    font-weight: 700;
+    font-size: 16px;
+    text-decoration: none;
+    transition: all 0.3s var(--ease-out-expo);
+    border: 2px solid rgba(0, 242, 255, 0.5);
+    background: linear-gradient(135deg, rgba(0, 242, 255, 0.2) 0%, rgba(112, 0, 255, 0.2) 100%);
+    color: var(--lumina-glow);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 25px rgba(0, 242, 255, 0.4), 0 0 0 0 rgba(0, 242, 255, 0);
+    z-index: 1;
+    font-family: var(--font-main);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.chat-button-main::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0, 242, 255, 0.3) 0%, rgba(112, 0, 255, 0.3) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+}
+
+.chat-button-main:hover {
+    transform: translateY(-3px) scale(1.05);
+    border-color: var(--lumina-glow);
+    background: linear-gradient(135deg, rgba(0, 242, 255, 0.3) 0%, rgba(112, 0, 255, 0.3) 100%);
+    box-shadow: 0 8px 40px rgba(0, 242, 255, 0.6), 0 0 60px rgba(112, 0, 255, 0.4);
+    color: #fff;
+}
+
+.chat-button-main:hover::before {
+    opacity: 1;
+}
+
+.chat-button-main:active {
+    transform: translateY(-1px) scale(1.02);
+}
+
+.chat-button-icon {
+    font-size: 20px;
+    display: inline-block;
+    animation: chatPulse 2s ease-in-out infinite;
+    filter: drop-shadow(0 0 8px rgba(0, 242, 255, 0.6));
+}
+
+.chat-button-text {
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+}
+
+.chat-button-glow {
+    position: absolute;
+    inset: -50%;
+    background: radial-gradient(circle, rgba(0, 242, 255, 0.4) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+    animation: chatGlow 3s ease-in-out infinite;
+}
+
+.chat-button-main:hover .chat-button-glow {
+    opacity: 1;
+}
+
+@keyframes chatPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+@keyframes chatGlow {
+    0%, 100% {
+        opacity: 0.3;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.6;
+        transform: scale(1.2);
+    }
+}
+
 .modern-btn {
     display: inline-flex;
     align-items: center;

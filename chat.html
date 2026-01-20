@@ -106,6 +106,9 @@
                     <p>Welcome to JNJ Chat! Start a conversation below.</p>
                 </div>
             </div>
+            <div id="newMessageIndicator" class="new-message-indicator" onclick="scrollToBottom(true)" style="display: none;">
+                New messages ↓
+            </div>
         </div>
         
         <div class="chat-input-container">
@@ -277,6 +280,20 @@
         const currentNameDisplay = document.getElementById('currentNameDisplay');
         const currentNameText = document.getElementById('currentNameText');
         const userNameContainer = document.getElementById('userNameContainer');
+        
+        // Initialize scroll listener for auto-scroll detection
+        if (chatMessages) {
+            chatMessages.addEventListener('scroll', () => {
+                if (typeof userScrolledUp !== 'undefined' && typeof checkIfNearBottom === 'function') {
+                    userScrolledUp = !checkIfNearBottom();
+                    // Hide/show new message indicator
+                    const newMessageIndicator = document.getElementById('newMessageIndicator');
+                    if (newMessageIndicator) {
+                        newMessageIndicator.style.display = userScrolledUp ? 'block' : 'none';
+                    }
+                }
+            });
+        }
         
         // Dev star and modals
         const devStarButton = document.getElementById('devStarButton');
@@ -1524,6 +1541,7 @@
             
             const time = new Date(timestamp);
             const timeString = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const relativeTime = getRelativeTime(timestamp);
             
             let imageHtml = '';
             if (imageData) {
@@ -1540,11 +1558,24 @@
             // Censor the message before displaying (in case it wasn't censored when saved)
             let censoredMessage = censorMessage(message);
             
-            // Convert URLs to clickable links
+            // Parse markdown and convert URLs to clickable links
             let messageHtml = '';
             if (censoredMessage) {
-                // Convert URLs to links first (linkify handles escaping)
-                messageHtml = linkify(censoredMessage);
+                // First parse markdown, then linkify URLs
+                messageHtml = parseMarkdown(censoredMessage);
+                // Linkify after markdown parsing (but preserve code blocks)
+                messageHtml = messageHtml.replace(/(<pre[^>]*>[\s\S]*?<\/pre>|<code[^>]*>[\s\S]*?<\/code>)/gi, (match) => {
+                    // Don't linkify inside code blocks
+                    return match;
+                });
+                // Linkify the rest
+                const parts = messageHtml.split(/(<pre[^>]*>[\s\S]*?<\/pre>|<code[^>]*>[\s\S]*?<\/code>)/gi);
+                messageHtml = parts.map((part, index) => {
+                    if (part.match(/^<(pre|code)/i)) {
+                        return part; // Don't process code blocks
+                    }
+                    return linkify(part);
+                }).join('');
             }
             // Emojis are already Unicode, so they should display fine
             
@@ -1629,11 +1660,24 @@
             if (glitchModeEnabled) messageClasses.push('glitch-text');
             const messageClass = messageClasses.length > 0 ? ' ' + messageClasses.join(' ') : '';
             
+            // Check if this message should be grouped with the previous one
+            const allMessages = Array.from(chatMessages.querySelectorAll('.message:not(.welcome-message)'));
+            const previousMessage = allMessages.length > 0 ? allMessages[allMessages.length - 1] : null;
+            const isGrouped = shouldGroupMessage(messageDiv, previousMessage);
+            
+            // Set grouped class if needed
+            if (isGrouped) {
+                messageDiv.classList.add('message-grouped');
+            }
+            
             messageDiv.innerHTML = `
-                <div class="message-header" style="display: flex; align-items: center; gap: 8px;">
+                <div class="message-header" style="display: flex; align-items: center; gap: 8px; ${isGrouped ? 'display: none;' : ''}">
                     ${avatarHtml}
                     <span class="message-user">${escapeHtml(displayUsername)}${titleHtml}</span>
-                    <span class="message-time" style="margin-left: auto;">${timeString}</span>
+                    <div class="message-time-wrapper" style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+                        <span class="message-time" title="${timeString} - ${new Date(timestamp).toLocaleString()}">${relativeTime}</span>
+                        <button class="message-copy-btn" title="Copy message" onclick="copyMessageText(this)" style="opacity: 0; transition: opacity 0.2s; background: none; border: none; color: rgba(255,255,255,0.4); cursor: pointer; padding: 4px; font-size: 12px;">📋</button>
+                    </div>
                 </div>
                 <div class="message-content">
                     ${imageHtml}
@@ -1665,12 +1709,12 @@
             }
             
             // Insert message in correct chronological order
-            const allMessages = Array.from(chatMessages.querySelectorAll('.message:not(.welcome-message)'));
+            const allMessagesArray = Array.from(chatMessages.querySelectorAll('.message:not(.welcome-message)'));
             let inserted = false;
-            for (let i = 0; i < allMessages.length; i++) {
-                const msgTimestamp = parseInt(allMessages[i].getAttribute('data-timestamp') || '0');
+            for (let i = 0; i < allMessagesArray.length; i++) {
+                const msgTimestamp = parseInt(allMessagesArray[i].getAttribute('data-timestamp') || '0');
                 if (timestamp < msgTimestamp) {
-                    chatMessages.insertBefore(messageDiv, allMessages[i]);
+                    chatMessages.insertBefore(messageDiv, allMessagesArray[i]);
                     inserted = true;
                     break;
                 }
@@ -1678,6 +1722,9 @@
             if (!inserted) {
                 chatMessages.appendChild(messageDiv);
             }
+            
+            // Update grouped state for adjacent messages
+            updateMessageGrouping();
             
             // Setup click handlers for dev users
             if (isDev()) {
@@ -1689,6 +1736,7 @@
             // Remove old messages if we exceed the limit
             limitVisibleMessages();
             
+            // Only auto-scroll if user is near bottom
             scrollToBottom();
         }
 
@@ -1740,9 +1788,150 @@
             });
         }
 
-        // Scroll to bottom of chat
-        function scrollToBottom() {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+        // Get relative time string (e.g., "2m ago", "1h ago")
+        function getRelativeTime(timestamp) {
+            const now = Date.now();
+            const diff = now - timestamp;
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (seconds < 60) return 'just now';
+            if (minutes < 60) return `${minutes}m ago`;
+            if (hours < 24) return `${hours}h ago`;
+            if (days < 7) return `${days}d ago`;
+            return new Date(timestamp).toLocaleDateString();
+        }
+
+        // Parse basic markdown (bold, italic, code blocks)
+        function parseMarkdown(text) {
+            if (!text) return text;
+            
+            // Escape HTML first to prevent XSS
+            let html = escapeHtml(text);
+            
+            // Code blocks (```code```)
+            html = html.replace(/```([\s\S]*?)```/g, '<pre class="message-code-block"><code>$1</code></pre>');
+            
+            // Inline code (`code`)
+            html = html.replace(/`([^`]+)`/g, '<code class="message-inline-code">$1</code>');
+            
+            // Bold (**text** or __text__)
+            html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+            
+            // Italic (*text* or _text_)
+            html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+            html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
+            
+            // Strikethrough (~~text~~)
+            html = html.replace(/~~([^~]+)~~/g, '<del>$1</del>');
+            
+            return html;
+        }
+
+        // Check if message should be grouped with previous message
+        function shouldGroupMessage(messageDiv, previousMessage) {
+            if (!previousMessage) return false;
+            
+            const prevUser = previousMessage.querySelector('.message-user')?.textContent?.trim();
+            const currentUser = messageDiv.querySelector('.message-user')?.textContent?.trim();
+            
+            if (!prevUser || !currentUser) return false;
+            
+            // Remove title from usernames for comparison
+            const prevUserClean = prevUser.replace(/\s*\[.*?\]\s*/g, '').trim();
+            const currentUserClean = currentUser.replace(/\s*\[.*?\]\s*/g, '').trim();
+            
+            if (prevUserClean !== currentUserClean) return false;
+            
+            // Check time difference (group if within 5 minutes)
+            const prevTimestamp = parseInt(previousMessage.getAttribute('data-timestamp') || '0');
+            const currentTimestamp = parseInt(messageDiv.getAttribute('data-timestamp') || '0');
+            const timeDiff = currentTimestamp - prevTimestamp;
+            
+            return timeDiff < 5 * 60 * 1000; // 5 minutes
+        }
+
+        // Track if user has manually scrolled up
+        let userScrolledUp = false;
+        let isNearBottom = true;
+        
+        // Check if user is near bottom of chat
+        function checkIfNearBottom() {
+            const threshold = 100; // pixels from bottom
+            const scrollTop = chatMessages.scrollTop;
+            const scrollHeight = chatMessages.scrollHeight;
+            const clientHeight = chatMessages.clientHeight;
+            isNearBottom = (scrollHeight - scrollTop - clientHeight) < threshold;
+            return isNearBottom;
+        }
+        
+        // Initialize scroll listener after chatMessages is available
+        // This will be called after DOM is ready
+        
+        // Scroll to bottom of chat (only if user hasn't scrolled up)
+        function scrollToBottom(force = false) {
+            if (force || !userScrolledUp) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                userScrolledUp = false;
+                isNearBottom = true;
+                // Hide new message indicator
+                const newMessageIndicator = document.getElementById('newMessageIndicator');
+                if (newMessageIndicator) {
+                    newMessageIndicator.style.display = 'none';
+                }
+            } else {
+                // Show new message indicator
+                const newMessageIndicator = document.getElementById('newMessageIndicator');
+                if (newMessageIndicator) {
+                    newMessageIndicator.style.display = 'block';
+                }
+            }
+        }
+        
+        // Copy message text to clipboard
+        function copyMessageText(button) {
+            const messageDiv = button.closest('.message');
+            const messageContent = messageDiv.querySelector('.message-content p');
+            if (!messageContent) return;
+            
+            // Get text content (without HTML)
+            const text = messageContent.textContent || messageContent.innerText;
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(text).then(() => {
+                // Show feedback
+                const originalText = button.textContent;
+                button.textContent = '✓';
+                button.style.color = '#22c55e';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.color = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+            });
+        }
+        
+        // Update message grouping for all messages
+        function updateMessageGrouping() {
+            const messages = Array.from(chatMessages.querySelectorAll('.message:not(.welcome-message)'));
+            messages.forEach((msg, index) => {
+                const prevMsg = index > 0 ? messages[index - 1] : null;
+                const shouldGroup = shouldGroupMessage(msg, prevMsg);
+                
+                if (shouldGroup) {
+                    msg.classList.add('message-grouped');
+                    const header = msg.querySelector('.message-header');
+                    if (header) header.style.display = 'none';
+                } else {
+                    msg.classList.remove('message-grouped');
+                    const header = msg.querySelector('.message-header');
+                    if (header) header.style.display = 'flex';
+                }
+            });
         }
         
         // Update all displayed messages with new username
