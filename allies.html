@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Allies - JNJ Website</title>
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;300;400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/index.css">
+    <link rel="stylesheet" href="css/about.css">
+    <link rel="stylesheet" href="css/background-music.css">
+    <script src="js/page-transitions.js" defer></script>
+    <script src="js/background-music.js" defer></script>
+</head>
+<body class="p-6 md:p-12 lg:p-16">
+    <!-- Cursor Ring -->
+    <div class="prism-cursor-ring" id="cursor-ring"></div>
+    
+    <!-- Animated Background Orbs -->
+    <div class="prism-bg">
+        <div class="orb w-[800px] h-[800px] bg-cyan-900/40 -top-40 -left-40"></div>
+        <div class="orb w-[600px] h-[600px] bg-purple-900/30 bottom-10 right-10" style="animation-delay: -7s"></div>
+    </div>
+
+    <div class="max-w-[1800px] mx-auto space-y-16 relative z-10">
+        <!-- Top Controls -->
+        <div class="top-controls flex flex-wrap items-center justify-between gap-4 px-4 mb-8">
+            <div class="flex gap-3 flex-wrap">
+                <a href="index.html" class="modern-btn modern-btn-outline">← Home</a>
+                <a href="profile.html" class="modern-btn modern-btn-primary" id="profileButton">👤 Profile</a>
+                <a href="events.html" class="modern-btn modern-btn-secondary" id="eventsButton">🎉 Events</a>
+                <a href="quests.html" class="modern-btn modern-btn-accent">⚔️ Quests</a>
+                <a href="about.html" class="modern-btn modern-btn-outline">About Us</a>
+                <a href="allies.html" class="modern-btn modern-btn-outline">🤝 Allies</a>
+            </div>
+        </div>
+        
+        <!-- Header -->
+        <header class="flex flex-col xl:flex-row items-start xl:items-end justify-between gap-12 px-4 mb-12">
+            <div class="space-y-8">
+                <div class="flex items-center gap-6">
+                    <div class="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10">
+                        <div class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></div>
+                        <span class="text-[10px] font-black tracking-[0.2em] uppercase text-slate-400">JNJ // Allies</span>
+                    </div>
+                    <span class="text-[10px] font-mono text-slate-600">v2.4.0-STABLE</span>
+                </div>
+                <h1 class="glitch-text text-9xl md:text-[12rem] font-black leading-[0.7] tracking-tighter transition-all duration-500">
+                    Allies<span class="opacity-30">.</span>
+                </h1>
+            </div>
+            <div class="max-w-md text-left xl:text-right space-y-6">
+                <p class="text-3xl font-light text-slate-200 tracking-tight leading-none">
+                    Our <span class="text-cyan-400">partners</span>
+                </p>
+                <p class="text-sm text-slate-500 leading-relaxed">
+                    Discover the projects and communities we collaborate with
+                </p>
+            </div>
+        </header>
+    
+        <div class="about-container">
+            <div class="allies-section">
+                <!-- The Project -->
+                <div class="ally-card coming-soon">
+                    <div class="ally-icon">🚀</div>
+                    <div class="ally-badge">Coming Soon</div>
+                    <h2>The Project</h2>
+                    <p class="ally-description">An exciting new project that's currently in development. Stay tuned for updates!</p>
+                    <div class="ally-status">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Not Available Yet</span>
+                    </div>
+                </div>
+                
+                <!-- Firehead -->
+                <div class="ally-card active">
+                    <div class="ally-icon">🔥</div>
+                    <h2>Firehead</h2>
+                    <p class="ally-description">An innovative project by our allies. Check out their amazing work!</p>
+                    <a href="https://dancing-fudge-66df02.netlify.app/" target="_blank" rel="noopener noreferrer" class="ally-link">
+                        <span>Visit Firehead</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .allies-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .ally-card {
+            position: relative;
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .ally-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(0, 242, 255, 0.1) 0%, rgba(112, 0, 255, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: 0;
+        }
+
+        .ally-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(0, 242, 255, 0.4);
+            box-shadow: 0 20px 60px rgba(0, 242, 255, 0.2), 0 0 40px rgba(112, 0, 255, 0.1);
+        }
+
+        .ally-card:hover::before {
+            opacity: 1;
+        }
+
+        .ally-card.coming-soon {
+            opacity: 0.7;
+            filter: grayscale(0.3);
+        }
+
+        .ally-card.coming-soon:hover {
+            opacity: 0.9;
+            filter: grayscale(0.1);
+        }
+
+        .ally-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            display: block;
+            filter: drop-shadow(0 0 20px rgba(0, 242, 255, 0.4));
+            position: relative;
+            z-index: 1;
+        }
+
+        .ally-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #000;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+            z-index: 2;
+        }
+
+        .ally-card h2 {
+            font-size: 32px;
+            font-weight: 900;
+            margin-bottom: 15px;
+            color: #fff;
+            position: relative;
+            z-index: 1;
+        }
+
+        .ally-description {
+            font-size: 16px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 25px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .ally-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-text {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 400;
+        }
+
+        .ally-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, rgba(0, 242, 255, 0.2) 0%, rgba(112, 0, 255, 0.2) 100%);
+            border: 2px solid rgba(0, 242, 255, 0.4);
+            border-radius: 12px;
+            color: var(--lumina-glow);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            z-index: 1;
+            margin-top: 10px;
+        }
+
+        .ally-link:hover {
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, rgba(0, 242, 255, 0.3) 0%, rgba(112, 0, 255, 0.3) 100%);
+            border-color: var(--lumina-glow);
+            box-shadow: 0 8px 30px rgba(0, 242, 255, 0.4);
+            color: #fff;
+        }
+
+        .ally-link svg {
+            transition: transform 0.3s ease;
+        }
+
+        .ally-link:hover svg {
+            transform: translate(4px, -4px);
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.2);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .allies-section {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .ally-card {
+                padding: 30px;
+            }
+
+            .ally-icon {
+                font-size: 48px;
+            }
+
+            .ally-card h2 {
+                font-size: 24px;
+            }
+        }
+    </style>
+
+    <script>
+        // Cursor Ring
+        const ring = document.getElementById('cursor-ring');
+        if (ring) {
+            document.addEventListener('mousemove', (e) => {
+                ring.style.left = `${e.clientX}px`;
+                ring.style.top = `${e.clientY}px`;
+            });
+            document.addEventListener('mousedown', () => {
+                ring.style.scale = '0.7';
+                ring.style.opacity = '1';
+            });
+            document.addEventListener('mouseup', () => {
+                ring.style.scale = '1';
+                ring.style.opacity = '0.6';
+            });
+        }
+    </script>
+</body>
+</html>
+
