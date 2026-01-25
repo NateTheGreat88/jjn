@@ -1874,7 +1874,7 @@
         // Scroll to bottom of chat (only if user hasn't scrolled up)
         function scrollToBottom(force = false) {
             if (force || !userScrolledUp) {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
                 userScrolledUp = false;
                 isNearBottom = true;
                 // Hide new message indicator
@@ -2408,6 +2408,87 @@
             }
             messageInput.value = '';
             messageInput.focus();
+            
+            // Trigger confetti celebration!
+            triggerConfetti();
+        }
+        
+        // Confetti function - lightweight and client-side only
+        function triggerConfetti() {
+            // Use existing container if available, otherwise create one
+            let confettiContainer = document.getElementById('confetti-container');
+            if (!confettiContainer) {
+                confettiContainer = document.createElement('div');
+                confettiContainer.id = 'confetti-container';
+                confettiContainer.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; overflow: hidden;';
+                document.body.appendChild(confettiContainer);
+            }
+            
+            const confettiCount = 30; // Reduced for better performance
+            const colors = ['#00f2ff', '#7000ff', '#8a2be2', '#00d4ff', '#ff00ff', '#00ffff'];
+            
+            // Get input position for confetti origin
+            const inputRect = messageInput.getBoundingClientRect();
+            const originX = inputRect.left + inputRect.width / 2;
+            const originY = inputRect.top;
+            
+            for (let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement('div');
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const size = Math.random() * 6 + 3;
+                const angle = (Math.random() - 0.5) * Math.PI * 0.8; // More upward spread
+                const velocity = Math.random() * 200 + 150;
+                const rotation = Math.random() * 360;
+                const rotationSpeed = (Math.random() - 0.5) * 8;
+                const isCircle = Math.random() > 0.4;
+                
+                confetti.style.cssText = `
+                    position: absolute;
+                    left: ${originX}px;
+                    top: ${originY}px;
+                    width: ${size}px;
+                    height: ${size}px;
+                    background: ${color};
+                    border-radius: ${isCircle ? '50%' : '2px'};
+                    pointer-events: none;
+                    box-shadow: 0 0 ${size * 1.5}px ${color};
+                    transform: rotate(${rotation}deg);
+                    will-change: transform, opacity;
+                `;
+                
+                confettiContainer.appendChild(confetti);
+                
+                // Animate confetti with physics
+                const vx = Math.cos(angle) * velocity;
+                const vy = Math.sin(angle) * velocity - 150; // Strong upward bias
+                const gravity = 400;
+                const duration = 1500 + Math.random() * 500;
+                const startTime = performance.now();
+                
+                function animate() {
+                    const elapsed = (performance.now() - startTime) / 1000;
+                    const progress = elapsed / (duration / 1000);
+                    
+                    if (progress >= 1) {
+                        confetti.remove();
+                        return;
+                    }
+                    
+                    const x = originX + vx * elapsed;
+                    const y = originY + vy * elapsed + 0.5 * gravity * elapsed * elapsed;
+                    const currentRotation = rotation + rotationSpeed * elapsed * 60;
+                    const opacity = Math.max(0, 1 - progress * 1.2);
+                    
+                    confetti.style.left = `${x}px`;
+                    confetti.style.top = `${y}px`;
+                    confetti.style.transform = `rotate(${currentRotation}deg)`;
+                    confetti.style.opacity = opacity;
+                    
+                    requestAnimationFrame(animate);
+                }
+                
+                requestAnimationFrame(animate);
+            }
         }
         
         let selectedGif = null; // Store selected GIF URL
