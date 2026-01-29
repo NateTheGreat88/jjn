@@ -76,6 +76,14 @@
     <!-- Grid Parallax Overlay -->
     <div class="prism-grid-overlay"></div>
 
+    <!-- Time Widget - Fixed Top Right -->
+    <div class="time-widget" id="timeWidget">
+        <div class="time-display" id="timeDisplay"></div>
+    </div>
+    
+    <!-- Time-Based Message -->
+    <div class="time-message" id="timeMessage"></div>
+
     <div class="max-w-[1800px] mx-auto space-y-16 relative z-10" id="mainContainer" style="opacity: 0; pointer-events: none;">
         <!-- Top Controls -->
         <div class="top-controls flex flex-wrap items-center justify-between gap-4 px-4 mb-8">
@@ -335,28 +343,28 @@
                             <div class="p-6 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-transparent border border-cyan-500/20 hover:border-cyan-400/50 transition-all group hover:transform hover:scale-105">
                                 <div class="text-3xl mb-3">👨‍💻</div>
                                 <h3 class="font-bold mb-2 text-cyan-400">Junhu Choi</h3>
-                                <p class="text-sm text-slate-400 mb-3">Full-stack developer & designer</p>
+                                <p class="text-sm text-slate-400 mb-3">Passionate designer and creative collaborator</p>
                                 <div class="flex gap-2 flex-wrap">
-                                    <span class="text-xs px-2 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">Code</span>
                                     <span class="text-xs px-2 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">Design</span>
+                                    <span class="text-xs px-2 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">Creative</span>
                                 </div>
                             </div>
                             <div class="p-6 rounded-2xl bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/20 hover:border-purple-400/50 transition-all group hover:transform hover:scale-105">
                                 <div class="text-3xl mb-3">🎨</div>
                                 <h3 class="font-bold mb-2 text-purple-400">Nathan DeLuca</h3>
-                                <p class="text-sm text-slate-400 mb-3">Creative director & musician</p>
+                                <p class="text-sm text-slate-400 mb-3">Creative developer and project collaborator</p>
                                 <div class="flex gap-2 flex-wrap">
-                                    <span class="text-xs px-2 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400">Music</span>
-                                    <span class="text-xs px-2 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400">Art</span>
+                                    <span class="text-xs px-2 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400">Code</span>
+                                    <span class="text-xs px-2 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400">Creative</span>
                                 </div>
                             </div>
                             <div class="p-6 rounded-2xl bg-gradient-to-br from-pink-500/10 to-transparent border border-pink-500/20 hover:border-pink-400/50 transition-all group hover:transform hover:scale-105">
                                 <div class="text-3xl mb-3">🚀</div>
                                 <h3 class="font-bold mb-2 text-pink-400">Jaxon Croskey</h3>
-                                <p class="text-sm text-slate-400 mb-3">Developer & game designer</p>
+                                <p class="text-sm text-slate-400 mb-3">Head of music and audio engineering</p>
                                 <div class="flex gap-2 flex-wrap">
-                                    <span class="text-xs px-2 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400">Games</span>
-                                    <span class="text-xs px-2 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400">Dev</span>
+                                    <span class="text-xs px-2 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400">Music</span>
+                                    <span class="text-xs px-2 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400">Audio</span>
                                 </div>
                             </div>
                         </div>
@@ -2459,6 +2467,80 @@
                 ring.style.opacity = '0.6';
             });
         }
+        
+        // Time Widget and Time-Based Messages
+        const timeMessages = {
+            early: ["It's too early for bugs 🐛", "Rise and code? ☀️", "Early morning vibes 🌅", "Dawn patrol checking in 🌄", "The early dev gets the merge ⏰", "Sunrise debugging session ☀️", "Birds chirping, keys clicking 🐦", "Fresh start energy 💫"],
+            morning: ["Good morning, early bird! ☀️", "Morning coding session? ☕", "Start of a great day! 🌞", "First commit of the day? 📝", "Coffee + code = productivity ☕", "Morning standup energy 📊", "New day, new bugs to fix 🐛", "Ready to ship something? 🚢", "Let's build something great! 🛠️"],
+            lateMorning: ["Morning coding session? ☕", "Productive morning! 💻", "Coffee time ☕", "Pre-lunch flow state 🧠", "Crushing that to-do list ✅", "Second coffee? Third? ☕☕", "Deep work hours 💪", "In the zone 🎯", "Making progress! 📈"],
+            lunch: ["Lunch break vibes 🍕", "Time for a break! 🍔", "Midday fuel ⚡", "Step away from the screen 👀", "Refuel and recharge 🔋", "Lunch + a walk? 🚶", "Brain break time 🧘", "Sandwich and stack overflow? 📚", "Power nap or power lunch? ⚡"],
+            afternoon: ["Afternoon productivity 💻", "Keep coding! 🚀", "Afternoon grind 💪", "Post-lunch momentum 🏃", "Second wind energy 💨", "Feature almost done? 🎉", "Afternoon standup prep 📋", "Crunch time? Or chill time? 😎", "Debugging the afternoon away 🐛", "Sprint to the finish! 🏁"],
+            evening: ["Evening coding time 🌆", "Sunset coding session 🌇", "Evening vibes ✨", "Golden hour coding 🌅", "Winding down or ramping up? 🤔", "Evening side project? 🎨", "Dinner break soon? 🍽️", "Last push before EOD 📤", "Golden hour productivity ✨"],
+            night: ["Night owl mode activated 🦉", "Late night coding? 🌙", "Burning the midnight oil? ⚡", "Debugging in the dark 🐛", "Night shift activated 🌃", "Still coding? Respect! 💪", "The best code happens at night 🌙", "Quiet hours = focus hours 🔇", "No meetings, just code 📝", "Night owl gang rise up 🦉", "One more commit... 🎯", "The city sleeps, you code 🌃"],
+            lateNight: ["Late night debugging? 🌙", "Burning the midnight oil? ⚡", "Debugging in the dark 🐛", "Night shift activated 🌃", "Still coding? Respect! 💪", "The code never sleeps 💻", "Past midnight club 🌙", "Insomniac dev hours 😴", "The grind doesn't stop ⏰", "Sleep is for the weak? 😅", "Tomorrow's problem = tonight's solution 💡", "3am clarity hits different 🧠"]
+        };
+        
+        let currentHour = null;
+        let currentMessageText = null;
+        
+        function getTimeBasedMessage(hours) {
+            // Get a new random message when the hour changes
+            if (currentHour === hours && currentMessageText) {
+                return currentMessageText;
+            }
+            
+            let messages = [];
+            if (hours >= 5 && hours < 7) {
+                messages = timeMessages.early;
+            } else if (hours >= 7 && hours < 9) {
+                messages = timeMessages.morning;
+            } else if (hours >= 9 && hours < 12) {
+                messages = timeMessages.lateMorning;
+            } else if (hours >= 12 && hours < 14) {
+                messages = timeMessages.lunch;
+            } else if (hours >= 14 && hours < 17) {
+                messages = timeMessages.afternoon;
+            } else if (hours >= 17 && hours < 19) {
+                messages = timeMessages.evening;
+            } else if (hours >= 19 && hours < 22) {
+                messages = timeMessages.night;
+            } else if (hours >= 22 && hours < 24) {
+                messages = timeMessages.lateNight;
+            } else {
+                messages = timeMessages.lateNight; // 0-5am
+            }
+            
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            currentHour = hours;
+            currentMessageText = randomMessage;
+            return randomMessage;
+        }
+        
+        function updateTime() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours % 12 || 12;
+            
+            // Update clock display
+            const timeDisplay = document.getElementById('timeDisplay');
+            if (timeDisplay) {
+                timeDisplay.textContent = `${displayHours}:${minutes}:${seconds} ${ampm}`;
+            }
+            
+            // Update time-based message when hour changes
+            const timeMessage = document.getElementById('timeMessage');
+            if (timeMessage) {
+                const message = getTimeBasedMessage(hours);
+                timeMessage.textContent = message;
+            }
+        }
+        
+        // Update time immediately and then every second
+        updateTime();
+        setInterval(updateTime, 1000);
         
     </script>
 </body>
