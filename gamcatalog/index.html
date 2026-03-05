@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Game Catalog · JNJ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --jnj-cyan:#00f2ff;
+  --jnj-purple:#7000ff;
+  --jnj-glass:rgba(8,8,12,0.6);
+  --jnj-border:rgba(255,255,255,0.08);
+  --jnj-glow:rgba(0,242,255,0.4);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  min-height:100vh;
+  background:#010103;
+  color:#eaeaea;
+  font-family:'Outfit',sans-serif;
+  position:relative;
+  overflow-x:hidden;
+}
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(0,242,255,0.12) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(112,0,255,0.12) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, #050510 0%, #010103 100%);
+}
+body::after{
+  content:'';
+  position:fixed;
+  inset:-200px;
+  z-index:-1;
+  background-image:
+    linear-gradient(rgba(0,242,255,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,242,255,0.06) 1px, transparent 1px);
+  background-size:40px 40px;
+  animation:gridMove 25s linear infinite;
+  pointer-events:none;
+  mix-blend-mode:screen;
+  opacity:0.8;
+}
+@keyframes gridMove{
+  0%{background-position:0 0}
+  100%{background-position:40px 40px}
+}
+.jnj-back{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  margin:12px 16px;
+  padding:8px 14px;
+  font-size:11px;
+  font-family:'Press Start 2P',monospace;
+  color:var(--jnj-cyan);
+  text-decoration:none;
+  border:2px solid rgba(0,242,255,0.3);
+  border-radius:8px;
+  background:var(--jnj-glass);
+  backdrop-filter:blur(12px);
+  transition:all 0.3s ease;
+}
+.jnj-back:hover{
+  border-color:var(--jnj-cyan);
+  box-shadow:0 0 20px var(--jnj-glow);
+  color:#fff;
+}
+
+/* HEADER */
+header{
+  padding:20px 16px 18px;
+  border-bottom:2px solid rgba(0,242,255,0.25);
+  background:var(--jnj-glass);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+}
+header h1{
+  margin:0;
+  font-size:16px;
+  font-family:'Press Start 2P',monospace;
+  color:#fff;
+  text-shadow:0 0 20px var(--jnj-glow);
+  letter-spacing:0.05em;
+}
+header .pixel-sub{
+  margin-top:8px;
+  font-size:9px;
+  font-family:'Press Start 2P',monospace;
+  color:var(--jnj-cyan);
+  opacity:0.9;
+  letter-spacing:0.1em;
+}
+
+/* CONTROLS */
+.controls{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}
+.controls input{
+  flex:1;
+  min-width:200px;
+  padding:10px;
+  font-size:10px;
+  font-family:'Press Start 2P',monospace;
+  background:rgba(0,0,0,0.4);
+  border:2px solid var(--jnj-border);
+  color:#eaeaea;
+  border-radius:4px;
+  transition:border-color 0.2s, box-shadow 0.2s;
+}
+.controls input:focus{
+  outline:none;
+  border-color:var(--jnj-cyan);
+  box-shadow:0 0 12px rgba(0,242,255,0.2);
+}
+.controls input::placeholder{color:#6b7280}
+.controls button,
+.controls a{
+  padding:10px;
+  font-size:10px;
+  font-family:'Press Start 2P',monospace;
+  background:rgba(0,0,0,0.4);
+  border:2px solid var(--jnj-border);
+  color:#eaeaea;
+  cursor:pointer;
+  text-decoration:none;
+  border-radius:4px;
+  transition:all 0.2s ease;
+}
+.controls button:hover,
+.controls a:hover{
+  border-color:var(--jnj-cyan);
+  color:var(--jnj-cyan);
+  box-shadow:0 0 12px rgba(0,242,255,0.2);
+}
+.controls button.active{
+  border-color:var(--jnj-cyan);
+  color:var(--jnj-cyan);
+  box-shadow:0 0 16px var(--jnj-glow);
+}
+
+/* Discord */
+.discord-btn{
+  border-color:rgba(112,0,255,0.5);
+  color:#c9c9e6;
+}
+.discord-btn:hover{
+  border-color:var(--jnj-purple);
+  color:#e6e6ff;
+  box-shadow:0 0 16px rgba(112,0,255,0.4);
+}
+
+/* CATEGORIES */
+.categories{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+.categories button{
+  padding:6px 10px;
+  font-size:9px;
+  font-family:'Press Start 2P',monospace;
+  background:rgba(0,0,0,0.4);
+  border:2px solid var(--jnj-border);
+  color:#eaeaea;
+  cursor:pointer;
+  border-radius:4px;
+  transition:all 0.2s ease;
+}
+.categories button:hover{
+  border-color:rgba(0,242,255,0.5);
+  color:var(--jnj-cyan);
+}
+.categories button.active{
+  border-color:var(--jnj-cyan);
+  color:var(--jnj-cyan);
+  box-shadow:0 0 12px var(--jnj-glow);
+}
+
+/* CATALOG */
+.catalog{
+  max-width:1000px;
+  margin:auto;
+  padding:18px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:14px
+}
+.card{
+  position:relative;
+  background:var(--jnj-glass);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border:2px solid var(--jnj-border);
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  border-radius:8px;
+  transition:all 0.3s ease;
+}
+.card:hover{
+  border-color:rgba(0,242,255,0.4);
+  box-shadow:0 0 24px rgba(0,242,255,0.15), 0 0 40px rgba(112,0,255,0.08);
+}
+.star{
+  position:absolute;
+  top:8px;
+  right:8px;
+  font-size:28px;
+  cursor:pointer;
+  color:#4b5563;
+  transition:color 0.2s, text-shadow 0.2s;
+}
+.star:hover{color:var(--jnj-cyan)}
+.star.active{
+  color:var(--jnj-cyan);
+  text-shadow:0 0 12px var(--jnj-glow);
+}
+.card h2{
+  margin:0 0 10px;
+  font-size:12px;
+  font-family:'Press Start 2P',monospace;
+  color:#fff;
+  line-height:1.5;
+}
+.card p{
+  font-size:9px;
+  font-family:'Press Start 2P',monospace;
+  color:#94a3b8;
+  flex-grow:1;
+}
+.card button{
+  margin-top:12px;
+  padding:10px;
+  font-size:10px;
+  font-family:'Press Start 2P',monospace;
+  border:2px solid rgba(0,242,255,0.3);
+  background:rgba(0,242,255,0.1);
+  color:#eaeaea;
+  cursor:pointer;
+  border-radius:4px;
+  transition:all 0.2s ease;
+}
+.card button:hover{
+  background:rgba(0,242,255,0.2);
+  border-color:var(--jnj-cyan);
+  color:var(--jnj-cyan);
+  box-shadow:0 0 16px rgba(0,242,255,0.3);
+}
+
+/* RANDOM OVERLAY */
+#randomOverlay{
+  position:fixed;
+  inset:0;
+  background:rgba(1,1,3,0.85);
+  backdrop-filter:blur(8px);
+  z-index:999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+#randomOverlay.hidden{display:none}
+.roulette{
+  width:90%;
+  max-width:1100px;
+  height:300px;
+  overflow:hidden;
+  border:2px solid rgba(0,242,255,0.3);
+  background:var(--jnj-glass);
+  backdrop-filter:blur(20px);
+  position:relative;
+  border-radius:8px;
+  box-shadow:0 0 40px rgba(0,242,255,0.15);
+}
+.marker{
+  position:absolute;
+  top:0;bottom:0;
+  left:50%;
+  width:3px;
+  background:var(--jnj-cyan);
+  transform:translateX(-50%);
+  box-shadow:0 0 12px var(--jnj-glow);
+}
+.close-btn{
+  position:absolute;
+  top:8px;
+  right:8px;
+  padding:6px 10px;
+  font-family:'Press Start 2P',monospace;
+  border:2px solid var(--jnj-border);
+  background:var(--jnj-glass);
+  color:#eaeaea;
+  cursor:pointer;
+  border-radius:4px;
+  font-size:9px;
+  transition:all 0.2s;
+}
+.close-btn:hover{border-color:var(--jnj-cyan);color:var(--jnj-cyan)}
+.roulette-track{
+  display:flex;
+  gap:24px;
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+}
+.unknown-card{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:100%;
+}
+.unknown-card span{
+  font-size:96px;
+  color:var(--jnj-cyan);
+  opacity:0.6;
+  text-shadow:0 0 20px var(--jnj-glow);
+}
+.spin-btn{
+  position:absolute;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  padding:14px 36px;
+  font-size:14px;
+  font-family:'Press Start 2P',monospace;
+  border:2px solid var(--jnj-cyan);
+  background:rgba(0,242,255,0.1);
+  color:#eaeaea;
+  cursor:pointer;
+  border-radius:4px;
+  transition:all 0.2s;
+}
+.spin-btn:hover{
+  background:rgba(0,242,255,0.2);
+  box-shadow:0 0 24px var(--jnj-glow);
+  color:var(--jnj-cyan);
+}
+
+/* REVEAL */
+.reveal{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(1,1,3,0.9);
+  backdrop-filter:blur(8px);
+  z-index:5;
+  border-radius:8px;
+}
+.reveal-card{
+  width:260px;
+  transform:scale(1.2);
+  border:2px solid rgba(0,242,255,0.3);
+  box-shadow:0 0 30px var(--jnj-glow);
+}
+.reveal-actions{display:flex;gap:12px;margin-top:12px}
+.reveal-actions button{
+  padding:10px;
+  font-size:10px;
+  font-family:'Press Start 2P',monospace;
+  border:2px solid rgba(0,242,255,0.3);
+  background:rgba(0,242,255,0.1);
+  color:#eaeaea;
+  cursor:pointer;
+  border-radius:4px;
+  transition:all 0.2s;
+}
+.reveal-actions button:hover{
+  border-color:var(--jnj-cyan);
+  color:var(--jnj-cyan);
+  box-shadow:0 0 12px var(--jnj-glow);
+}
+</style>
+</head>
+
+<body>
+
+<a href="../index.html" class="jnj-back">← HOME</a>
+
+<header>
+<h1>GAME CATALOG</h1>
+<p class="pixel-sub">PIXEL LAUNCHER</p>
+
+<div class="controls">
+<input type="text" placeholder="SEARCH GAME..." oninput="searchGames(this.value)">
+<button id="favToggle" onclick="toggleFavorites()">SHOW ★</button>
+<button onclick="openRandom()">RANDOM</button>
+<a class="discord-btn" href="https://discord.gg/wjm2pD89N9" target="_blank" rel="noopener">DISCORD</a>
+</div>
+
+<div class="categories" id="categories"></div>
+</header>
+
+<main class="catalog" id="catalog"></main>
+
+<div id="randomOverlay" class="hidden">
+  <div class="roulette">
+    <button class="close-btn" onclick="closeRandom()">✕</button>
+    <div class="marker"></div>
+    <div class="roulette-track" id="rouletteTrack"></div>
+    <button class="spin-btn" onclick="startSpin()">SPIN</button>
+  </div>
+</div>
+
+<script src="games.js"></script>
+<script>
+const layoutMap={q:"й",w:"ц",e:"у",r:"к",t:"е",y:"н",u:"г",i:"ш",o:"щ",p:"з",a:"ф",s:"ы",d:"в",f:"а",g:"п",h:"р",j:"о",k:"л",l:"д",z:"я",x:"ч",c:"с",v:"м",b:"и",n:"т",m:"ь",й:"q",ц:"w",у:"e",к:"r",е:"t",н:"y",г:"u",ш:"i",щ:"o",з:"p",ф:"a",ы:"s",в:"d",а:"f",п:"g",р:"h",о:"j",л:"k",д:"l",я:"z",ч:"x",с:"c",м:"v",и:"b",т:"n",ь:"m"};
+const switchLayout=t=>t.toLowerCase().split("").map(c=>layoutMap[c]||c).join("");
+
+const games=window.GAMES||[];
+let favorites=JSON.parse(localStorage.getItem("favorites")||"[]");
+let showFavs=false;
+let activeCategory="All";
+let searchQuery="";
+
+const CATEGORY_RULES={
+Shooter:["shoot","gun","bullet","doom","war","zombie"],
+Puzzle:["puzzle","logic","slice","panda"],
+Sports:["soccer","football","tennis","ball","golf"],
+Racing:["race","car","drive"],
+Platformer:["jump","run","dash"],
+Arcade:["classic","arcade"]
+};
+
+function detectCategories(title){
+const t=title.toLowerCase();
+const res=[];
+for(const [c,k] of Object.entries(CATEGORY_RULES))
+if(k.some(w=>t.includes(w)))res.push(c);
+return res.length?res:["Unknown"];
+}
+
+function toggleFavorite(t){
+favorites=favorites.includes(t)?favorites.filter(x=>x!==t):[...favorites,t];
+localStorage.setItem("favorites",JSON.stringify(favorites));
+render();
+}
+function toggleFavorites(){
+showFavs=!showFavs;
+document.getElementById("favToggle").classList.toggle("active",showFavs);
+render();
+}
+function searchGames(q){searchQuery=q;render();}
+
+function renderCategories(){
+const cats=["All",...Object.keys(CATEGORY_RULES),"Unknown"];
+const c=document.getElementById("categories");
+c.innerHTML="";
+cats.forEach(cat=>{
+const b=document.createElement("button");
+b.textContent=cat;
+if(cat===activeCategory)b.classList.add("active");
+b.onclick=()=>{activeCategory=cat;render();renderCategories();};
+c.appendChild(b);
+});
+}
+
+function render(){
+const q1=searchQuery.toLowerCase(),q2=switchLayout(q1);
+const c=document.getElementById("catalog");
+c.innerHTML="";
+games.forEach(g=>{
+if(showFavs&&!favorites.includes(g.title))return;
+const t=g.title.toLowerCase();
+if(q1&&!t.includes(q1)&&!t.includes(q2))return;
+const cats=detectCategories(g.title);
+if(activeCategory!=="All"&&!cats.includes(activeCategory))return;
+const d=document.createElement("div");
+d.className="card";
+d.innerHTML=`<div class="star ${favorites.includes(g.title)?"active":""}" onclick="toggleFavorite('${g.title.replace(/'/g,"\\'")}')">${favorites.includes(g.title)?"★":"☆"}</div>
+<h2>${g.title}</h2><p>${cats.join(", ")}</p>
+<button onclick="window.open('${g.file}','_blank')">PLAY</button>`;
+c.appendChild(d);
+});
+}
+
+let pos=0,speed=0;
+function openRandom(){
+const o=document.getElementById("randomOverlay");
+const t=document.getElementById("rouletteTrack");
+t.innerHTML="";
+window.__randomGame=games[Math.floor(Math.random()*games.length)];
+for(let i=0;i<20;i++){
+const c=document.createElement("div");
+c.className="card";
+c.style.width="200px";
+c.innerHTML=`<div class="unknown-card"><span>?</span></div>`;
+t.appendChild(c);
+}
+pos=t.offsetWidth;
+t.style.transform=`translate(${pos}px,-50%)`;
+o.classList.remove("hidden");
+}
+function startSpin(){speed=40;animate();}
+function animate(){
+const t=document.getElementById("rouletteTrack");
+pos-=speed;
+t.style.transform=`translate(${pos}px,-50%)`;
+speed*=0.96;
+if(speed<0.6){reveal();return;}
+requestAnimationFrame(animate);
+}
+function reveal(){
+const r=document.createElement("div");
+r.className="reveal";
+r.innerHTML=`<div class="card reveal-card"><h2>${window.__randomGame.title}</h2>
+<div class="reveal-actions">
+<button onclick="window.open('${window.__randomGame.file}','_blank')">PLAY</button>
+<button onclick="closeRandom()">CLOSE</button>
+</div></div>`;
+document.querySelector(".roulette").appendChild(r);
+}
+function closeRandom(){
+document.getElementById("randomOverlay").classList.add("hidden");
+document.querySelector(".reveal")?.remove();
+}
+
+renderCategories();
+render();
+</script>
+
+</body>
+</html>
